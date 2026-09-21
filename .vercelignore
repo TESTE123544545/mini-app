@@ -1,0 +1,12 @@
+.cache-trash
+.gradle-cache
+.next
+.sites-runtime
+.vinext
+.wrangler
+android
+dist
+node_modules
+outputs
+work
+package-lock.json
