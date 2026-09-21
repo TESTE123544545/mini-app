@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { BookOpen, BriefcaseBusiness, Camera, Check, ChevronRight, CircleDollarSign, Cloud, Eye, EyeOff, Flame, Gem, Home, ImagePlus, Leaf, LockKeyhole, LogOut, Mail, Pencil, Plus, Rocket, Save, Sparkles, Target, Trophy, UserRound } from "lucide-react";
+import { ArrowLeft, BookOpen, BriefcaseBusiness, Camera, Check, ChevronRight, CircleDollarSign, Cloud, Eye, EyeOff, Flame, Gem, Home, ImagePlus, Leaf, LockKeyhole, LogOut, Mail, Pencil, Plus, Rocket, Save, Sparkles, Target, Trophy, UserRound } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { Toaster } from "@/components/ui/sonner";
@@ -268,25 +268,47 @@ export default function HomePage() {
 
 const viewLabels: Record<View, string> = { home: "Início", tree: "Sua Árvore", missions: "Missões", journal: "Seu Diário", profile: "Seu Caminho" };
 
+type AuthMode = "register" | "login" | "recover" | "reset";
+
 function AuthScreen({ onAuthenticated }: { onAuthenticated: (user: Account, mode: "register" | "login") => Promise<void> }) {
-  const [mode, setMode] = useState<"register" | "login">("register");
+  const [mode, setMode] = useState<AuthMode>("register");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
+  const [resetToken, setResetToken] = useState("");
   const [visible, setVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+
+  useEffect(() => {
+    const token = new URLSearchParams(window.location.search).get("reset");
+    if (token) queueMicrotask(() => { setResetToken(token); setMode("reset"); });
+  }, []);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
-    setError("");
-    if (mode === "register" && password !== confirmation) return setError("As senhas não são iguais.");
+    setError(""); setNotice("");
+    if ((mode === "register" || mode === "reset") && password !== confirmation) return setError("As senhas não são iguais.");
     setLoading(true);
     try {
+      if (mode === "recover") {
+        const response = await fetch("/api/auth/recover", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email }) });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "Não foi possível enviar o e-mail.");
+        setNotice(result.message); return;
+      }
+      if (mode === "reset") {
+        const response = await fetch("/api/auth/recover", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ token: resetToken, password }) });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "Não foi possível alterar a senha.");
+        window.history.replaceState({}, "", "/");
+        setPassword(""); setConfirmation(""); setResetToken(""); setMode("login"); setNotice("Senha alterada. Agora entre com sua nova senha."); return;
+      }
       const response = await fetch("/api/auth", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: mode, email, password }) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Não foi possível continuar.");
-      await onAuthenticated(result.user, mode);
+      await onAuthenticated(result.user, mode as "register" | "login");
       toast.success(mode === "register" ? "Conta criada com sucesso." : "Bem-vindo de volta.");
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Não foi possível continuar.");
@@ -295,22 +317,28 @@ function AuthScreen({ onAuthenticated }: { onAuthenticated: (user: Account, mode
     }
   }
 
-  function switchMode(next: "register" | "login") {
-    setMode(next); setError(""); setPassword(""); setConfirmation("");
+  function switchMode(next: AuthMode) {
+    setMode(next); setError(""); setNotice(""); setPassword(""); setConfirmation("");
   }
+
+  const titles: Record<AuthMode, string> = { register: "Crie sua conta", login: "Entre na sua conta", recover: "Recupere sua senha", reset: "Crie uma nova senha" };
+  const descriptions: Record<AuthMode, string> = { register: "Salve sua árvore, metas e reflexões para acessar em qualquer celular.", login: "Continue sua evolução de onde parou.", recover: "Digite seu e-mail e enviaremos um link seguro para você.", reset: "Escolha uma senha nova com pelo menos 8 caracteres." };
 
   return <main className="auth-screen"><div className="stars" aria-hidden="true"/><section className="auth-card">
     <div className="auth-brand"><div className="brand-mark"><Leaf/></div><p className="brand-name">Veias da Sintonia</p></div>
+    {(mode === "recover" || mode === "reset") && <button className="auth-back" type="button" onClick={() => switchMode("login")}><ArrowLeft/> Voltar para entrar</button>}
     <p className="eyebrow">Sua jornada, sempre com você</p>
-    <h1>{mode === "register" ? "Crie sua conta" : "Entre na sua conta"}</h1>
-    <p className="auth-copy">{mode === "register" ? "Salve sua árvore, metas e reflexões para acessar em qualquer celular." : "Continue sua evolução de onde parou."}</p>
-    <div className="auth-tabs" role="tablist" aria-label="Acesso à conta"><button type="button" role="tab" aria-selected={mode === "register"} className={mode === "register" ? "active" : ""} onClick={() => switchMode("register")}>Criar conta</button><button type="button" role="tab" aria-selected={mode === "login"} className={mode === "login" ? "active" : ""} onClick={() => switchMode("login")}>Já tenho conta</button></div>
+    <h1>{titles[mode]}</h1>
+    <p className="auth-copy">{descriptions[mode]}</p>
+    {(mode === "register" || mode === "login") && <div className="auth-tabs" role="tablist" aria-label="Acesso à conta"><button type="button" role="tab" aria-selected={mode === "register"} className={mode === "register" ? "active" : ""} onClick={() => switchMode("register")}>Criar conta</button><button type="button" role="tab" aria-selected={mode === "login"} className={mode === "login" ? "active" : ""} onClick={() => switchMode("login")}>Já tenho conta</button></div>}
     <form className="auth-form" onSubmit={submit}>
-      <label>E-mail<div className="input-with-icon"><Mail/><input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="voce@email.com" required/></div></label>
-      <label>Senha<div className="input-with-icon"><LockKeyhole/><input type={visible ? "text" : "password"} autoComplete={mode === "register" ? "new-password" : "current-password"} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Mínimo de 8 caracteres" minLength={8} required/><button type="button" onClick={() => setVisible(!visible)} aria-label={visible ? "Ocultar senha" : "Mostrar senha"}>{visible ? <EyeOff/> : <Eye/>}</button></div></label>
-      {mode === "register" && <label>Confirme sua senha<div className="input-with-icon"><LockKeyhole/><input type={visible ? "text" : "password"} autoComplete="new-password" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} placeholder="Digite novamente" minLength={8} required/></div></label>}
+      {mode !== "reset" && <label>E-mail<div className="input-with-icon"><Mail/><input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="voce@email.com" required/></div></label>}
+      {mode !== "recover" && <label>{mode === "reset" ? "Nova senha" : "Senha"}<div className="input-with-icon"><LockKeyhole/><input type={visible ? "text" : "password"} autoComplete={mode === "login" ? "current-password" : "new-password"} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Mínimo de 8 caracteres" minLength={8} required/><button type="button" onClick={() => setVisible(!visible)} aria-label={visible ? "Ocultar senha" : "Mostrar senha"}>{visible ? <EyeOff/> : <Eye/>}</button></div></label>}
+      {(mode === "register" || mode === "reset") && <label>Confirme sua senha<div className="input-with-icon"><LockKeyhole/><input type={visible ? "text" : "password"} autoComplete="new-password" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} placeholder="Digite novamente" minLength={8} required/></div></label>}
+      {mode === "login" && <button className="forgot-button" type="button" onClick={() => switchMode("recover")}>Esqueci minha senha</button>}
       {error && <p className="form-error" role="alert">{error}</p>}
-      <button className="gold-button" disabled={loading}>{loading ? "Aguarde…" : mode === "register" ? "Criar minha conta" : "Entrar"}<ChevronRight/></button>
+      {notice && <p className="form-success" role="status"><Check/> {notice}</p>}
+      {!(mode === "recover" && notice) && <button className="gold-button" disabled={loading}>{loading ? "Aguarde…" : mode === "register" ? "Criar minha conta" : mode === "login" ? "Entrar" : mode === "recover" ? "Enviar link de recuperação" : "Salvar nova senha"}<ChevronRight/></button>}
     </form>
     <p className="auth-security"><LockKeyhole/> Sua senha é protegida e sua jornada fica vinculada à sua conta.</p>
   </section><Toaster richColors position="top-center"/></main>;

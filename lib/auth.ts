@@ -17,7 +17,7 @@ function base64ToBytes(value: string) {
   return Uint8Array.from(binary, (character) => character.charCodeAt(0));
 }
 
-async function sha256(value: string) {
+export async function hashToken(value: string) {
   const bytes = new TextEncoder().encode(value);
   const digest = await crypto.subtle.digest("SHA-256", bytes);
   return bytesToBase64(new Uint8Array(digest));
@@ -70,7 +70,7 @@ export async function verifyPassword(password: string, passwordHash: string, pas
 export async function createSession(userId: string) {
   const tokenBytes = crypto.getRandomValues(new Uint8Array(32));
   const token = bytesToBase64(tokenBytes).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
-  const tokenHash = await sha256(token);
+  const tokenHash = await hashToken(token);
   const expires = new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000);
   await getDb().insert(sessions).values({ tokenHash, userId, expiresAt: expires.toISOString() });
   return {
@@ -82,7 +82,7 @@ export async function createSession(userId: string) {
 export async function getSessionUser(request: Request) {
   const token = readCookie(request, SESSION_COOKIE);
   if (!token) return null;
-  const tokenHash = await sha256(token);
+  const tokenHash = await hashToken(token);
   const db = getDb();
   const [session] = await db.select().from(sessions).where(eq(sessions.tokenHash, tokenHash)).limit(1);
   if (!session || new Date(session.expiresAt).getTime() <= Date.now()) {
@@ -95,10 +95,15 @@ export async function getSessionUser(request: Request) {
 
 export async function deleteSession(request: Request) {
   const token = readCookie(request, SESSION_COOKIE);
-  if (token) await getDb().delete(sessions).where(eq(sessions.tokenHash, await sha256(token)));
+  if (token) await getDb().delete(sessions).where(eq(sessions.tokenHash, await hashToken(token)));
   return `${SESSION_COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`;
 }
 
 export function publicUser(user: { email: string; primaryDeviceId: string | null }) {
   return { email: user.email, deviceId: user.primaryDeviceId };
+}
+
+export function createSecureToken() {
+  const bytes = crypto.getRandomValues(new Uint8Array(32));
+  return bytesToBase64(bytes).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
 }
