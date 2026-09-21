@@ -44,3 +44,13 @@ next-env.d.ts
 /.codex/
 /outputs/
 /work/
+
+# Android build outputs and signing material
+/android/.gradle/
+/android/app/build/
+/android/build/
+/android/android.keystore
+/android/*.jks
+/android/*.keystore
+/.gradle-cache/
+/.cache-trash/
