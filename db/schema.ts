@@ -52,6 +52,8 @@ export const userProgress = sqliteTable("user_progress", {
   streak: integer("streak").notNull().default(1),
   missionDone: integer("mission_done", { mode: "boolean" }).notNull().default(false),
   lastMissionDate: text("last_mission_date"),
+  ritualDone: integer("ritual_done", { mode: "boolean" }).notNull().default(false),
+  lastRitualDate: text("last_ritual_date"),
   updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 

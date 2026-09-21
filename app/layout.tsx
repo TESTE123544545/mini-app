@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { Viewport } from "next";
 import "./globals.css";
+import "./premium.css";
 import { PwaRegister } from "./pwa-register";
 
 export const metadata: Metadata = {
@@ -35,6 +36,9 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body className="antialiased">
+        {/* React hoists these into <head>; the display face loads with the first paint. */}
+        <link rel="preload" href="/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+        <link rel="preload" href="/fonts/cormorant-garamond-latin.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
         {children}
         <PwaRegister />
       </body>

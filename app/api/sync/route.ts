@@ -17,12 +17,36 @@ const syncSchema = z.object({
   }).strict(),
   xp: z.number().int().min(0).max(1_000_000).optional().default(0),
   missionDone: z.boolean().optional().default(false),
+  ritualDone: z.boolean().optional().default(false),
   goals: z.array(z.object({ id: z.number().int().positive().max(Number.MAX_SAFE_INTEGER), title: z.string().trim().min(1).max(160), category: z.string().min(1).max(80), progress: z.number().int().min(0).max(100) }).strict()).max(100).optional().default([]),
   entries: z.array(z.object({ date: z.string().min(1).max(20), answers: z.array(z.string().max(4000)).max(4) }).strict()).max(365).optional().default([]),
+  dayKey: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
 }).strict();
 
 function validDeviceId(value: unknown): value is string {
   return typeof value === "string" && /^[a-zA-Z0-9-]{16,64}$/.test(value);
+}
+
+/**
+ * The client reports its own calendar day so the daily reset happens at the user's
+ * midnight, not at UTC midnight. Anything further than one day from the server's
+ * date is ignored — that range already covers every real timezone offset.
+ */
+function resolveDay(requested: string | null | undefined, serverDay: string) {
+  if (!requested || !/^\d{4}-\d{2}-\d{2}$/.test(requested)) return serverDay;
+  const distance = Math.abs(Date.parse(`${requested}T00:00:00Z`) - Date.parse(`${serverDay}T00:00:00Z`));
+  return Number.isFinite(distance) && distance <= 86_400_000 ? requested : serverDay;
+}
+
+function shiftDay(day: string, offset: number) {
+  const [year, month, date] = day.split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1, date + offset)).toISOString().slice(0, 10);
+}
+
+/** Most recent day on which the user completed the mission or the ritual. */
+function lastActiveDay(mission: string | null | undefined, ritual: string | null | undefined) {
+  const days = [mission, ritual].filter((value): value is string => Boolean(value)).sort();
+  return days.length ? days[days.length - 1] : null;
 }
 
 function errorResponse(error: unknown) {
@@ -41,7 +65,10 @@ export async function GET(request: Request) {
     const [progress] = await db.select().from(userProgress).where(eq(userProgress.deviceId, deviceId)).limit(1);
     const savedGoals = await db.select().from(goals).where(and(eq(goals.deviceId, deviceId), eq(goals.status, "active")));
     const savedEntries = await db.select().from(journalEntries).where(eq(journalEntries.deviceId, deviceId));
-    return Response.json({ deviceId, state: { profile: { name: profile.name, birthDate: profile.birthDate, objective: profile.objective, sign: profile.sign, intention: profile.intention, theme: profile.theme, hasAvatar: Boolean(profile.avatarData) }, xp: progress?.xp ?? 0, missionDone: progress?.missionDone ?? false, goals: savedGoals.map(({ id, title, category, progress: value }) => ({ id, title, category, progress: value })), entries: savedEntries.map((entry) => ({ date: entry.entryDate, answers: JSON.parse(entry.answersJson) })) } });
+    const today = resolveDay(new URL(request.url).searchParams.get("day"), new Date().toISOString().slice(0, 10));
+    const lastActive = lastActiveDay(progress?.lastMissionDate, progress?.lastRitualDate);
+    const streakAlive = lastActive === today || lastActive === shiftDay(today, -1);
+    return Response.json({ deviceId, state: { profile: { name: profile.name, birthDate: profile.birthDate, objective: profile.objective, sign: profile.sign, intention: profile.intention, theme: profile.theme, hasAvatar: Boolean(profile.avatarData) }, xp: progress?.xp ?? 0, missionDone: progress?.lastMissionDate === today && Boolean(progress?.missionDone), ritualDone: progress?.lastRitualDate === today && Boolean(progress?.ritualDone), streak: streakAlive ? (progress?.streak ?? 0) : 0, goals: savedGoals.map(({ id, title, category, progress: value }) => ({ id, title, category, progress: value })), entries: savedEntries.map((entry) => ({ date: entry.entryDate, answers: JSON.parse(entry.answersJson) })) } });
   } catch (error) { return errorResponse(error); }
 }
 
@@ -65,7 +92,29 @@ export async function POST(request: Request) {
       if (owner && owner.id !== user.id) return Response.json({ error: "Esta jornada já pertence a outra conta." }, { status: 409 });
     }
     const profileValues = { name: profile.name, birthDate: profile.birthDate, objective: profile.objective, sign: profile.sign, intention: profile.intention.trim(), theme: profile.theme, updatedAt: now };
-    const progressValues = { xp: payload.xp, missionDone: payload.missionDone, lastMissionDate: payload.missionDone ? now.slice(0, 10) : null, updatedAt: now };
+    const [savedProgress] = await db.select().from(userProgress).where(eq(userProgress.deviceId, deviceId)).limit(1);
+    const today = resolveDay(payload.dayKey, now.slice(0, 10));
+    const yesterday = shiftDay(today, -1);
+    const missionAlreadyCompletedToday = savedProgress?.lastMissionDate === today;
+    const ritualAlreadyCompletedToday = savedProgress?.lastRitualDate === today;
+    const previousActive = lastActiveDay(savedProgress?.lastMissionDate, savedProgress?.lastRitualDate);
+    const activeToday = payload.missionDone || payload.ritualDone;
+    let streak = savedProgress?.streak ?? 0;
+    if (activeToday) {
+      if (previousActive !== today) streak = previousActive === yesterday ? streak + 1 : 1;
+      else if (streak === 0) streak = 1;
+    } else if (previousActive !== today && previousActive !== yesterday) {
+      streak = 0;
+    }
+    const progressValues = {
+      xp: payload.xp,
+      streak,
+      missionDone: payload.missionDone,
+      lastMissionDate: payload.missionDone ? (missionAlreadyCompletedToday ? savedProgress.lastMissionDate : today) : savedProgress?.lastMissionDate ?? null,
+      ritualDone: payload.ritualDone,
+      lastRitualDate: payload.ritualDone ? (ritualAlreadyCompletedToday ? savedProgress.lastRitualDate : today) : savedProgress?.lastRitualDate ?? null,
+      updatedAt: now,
+    };
     const operations = [
       ...(user.primaryDeviceId ? [] : [db.update(users).set({ primaryDeviceId: deviceId, updatedAt: now }).where(eq(users.id, user.id))]),
       db.insert(profiles).values({ deviceId, ...profileValues }).onConflictDoUpdate({ target: profiles.deviceId, set: profileValues }),
@@ -76,6 +125,6 @@ export async function POST(request: Request) {
       ...(payload.entries.length ? [db.insert(journalEntries).values(payload.entries.map((entry) => ({ deviceId, entryDate: entry.date, answersJson: JSON.stringify(entry.answers) })))] : []),
     ];
     await db.batch(operations as Parameters<typeof db.batch>[0]);
-    return Response.json({ saved: true, savedAt: now, deviceId });
+    return Response.json({ saved: true, savedAt: now, deviceId, streak });
   } catch (error) { return errorResponse(error); }
 }

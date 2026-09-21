@@ -2,11 +2,13 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, BookOpen, BriefcaseBusiness, Camera, CameraOff, Check, ChevronRight, CircleDollarSign, Cloud, Eye, EyeOff, Flame, Gem, Home, ImagePlus, Leaf, LockKeyhole, LogOut, Mail, Pencil, Plus, Rocket, Save, Settings2, ShieldCheck, Sparkles, Target, Trophy, UserRound } from "lucide-react";
+import { Anchor, Apple, ArrowLeft, BookOpen, BriefcaseBusiness, CalendarDays, Camera, CameraOff, Check, ChevronRight, CircleDollarSign, Cloud, Compass, Crown, Eye, EyeOff, Flame, Flower2, Gem, Home, ImagePlus, Leaf, LockKeyhole, LogOut, Mail, MoonStar, Orbit, Pencil, Play, Plus, Rocket, Route, Save, Settings2, ShieldCheck, Sparkles, Sprout, Sun, Sunrise, Sunset, Target, TreeDeciduous, Trophy, UserRound, Wind } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
+import { dailyPlan, dayPart, dayPartLabel, greetingLabel, journalAnchors, localDayKey, weekPlan, type DailyPlan, type DayPart } from "@/lib/daily";
+import { achievementState, treeParts, weeklyReport, type Achievement, type JourneySnapshot, type TreePart } from "@/lib/journey";
 
 type View = "home" | "tree" | "missions" | "journal" | "profile";
 type Goal = { id: number; title: string; category: string; progress: number };
@@ -38,23 +40,18 @@ const signGuides: Record<string, { strengths: string[]; care: string[]; style: s
   "Peixes": { strengths: ["imaginação", "empatia", "sensibilidade"], care: ["idealização", "falta de limites"], style: "Proteja sua energia com limites e traduza inspiração em rotina." },
 };
 
-const missions: Record<string, string> = {
-  "Áries": "Escolha uma meta e dê o primeiro passo possível em 15 minutos.",
-  "Touro": "Revise um gasto recorrente e decida se ele ainda apoia seus objetivos.",
-  "Gêmeos": "Anote três ideias e escolha apenas uma para desenvolver hoje.",
-  "Câncer": "Organize uma pequena área que influencia sua sensação de segurança.",
-  "Leão": "Compartilhe uma habilidade que pode abrir uma nova oportunidade.",
-  "Virgem": "Simplifique um processo que está consumindo tempo demais.",
-  "Libra": "Tome uma decisão adiada usando três critérios objetivos.",
-  "Escorpião": "Encerre uma pendência que continua drenando sua atenção.",
-  "Sagitário": "Transforme um plano amplo em uma ação com data e horário.",
-  "Capricórnio": "Escolha uma meta adiada e defina seu primeiro passo concreto.",
-  "Aquário": "Teste uma forma mais simples de resolver um problema recorrente.",
-  "Peixes": "Reserve dez minutos para transformar uma intuição em plano escrito.",
-};
-
 const objectives = ["Dinheiro", "Carreira", "Negócios", "Organização financeira", "Disciplina", "Desenvolvimento pessoal"];
-const journalQuestions = ["O que eu quero construir?", "O que estou evitando?", "Qual foi minha melhor decisão hoje?", "Qual pequena ação posso realizar amanhã?"];
+
+const dayPartIcon: Record<DayPart, React.ReactNode> = { dawn: <Sunrise />, day: <Sun />, dusk: <Sunset />, night: <MoonStar /> };
+const achievementIcon: Record<Achievement["icon"], React.ReactNode> = { sprout: <Sprout />, anchor: <Anchor />, flame: <Flame />, apple: <Apple />, shield: <ShieldCheck />, orbit: <Orbit />, crown: <Crown /> };
+const treePartIcon: Record<string, React.ReactNode> = { raizes: <Anchor />, tronco: <TreeDeciduous />, "galho-esquerdo": <Target />, "galho-direito": <BookOpen />, flores: <Flower2 />, frutos: <Apple />, copa: <Crown /> };
+
+/** Short, non-intrusive haptic confirmation. Silently ignored where unsupported. */
+function haptic(pattern: number | number[] = 12) {
+  if (typeof navigator === "undefined" || typeof navigator.vibrate !== "function") return;
+  if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+  try { navigator.vibrate(pattern); } catch { /* no haptics available */ }
+}
 
 function getSign(date: string) {
   if (!date) return "Capricórnio";
@@ -79,7 +76,17 @@ export default function HomePage() {
   const [profile, setProfile] = useState<Profile>(emptyProfile);
   const [xp, setXp] = useState(0);
   const [missionDone, setMissionDone] = useState(false);
+  const [ritualDone, setRitualDone] = useState(false);
+  const [ritualOpen, setRitualOpen] = useState(false);
+  const [treeCelebrating, setTreeCelebrating] = useState(false);
+  const [streak, setStreak] = useState(0);
   const [oracleOpen, setOracleOpen] = useState(false);
+  const [dayKey, setDayKey] = useState(() => localDayKey());
+  const [part, setPart] = useState<DayPart>(() => dayPart(new Date().getHours()));
+  const [xpBurst, setXpBurst] = useState<{ id: number; amount: number } | null>(null);
+  const [levelUp, setLevelUp] = useState<number | null>(null);
+  const levelBaseline = useRef<number | null>(null);
+  const lastDay = useRef(dayKey);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [goalTitle, setGoalTitle] = useState("");
   const [goalCategory, setGoalCategory] = useState("Carreira");
@@ -103,7 +110,6 @@ export default function HomePage() {
       .then(({ user }) => {
         setAccount(user);
         if (!user) return null;
-        // eslint-disable-next-line react-hooks/immutability
         return loadCloudState(user, id);
       })
       .catch(() => toast.error("Não foi possível verificar sua conta."))
@@ -112,7 +118,7 @@ export default function HomePage() {
 
   async function loadCloudState(user: Account, fallbackDeviceId: string) {
     try {
-      const response = await fetch("/api/sync");
+      const response = await fetch(`/api/sync?day=${localDayKey()}`);
       if (!response.ok) throw new Error("sync unavailable");
       const { state, deviceId: cloudDeviceId } = await response.json();
       const resolvedId = cloudDeviceId || fallbackDeviceId;
@@ -121,11 +127,11 @@ export default function HomePage() {
       setAccount({ ...user, deviceId: cloudDeviceId });
       if (state) {
         const nextProfile = { ...emptyProfile, ...state.profile };
-        setProfile(nextProfile); setXp(state.xp ?? 0); setMissionDone(state.missionDone ?? false);
+        setProfile(nextProfile); setXp(state.xp ?? 0); setMissionDone(state.missionDone ?? false); setRitualDone(state.ritualDone ?? false); setStreak(state.streak ?? 0);
         setGoals(state.goals ?? []); setEntries(state.entries ?? []); setOnboarding(3);
         if (nextProfile.hasAvatar) setAvatarVersion(Date.now());
       } else {
-        setProfile(emptyProfile); setXp(0); setMissionDone(false); setGoals([]); setEntries([]); setOnboarding(0);
+        setProfile(emptyProfile); setXp(0); setMissionDone(false); setRitualDone(false); setStreak(0); setGoals([]); setEntries([]); setOnboarding(0);
       }
       setSyncStatus("saved");
       setSyncReady(true);
@@ -145,7 +151,8 @@ export default function HomePage() {
     await fetch("/api/auth", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "logout" }) });
     localStorage.removeItem("vds-state");
     localStorage.setItem("vds-device-id", crypto.randomUUID());
-    setAccount(null); setProfile(emptyProfile); setXp(0); setMissionDone(false); setGoals([]); setEntries([]); setOnboarding(0); setView("home"); setSyncReady(false);
+    setAccount(null); setProfile(emptyProfile); setXp(0); setMissionDone(false); setRitualDone(false); setStreak(0); setGoals([]); setEntries([]); setOnboarding(0); setView("home"); setSyncReady(false);
+    levelBaseline.current = null;
     toast.success("Você saiu da sua conta.");
   }
 
@@ -157,19 +164,64 @@ export default function HomePage() {
       fetch("/api/sync", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ deviceId, profile, xp, missionDone, goals, entries }),
-      }).then((response) => {
+        body: JSON.stringify({ deviceId, dayKey, profile: { name: profile.name, birthDate: profile.birthDate, objective: profile.objective, sign: profile.sign, intention: profile.intention, theme: profile.theme }, xp, missionDone, ritualDone, goals, entries }),
+      }).then(async (response) => {
         if (!response.ok) throw new Error("sync failed");
+        const result = await response.json().catch(() => null);
+        if (result && typeof result.streak === "number") setStreak(result.streak);
         setSyncStatus("saved");
       }).catch(() => setSyncStatus("offline"));
     }, 700);
     return () => window.clearTimeout(timer);
-  }, [syncReady, account, deviceId, onboarding, profile, xp, missionDone, goals, entries]);
+  // dayKey is read but deliberately left out: a rollover must first clear the daily
+  // flags below, otherwise this would persist yesterday's mission as today's.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [syncReady, account, deviceId, onboarding, profile, xp, missionDone, ritualDone, goals, entries]);
+
+  // The app can stay open across a sunset or a midnight: keep the ambience and the day's content honest.
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setDayKey(localDayKey());
+      setPart(dayPart(new Date().getHours()));
+    }, 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    if (lastDay.current === dayKey) return;
+    lastDay.current = dayKey;
+    setMissionDone(false);
+    setRitualDone(false);
+    setOracleOpen(false);
+    setAnswers(["", "", "", ""]);
+  }, [dayKey]);
 
   const level = Math.floor(xp / 100) + 1;
   const stage = xp < 40 ? "Semente" : xp < 100 ? "Raiz" : xp < 180 ? "Crescimento" : xp < 300 ? "Árvore" : "Árvore Dourada";
   const guide = signGuides[profile.sign] ?? signGuides["Capricórnio"];
   const mainGoal = goals[0];
+  const plan = useMemo(() => dailyPlan({ dayKey, sign: profile.sign, objective: profile.objective }), [dayKey, profile.sign, profile.objective]);
+  const week = useMemo(() => weekPlan(profile.sign, 7, new Date(`${dayKey}T00:00:00`)), [profile.sign, dayKey]);
+  const snapshot = useMemo<JourneySnapshot>(() => ({ xp, level, streak, entries, goals }), [xp, level, streak, entries, goals]);
+
+  useEffect(() => {
+    if (!syncReady) return;
+    if (levelBaseline.current === null) { levelBaseline.current = level; return; }
+    if (level > levelBaseline.current) { setLevelUp(level); haptic([18, 60, 26]); }
+    levelBaseline.current = level;
+  }, [syncReady, level]);
+
+  useEffect(() => {
+    if (levelUp === null) return;
+    const timer = window.setTimeout(() => setLevelUp(null), 2900);
+    return () => window.clearTimeout(timer);
+  }, [levelUp]);
+
+  useEffect(() => {
+    if (!xpBurst) return;
+    const timer = window.setTimeout(() => setXpBurst(null), 1300);
+    return () => window.clearTimeout(timer);
+  }, [xpBurst]);
   const mapScores = useMemo(() => [
     ["Dinheiro", Math.min(100, 28 + xp / 8)], ["Carreira", Math.min(100, 36 + goals.length * 9)],
     ["Negócios", Math.min(100, 24 + xp / 12)], ["Disciplina", Math.min(100, 32 + (missionDone ? 24 : 0) + entries.length * 4)],
@@ -183,32 +235,59 @@ export default function HomePage() {
     toast.success(`Sua árvore de ${sign} foi plantada.`);
   }
 
+  function awardXp(amount: number) {
+    setXp((value) => value + amount);
+    setXpBurst({ id: Date.now(), amount });
+    haptic(14);
+  }
+
   function completeMission() {
     if (missionDone) return;
-    setMissionDone(true); setXp((v) => v + 20); track("daily_mission_completed", { sign: profile.sign });
+    setMissionDone(true); awardXp(20); track("daily_mission_completed", { sign: profile.sign, theme: plan.theme.key });
+    celebrateTree();
     toast.success("+20 XP · Mais um passo foi dado na sua jornada.");
+  }
+
+  function celebrateTree() {
+    setTreeCelebrating(true);
+    window.setTimeout(() => setTreeCelebrating(false), 1400);
+  }
+
+  function completeRitual(mood: string) {
+    if (ritualDone) return;
+    setRitualDone(true);
+    awardXp(10);
+    setRitualOpen(false);
+    celebrateTree();
+    track("daily_ritual_completed", { sign: profile.sign, objective: profile.objective, mood, theme: plan.theme.key });
+    toast.success("Ritual concluído · sua árvore recebeu +10 XP");
   }
 
   function addGoal(title = goalTitle, category = goalCategory) {
     if (!title.trim()) return false;
     setGoals((g) => [...g, { id: Date.now(), title: title.trim(), category, progress: 0 }]);
-    setXp((v) => v + 15); setGoalTitle(""); setGoalDialog(false); track("goal_created", { category });
+    awardXp(15); setGoalTitle(""); setGoalDialog(false); track("goal_created", { category });
     toast.success("Meta plantada · +15 XP"); return true;
   }
 
   function advanceGoal(id: number) {
-    setGoals((items) => items.map((g) => {
-      if (g.id !== id) return g;
-      const next = Math.min(100, g.progress + 25);
-      if (next === 100 && g.progress < 100) { setXp((v) => v + 50); track("goal_completed", { category: g.category }); toast.success("Um novo fruto nasceu na sua árvore · +50 XP"); }
-      return { ...g, progress: next };
-    }));
+    const goal = goals.find((item) => item.id === id);
+    if (!goal || goal.progress === 100) return;
+    const next = Math.min(100, goal.progress + 25);
+    setGoals((items) => items.map((item) => (item.id === id ? { ...item, progress: next } : item)));
+    if (next === 100) {
+      awardXp(50); celebrateTree(); track("goal_completed", { category: goal.category });
+      toast.success("Um novo fruto nasceu na sua árvore · +50 XP");
+    } else {
+      haptic(10);
+      toast.success(`${goal.title} · ${next}%`);
+    }
   }
 
   function saveJournal() {
     if (!answers.some((a) => a.trim())) return toast.error("Escreva ao menos uma reflexão.");
     setEntries((e) => [{ date: new Date().toLocaleDateString("pt-BR"), answers }, ...e]);
-    setAnswers(["", "", "", ""]); setXp((v) => v + 10); track("journal_entry_created"); toast.success("Reflexão salva · +10 XP");
+    setAnswers(["", "", "", ""]); awardXp(10); track("journal_entry_created"); toast.success("Reflexão salva · +10 XP");
   }
 
   useEffect(() => {
@@ -222,39 +301,65 @@ export default function HomePage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onboarding, missionDone]);
 
-  if (!ready) return <main className="app-shell" />;
+  if (!ready) return <AppSplash />;
   if (!account) return <AuthScreen onAuthenticated={handleAuthenticated} />;
   if (onboarding < 3) return <Onboarding step={onboarding} setStep={setOnboarding} profile={profile} setProfile={setProfile} finish={finishOnboarding} />;
 
+  function navigate(next: View) {
+    if (next === view) return;
+    haptic(8);
+    setView(next);
+  }
+
   return (
-    <main className="app-shell" data-theme={profile.theme}>
+    <main className="app-shell" data-theme={profile.theme} data-daypart={part}>
       <div className="cosmos" aria-hidden="true" />
       <section className="app-frame">
         <header className="topbar">
-          <div><p className="eyebrow">Veias da Sintonia</p><h1>{view === "home" ? `Olá, ${profile.name}` : viewLabels[view]} <span aria-hidden="true">✦</span></h1></div>
-          <button className={`avatar ${profile.hasAvatar ? "has-photo" : ""}`} onClick={() => setView("profile")} aria-label="Abrir perfil">{profile.hasAvatar ? <Image unoptimized src={`/api/profile/avatar?v=${avatarVersion}`} alt="" width={44} height={44} /> : profile.name.slice(0, 2).toUpperCase()}</button>
+          <div><p className="eyebrow">Veias da Sintonia</p><h1>{view === "home" ? `Olá, ${profile.name.split(" ")[0]}` : viewLabels[view]} <span aria-hidden="true">✦</span></h1></div>
+          <button className={`avatar ${profile.hasAvatar ? "has-photo" : ""}`} onClick={() => navigate("profile")} aria-label="Abrir perfil">{profile.hasAvatar ? <Image unoptimized src={`/api/profile/avatar?v=${avatarVersion}`} alt="" width={44} height={44} /> : profile.name.slice(0, 2).toUpperCase()}</button>
         </header>
 
-        {view === "home" && <HomeView profile={profile} xp={xp} level={level} stage={stage} missionDone={missionDone} completeMission={completeMission} oracleOpen={oracleOpen} setOracleOpen={setOracleOpen} mainGoal={mainGoal} advanceGoal={advanceGoal} openGoals={() => setView("profile")} navigate={setView} />}
-        {view === "tree" && <TreeView xp={xp} level={level} stage={stage} mapScores={mapScores} goals={goals} />}
-        {view === "missions" && <MissionsView profile={profile} missionDone={missionDone} completeMission={completeMission} />}
-        {view === "journal" && <JournalView answers={answers} setAnswers={setAnswers} save={saveJournal} entries={entries} />}
-        {view === "profile" && <ProfileView profile={profile} setProfile={setProfile} account={account} guide={guide} goals={goals} advanceGoal={advanceGoal} goalDialog={goalDialog} setGoalDialog={setGoalDialog} goalTitle={goalTitle} setGoalTitle={setGoalTitle} goalCategory={goalCategory} setGoalCategory={setGoalCategory} addGoal={() => addGoal()} syncStatus={syncStatus} avatarVersion={avatarVersion} setAvatarVersion={setAvatarVersion} logout={logout} />}
+        <div className="view-swap" key={view}>
+          {view === "home" && <HomeView profile={profile} plan={plan} week={week} part={part} xp={xp} level={level} stage={stage} streak={streak} fruits={goals.filter((goal) => goal.progress === 100).length} missionDone={missionDone} ritualDone={ritualDone} treeCelebrating={treeCelebrating} completeMission={completeMission} openRitual={() => { haptic(8); setRitualOpen(true); }} oracleOpen={oracleOpen} setOracleOpen={setOracleOpen} mainGoal={mainGoal} advanceGoal={advanceGoal} openGoals={() => navigate("profile")} navigate={navigate} />}
+          {view === "tree" && <TreeView xp={xp} level={level} stage={stage} streak={streak} mapScores={mapScores} goals={goals} />}
+          {view === "missions" && <JourneyView profile={profile} plan={plan} snapshot={snapshot} week={week} missionDone={missionDone} ritualDone={ritualDone} completeMission={completeMission} openRitual={() => { haptic(8); setRitualOpen(true); }} />}
+          {view === "journal" && <JournalView plan={plan} answers={answers} setAnswers={setAnswers} save={saveJournal} entries={entries} />}
+          {view === "profile" && <ProfileView profile={profile} setProfile={setProfile} account={account} guide={guide} goals={goals} advanceGoal={advanceGoal} goalDialog={goalDialog} setGoalDialog={setGoalDialog} goalTitle={goalTitle} setGoalTitle={setGoalTitle} goalCategory={goalCategory} setGoalCategory={setGoalCategory} addGoal={() => addGoal()} syncStatus={syncStatus} avatarVersion={avatarVersion} setAvatarVersion={setAvatarVersion} logout={logout} />}
+        </div>
 
         <nav className="bottom-nav" aria-label="Navegação principal">
-          <NavButton active={view === "home"} onClick={() => setView("home")} icon={<Home/>} label="Início" />
-          <NavButton active={view === "tree"} onClick={() => setView("tree")} icon={<Leaf/>} label="Árvore" />
-          <NavButton active={view === "missions"} onClick={() => setView("missions")} icon={<Target/>} label="Missões" />
-          <NavButton active={view === "journal"} onClick={() => setView("journal")} icon={<BookOpen/>} label="Diário" />
-          <NavButton active={view === "profile"} onClick={() => setView("profile")} icon={<UserRound/>} label="Perfil" />
+          <NavButton active={view === "home"} onClick={() => navigate("home")} icon={<Home/>} label="Início" />
+          <NavButton active={view === "tree"} onClick={() => navigate("tree")} icon={<Leaf/>} label="Árvore" />
+          <NavButton active={view === "missions"} onClick={() => navigate("missions")} icon={<Route/>} label="Jornada" />
+          <NavButton active={view === "journal"} onClick={() => navigate("journal")} icon={<BookOpen/>} label="Diário" />
+          <NavButton active={view === "profile"} onClick={() => navigate("profile")} icon={<UserRound/>} label="Perfil" />
         </nav>
       </section>
+      <DailyRitual open={ritualOpen} onOpenChange={setRitualOpen} profile={profile} plan={plan} done={ritualDone} onComplete={completeRitual} />
+      {xpBurst && <div className="xp-float" key={xpBurst.id} aria-hidden="true">+{xpBurst.amount} XP</div>}
+      {levelUp !== null && <LevelUpOverlay level={levelUp} stage={stage} />}
       <Toaster richColors position="top-center" />
     </main>
   );
 }
 
-const viewLabels: Record<View, string> = { home: "Início", tree: "Sua Árvore", missions: "Missões", journal: "Seu Diário", profile: "Seu Caminho" };
+const viewLabels: Record<View, string> = { home: "Início", tree: "Sua Árvore", missions: "Sua Jornada", journal: "Seu Diário", profile: "Seu Caminho" };
+
+function AppSplash() {
+  return <main className="app-splash"><div className="stars" aria-hidden="true"/><div><div className="brand-mark"><Leaf/></div><p>Veias da Sintonia</p><div className="splash-bar" aria-hidden="true"><i/></div></div></main>;
+}
+
+function LevelUpOverlay({ level, stage }: { level: number; stage: string }) {
+  return <div className="levelup" role="status" aria-live="polite">
+    <div>
+      <div className="levelup-ring"><strong>{level}</strong></div>
+      <p className="eyebrow">Novo nível alcançado</p>
+      <h2>{stage}</h2>
+      <p>Sua árvore mudou de estágio porque você voltou — não porque teve um dia perfeito.</p>
+    </div>
+  </div>;
+}
 
 type AuthMode = "register" | "login" | "recover" | "reset";
 
@@ -348,33 +453,172 @@ function Onboarding({ step, setStep, profile, setProfile, finish }: { step: numb
   </main>;
 }
 
-function HomeView({ profile, xp, level, stage, missionDone, completeMission, oracleOpen, setOracleOpen, mainGoal, advanceGoal, openGoals, navigate }: { profile: Profile; xp: number; level: number; stage: string; missionDone: boolean; completeMission: () => void; oracleOpen: boolean; setOracleOpen: (v: boolean) => void; mainGoal?: Goal; advanceGoal: (id: number) => void; openGoals: () => void; navigate: (view: View) => void }) {
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
-  return <><div className="welcome-copy"><p><strong>{greeting}, {profile.name.split(" ")[0]}.</strong><br/>Hoje é um novo dia para construir sua prosperidade.</p><span className="sign-pill"><Sparkles size={14}/>{profile.sign}</span></div><TreeCard xp={xp} level={level} stage={stage}/>
-    <section className="journey-shortcuts" aria-label="Atalhos da jornada"><button onClick={() => navigate("missions")}><span><Target/></span><strong>Missão</strong><small>{missionDone ? "Concluída" : "Fazer agora"}</small></button><button onClick={() => navigate("journal")}><span><BookOpen/></span><strong>Refletir</strong><small>Meu diário</small></button><button onClick={() => navigate("profile")}><span><UserRound/></span><strong>Personalizar</strong><small>Meu perfil</small></button></section>
-    <section className={`mission-card ${missionDone ? "done" : ""}`}><div className="mission-icon">{missionDone ? <Check/> : <Target/>}</div><div className="mission-copy"><p className="eyebrow">Missão do dia · {missionDone ? "concluída" : "+20 XP"}</p><h2>{missionDone ? "Intenção em movimento" : "Dê forma ao que importa"}</h2><p>{missions[profile.sign]}</p></div><button className="gold-button" disabled={missionDone} onClick={completeMission}>{missionDone ? <><Check/> Missão concluída</> : <><Target/> Começar missão</>}</button></section>
-    <section className="oracle-card"><div><p className="eyebrow">Oráculo do dia</p><h2>{oracleOpen ? "A clareza cresce quando a decisão encontra um gesto." : "Uma mensagem para o seu momento"}</h2>{oracleOpen && <p>Transforme em ação: escolha uma pendência simples e reserve 15 minutos para ela.</p>}</div><button className="ghost-button" onClick={() => { setOracleOpen(!oracleOpen); track("oracle_revealed"); }}>{oracleOpen ? "Recolher" : "Revelar mensagem"}</button></section>
-    <section className="goal-snapshot"><div className="section-heading"><div><p className="eyebrow">Meta principal</p><h2>{mainGoal ? mainGoal.title : "Plante sua primeira meta"}</h2></div><button onClick={openGoals}>{mainGoal ? "Ver metas" : <><Plus size={16}/> Criar</>}</button></div>{mainGoal ? <><Progress value={mainGoal.progress}/><div className="goal-foot"><span>{mainGoal.category} · {mainGoal.progress}%</span><button onClick={() => advanceGoal(mainGoal.id)}>Avançar +25%</button></div></> : <p>Metas concluídas se transformam em frutos na sua árvore.</p>}</section>
-    <div className="tomorrow"><Sparkles/><div><strong>Volte amanhã</strong><span>Uma nova missão e uma mensagem esperam por você.</span></div></div>
-  </>;
+type WeekDay = ReturnType<typeof weekPlan>[number];
+
+function HomeView({ profile, plan, week, part, xp, level, stage, streak, fruits, missionDone, ritualDone, treeCelebrating, completeMission, openRitual, oracleOpen, setOracleOpen, mainGoal, advanceGoal, openGoals, navigate }: { profile: Profile; plan: DailyPlan; week: WeekDay[]; part: DayPart; xp: number; level: number; stage: string; streak: number; fruits: number; missionDone: boolean; ritualDone: boolean; treeCelebrating: boolean; completeMission: () => void; openRitual: () => void; oracleOpen: boolean; setOracleOpen: (v: boolean) => void; mainGoal?: Goal; advanceGoal: (id: number) => void; openGoals: () => void; navigate: (view: View) => void }) {
+  const firstName = profile.name.split(" ")[0];
+  const tomorrow = week[1];
+  return <div className="home-flow">
+    <section className="daily-briefing">
+      <div className="briefing-orbit" aria-hidden="true"><span/><span/><span/></div>
+      <div className="briefing-top"><span className="theme-pill"><Compass/>Dia de {plan.theme.name}</span><span className="day-phase">{dayPartIcon[part]}{dayPartLabel[part]}</span></div>
+      <p className="eyebrow">Seu clima de prosperidade</p>
+      <h2>{greetingLabel[part]}, {firstName}. {plan.theme.verb} é a palavra de hoje.</h2>
+      <p>{plan.theme.guidance} Sua intenção principal continua sendo <strong>{profile.objective.toLowerCase()}</strong>.</p>
+      <div className="briefing-voice"><em>“{plan.voice}”</em><span>Leitura simbólica de hoje para {profile.sign}</span></div>
+      <button className={`ritual-button ${ritualDone ? "done" : ""}`} onClick={openRitual}>{ritualDone ? <Check/> : <Play/>}<span><strong>{ritualDone ? "Ritual concluído" : "Começar ritual de 3 minutos"}</strong><small>{ritualDone ? "Sua árvore foi nutrida hoje" : "Check-in · respiração · ação"}</small></span><ChevronRight/></button>
+    </section>
+    <TreeCard xp={xp} level={level} stage={stage} streak={streak} fruits={fruits} celebrating={treeCelebrating}/>
+    <section className="week-orbit" aria-label="Próximos sete dias">
+      <div className="section-heading"><div><p className="eyebrow">Seu ciclo</p><h2>Próximos 7 dias</h2></div><CalendarDays/></div>
+      <div className="week-days">{week.map((day) => <div className={day.offset === 0 ? "today" : day.offset === 1 ? "next" : ""} key={day.dayKey}><span>{day.weekday}</span><strong>{day.day}</strong><b>{day.theme.name}</b></div>)}</div>
+      <p>{missionDone ? `Missão de hoje concluída. Amanhã o foco muda para ${tomorrow.theme.name.toLowerCase()}.` : "Cada dia traz um foco simbólico diferente — nenhum deles é uma previsão."}</p>
+    </section>
+    <section className="journey-shortcuts" aria-label="Atalhos da jornada"><button onClick={() => navigate("missions")}><span><Route/></span><strong>Jornada</strong><small>{missionDone ? "Missão feita" : "Missão de hoje"}</small></button><button onClick={() => navigate("journal")}><span><BookOpen/></span><strong>Refletir</strong><small>Meu diário</small></button><button onClick={() => navigate("tree")}><span><Leaf/></span><strong>Minha árvore</strong><small>{stage}</small></button></section>
+    <section className={`mission-card ${missionDone ? "done" : ""}`}><div className="mission-icon">{missionDone ? <Check/> : <Target/>}</div><div className="mission-copy"><p className="eyebrow">Missão do dia · {missionDone ? "concluída" : "+20 XP"}</p><h2>{missionDone ? "Intenção em movimento" : plan.theme.verb}</h2><p>{plan.mission}</p></div><button className="gold-button" disabled={missionDone} onClick={completeMission}>{missionDone ? <><Check/> Missão concluída</> : <><Target/> Começar missão</>}</button></section>
+    <section className="oracle-card"><div><p className="eyebrow">Oráculo do dia</p><h2>{oracleOpen ? plan.oracle.message : "Uma mensagem para o seu momento"}</h2>{oracleOpen && <p>Transforme em ação: {plan.oracle.action.charAt(0).toLowerCase() + plan.oracle.action.slice(1)}</p>}</div><button className="ghost-button" onClick={() => { setOracleOpen(!oracleOpen); if (!oracleOpen) { haptic(8); track("oracle_revealed"); } }}>{oracleOpen ? "Recolher" : "Revelar mensagem"}</button></section>
+    <section className="goal-snapshot"><div className="section-heading"><div><p className="eyebrow">Meta principal</p><h2>{mainGoal ? mainGoal.title : "Plante sua primeira meta"}</h2></div><button onClick={openGoals}>{mainGoal ? "Ver metas" : <><Plus size={16}/> Criar</>}</button></div>{mainGoal ? <><Progress value={mainGoal.progress}/><div className="goal-foot"><span>{mainGoal.category} · {mainGoal.progress}%</span><button onClick={() => advanceGoal(mainGoal.id)} disabled={mainGoal.progress === 100}>{mainGoal.progress === 100 ? "Fruto conquistado" : "Avançar +25%"}</button></div></> : <p>Metas concluídas se transformam em frutos na sua árvore.</p>}</section>
+    <div className="tomorrow"><Sparkles/><div><strong>Amanhã: dia de {tomorrow.theme.name.toLowerCase()}</strong><span>{tomorrow.theme.guidance}</span></div></div>
+  </div>;
 }
 
-function TreeCard({ xp, level, stage }: { xp: number; level: number; stage: string }) {
-  const progress = xp % 100;
-  return <section className="tree-card"><div className="tree-card__heading"><div><p className="eyebrow">Sua evolução</p><h2>{stage}</h2></div><div className="level-medal"><span>{level}</span><small>NÍVEL</small></div></div><div className="tree-stage"><div className="orb orb-one"/><div className="orb orb-two"/><Image className="prosperity-tree" src="/prosperity-tree.png" alt="Árvore dourada com raízes, folhas e frutos simbolizando a evolução pessoal" width={768} height={1152} priority/><div className="tree-glow"/></div><div className="xp-row"><div><span>{xp} XP</span><small>continue nutrindo sua árvore</small></div><strong>{progress}%</strong></div><Progress value={progress}/><div className="stats-row"><div><Flame/><strong>1</strong><span>dia</span></div><div><Leaf/><strong>{Math.floor(xp / 100)}</strong><span>frutos</span></div><div><Sparkles/><strong>{xp}</strong><span>pontos</span></div></div></section>;
+function TreeCard({ xp, level, stage, streak, fruits = 0, celebrating = false, onSelectPart }: { xp: number; level: number; stage: string; streak: number; fruits?: number; celebrating?: boolean; onSelectPart?: (part: TreePart) => void }) {
+  const milestones = [0, 40, 100, 180, 300];
+  const currentIndex = Math.max(0, milestones.findLastIndex((value) => xp >= value));
+  const start = milestones[currentIndex];
+  const end = milestones[currentIndex + 1] ?? start;
+  const progress = end === start ? 100 : Math.round(((xp - start) / (end - start)) * 100);
+  return <section className={`tree-card ${celebrating ? "is-growing" : ""}`}><div className="tree-card__heading"><div><p className="eyebrow">Sua árvore viva</p><h2>{stage}</h2></div><div className="level-medal"><span>{level}</span><small>NÍVEL</small></div></div><div className="tree-stage"><div className="orbit-line"/><div className="orb orb-one"/><div className="orb orb-two"/><div className="orb orb-three"/><div className="growth-particles" aria-hidden="true">{Array.from({ length: 9 }, (_, index) => <i key={index}/>)}</div><Image className="prosperity-tree" src="/prosperity-tree.png" alt="Árvore dourada com raízes, folhas e frutos simbolizando a evolução pessoal" width={768} height={1152} priority/><div className="tree-glow"/>{onSelectPart && <div className="tree-parts">{treeParts.map((treePart) => { const locked = xp < treePart.unlockedAt; return <button key={treePart.key} className={locked ? "locked" : ""} style={{ left: `${treePart.x}%`, top: `${treePart.y}%` }} onClick={() => { haptic(8); onSelectPart(treePart); }} aria-label={`${treePart.name}${locked ? " (bloqueado)" : ""}`}>{locked ? <LockKeyhole/> : treePartIcon[treePart.key] ?? <Sparkles/>}</button>; })}</div>}</div><div className="xp-row"><div><span>{xp} XP</span><small>{progress === 100 ? "sua árvore alcançou o estágio dourado" : "avance até o próximo estágio"}</small></div><strong>{progress}%</strong></div><Progress value={progress}/><div className="stats-row"><div><Flame/><strong>{streak}</strong><span>{streak === 1 ? "dia" : "dias"}</span></div><div><Apple/><strong>{fruits}</strong><span>{fruits === 1 ? "fruto" : "frutos"}</span></div><div><Sparkles/><strong>{xp}</strong><span>pontos</span></div></div></section>;
 }
 
-function TreeView({ xp, level, stage, mapScores, goals }: { xp: number; level: number; stage: string; mapScores: [string, number][]; goals: Goal[] }) {
-  return <div className="view-stack"><p className="view-intro">Cada ação fortalece raízes, galhos e frutos da sua jornada.</p><TreeCard xp={xp} level={level} stage={stage}/><section className="surface-card"><div className="section-heading"><div><p className="eyebrow">Meu mapa da prosperidade</p><h2>Índice de evolução pessoal</h2></div></div><div className="pillar-list">{mapScores.map(([name, score]) => <div key={name}><div><span>{name}</span><strong>{Math.round(score)}</strong></div><Progress value={score}/></div>)}</div><p className="disclaimer">Este índice reflete suas ações dentro do app. Não é uma previsão financeira.</p></section><section className="milestone-grid"><div><span>Raízes</span><strong>{xp >= 40 ? "Desbloqueadas" : "Em formação"}</strong></div><div><span>Flores</span><strong>{xp >= 180 ? "Desbloqueadas" : `${180 - xp} XP`}</strong></div><div><span>Frutos</span><strong>{goals.filter((g) => g.progress === 100).length} conquistados</strong></div><div><span>Próximo estágio</span><strong>{xp >= 300 ? "Árvore Dourada" : "300 XP"}</strong></div></section></div>;
+function TreeView({ xp, level, stage, streak, mapScores, goals }: { xp: number; level: number; stage: string; streak: number; mapScores: [string, number][]; goals: Goal[] }) {
+  const [selected, setSelected] = useState<TreePart | null>(null);
+  const fruits = goals.filter((goal) => goal.progress === 100).length;
+  const stages = [
+    { name: "Semente", at: 0, note: "A intenção foi plantada." },
+    { name: "Raiz", at: 40, note: "Os primeiros hábitos ganharam sustentação." },
+    { name: "Crescimento", at: 100, note: "Galhos de ação e de reflexão se abriram." },
+    { name: "Árvore", at: 180, note: "Flores aparecem quando você volta em dias seguidos." },
+    { name: "Árvore Dourada", at: 300, note: "A jornada já não depende de empolgação." },
+  ];
+  return <div className="view-stack">
+    <p className="view-intro">Toque nas partes da árvore para entender o que cada uma representa na sua jornada.</p>
+    <TreeCard xp={xp} level={level} stage={stage} streak={streak} fruits={fruits} onSelectPart={setSelected}/>
+    <Dialog open={selected !== null} onOpenChange={(open) => { if (!open) setSelected(null); }}>
+      <DialogContent className="goal-dialog permission-dialog">
+        <DialogHeader><DialogTitle>{selected?.name ?? "Parte da árvore"}</DialogTitle><DialogDescription>O que esta parte representa e como ela cresce.</DialogDescription></DialogHeader>
+        {selected && <div className="part-sheet">
+          <div><span className={xp < selected.unlockedAt ? "locked" : ""}>{treePartIcon[selected.key] ?? <Sparkles/>}</span><div><strong>{xp < selected.unlockedAt ? "Ainda em formação" : "Desbloqueada"}</strong><small>{xp < selected.unlockedAt ? `Faltam ${selected.unlockedAt - xp} XP para esta parte aparecer.` : `Liberada a partir de ${selected.unlockedAt} XP.`}</small></div></div>
+          <p>{selected.meaning}</p>
+        </div>}
+      </DialogContent>
+    </Dialog>
+    <section className="surface-card"><div className="section-heading"><div><p className="eyebrow">Linha do tempo</p><h2>A evolução da sua árvore</h2></div><TreeDeciduous/></div><div className="evolution-timeline">{stages.map((item) => <div key={item.name} className={xp >= item.at ? "reached" : ""}><i/><div><strong>{item.name}</strong><small>{xp >= item.at ? item.note : `${item.at} XP · ${item.note}`}</small></div></div>)}</div></section>
+    <section className="surface-card"><div className="section-heading"><div><p className="eyebrow">Meu mapa da prosperidade</p><h2>Índice de evolução pessoal</h2></div></div><div className="pillar-list">{mapScores.map(([name, score]) => <div key={name}><div><span>{name}</span><strong>{Math.round(score)}</strong></div><Progress value={score}/></div>)}</div><p className="disclaimer">Este índice reflete suas ações dentro do app. Não é uma previsão financeira.</p></section>
+    <section className="milestone-grid"><div><span>Raízes</span><strong>{xp >= 40 ? "Desbloqueadas" : "Em formação"}</strong></div><div><span>Flores</span><strong>{xp >= 180 ? "Desbloqueadas" : `${180 - xp} XP`}</strong></div><div><span>Frutos</span><strong>{fruits} {fruits === 1 ? "conquistado" : "conquistados"}</strong></div><div><span>Próximo estágio</span><strong>{xp >= 300 ? "Árvore Dourada" : `${300 - xp} XP`}</strong></div></section>
+  </div>;
 }
 
-function MissionsView({ profile, missionDone, completeMission }: { profile: Profile; missionDone: boolean; completeMission: () => void }) {
-  return <div className="view-stack"><p className="view-intro">Missões práticas, inspiradas simbolicamente em {profile.sign} e no seu objetivo de {profile.objective.toLowerCase()}.</p><section className={`featured-mission ${missionDone ? "done" : ""}`}><div className="mission-badge"><Target/><span>Hoje</span></div><p className="eyebrow">Missão diária · +20 XP</p><h2>{missions[profile.sign]}</h2><p>Leva cerca de 15 minutos. O valor está na ação realizada, não em uma promessa de resultado.</p><button className="gold-button" onClick={completeMission} disabled={missionDone}>{missionDone ? <><Check/> Concluída hoje</> : "Concluir missão"}</button></section><section className="surface-card locked-card"><div className="lock"><LockKeyhole/></div><div><p className="eyebrow">Desafio semanal · Premium</p><h2>7 dias de raízes fortes</h2><p>Uma sequência de ações para construir disciplina com gentileza.</p></div><button onClick={() => { track("paywall_viewed"); toast("Disponível na jornada Premium."); }}>Conhecer Premium</button></section><section className="achievement-row"><Trophy/><div><strong>Próxima conquista</strong><span>Complete 7 missões para desbloquear “Raízes Fortes”.</span></div><span>1/7</span></section></div>;
+const ritualTitles = ["Como você chega agora?", "Sua mensagem de hoje", "Respire e volte para si", "Um gesto pequeno agora"];
+
+function DailyRitual({ open, onOpenChange, profile, plan, done, onComplete }: { open: boolean; onOpenChange: (open: boolean) => void; profile: Profile; plan: DailyPlan; done: boolean; onComplete: (mood: string) => void }) {
+  const [step, setStep] = useState(0);
+  const [mood, setMood] = useState("");
+  const moods = [{ label: "Leve", icon: "☀️" }, { label: "Focado", icon: "✨" }, { label: "Cansado", icon: "🌙" }, { label: "Ansioso", icon: "🌊" }];
+  const moodNotes: Record<string, string> = {
+    "Leve": "Aproveite a leveza para adiantar algo que costuma pesar.",
+    "Focado": "Use o foco em uma frente só; ele rende mais concentrado.",
+    "Cansado": "Reduza a meta do dia até ela caber no cansaço de hoje.",
+    "Ansioso": "Diminua o campo de visão: só o próximo passo importa agora.",
+  };
+  function changeOpen(next: boolean) {
+    onOpenChange(next);
+    if (!next) { setStep(0); setMood(""); }
+  }
+  function advance(next: number) {
+    haptic(8);
+    setStep(next);
+  }
+  return <Dialog open={open} onOpenChange={changeOpen}><DialogContent className="ritual-dialog">
+    <DialogHeader>
+      <div className="ritual-progress" aria-label={`Etapa ${step + 1} de 4`}>{[0, 1, 2, 3].map((index) => <i key={index} className={step >= index ? "active" : ""}/>)}</div>
+      <DialogTitle>{done ? "Seu ritual de hoje floresceu" : ritualTitles[step]}</DialogTitle>
+      <DialogDescription>{done ? "Volte amanhã para um novo momento." : `Ritual de ${profile.sign} · dia de ${plan.theme.name.toLowerCase()} · cerca de 3 minutos`}</DialogDescription>
+    </DialogHeader>
+    {done ? <div className="ritual-complete"><span><Check/></span><p>Sua presença de hoje já nutriu a Árvore da Prosperidade.</p><button className="gold-button" onClick={() => changeOpen(false)}>Continuar minha jornada</button></div>
+      : step === 0 ? <div className="mood-grid">{moods.map((item) => <button className={mood === item.label ? "selected" : ""} key={item.label} onClick={() => { haptic(8); setMood(item.label); }}><span>{item.icon}</span>{item.label}</button>)}<button className="gold-button ritual-next" disabled={!mood} onClick={() => advance(1)}>Continuar <ChevronRight/></button></div>
+      : step === 1 ? <div className="ritual-message"><div className="ritual-quote"><Compass/><p>{plan.voice}</p></div><p>{moodNotes[mood] ?? plan.theme.guidance}</p><p className="ritual-theme">Hoje o convite é <strong>{plan.theme.verb.toLowerCase()}</strong>, aplicado a {profile.objective.toLowerCase()}.</p><button className="gold-button" onClick={() => advance(2)}>Fazer a respiração <ChevronRight/></button></div>
+      : step === 2 ? <div className="breathing-step"><div className="breathing-orb"><Wind/><span>Inspire<br/><small>e expire</small></span></div><p>Faça três respirações lentas. Não precisa mudar o que sente; apenas observe.</p><button className="gold-button" onClick={() => advance(3)}>Estou presente <ChevronRight/></button></div>
+      : <div className="ritual-action"><span><Target/></span><p className="eyebrow">Gesto de 2 minutos</p><h3>{plan.micro}</h3><p>A missão maior do dia continua te esperando na Jornada. Aqui basta criar movimento.</p><button className="gold-button" onClick={() => onComplete(mood)}><Sparkles/> Nutrir minha árvore · +10 XP</button></div>}
+  </DialogContent></Dialog>;
 }
 
-function JournalView({ answers, setAnswers, save, entries }: { answers: string[]; setAnswers: (a: string[]) => void; save: () => void; entries: JournalEntry[] }) {
-  return <div className="view-stack"><p className="view-intro">Um espaço privado para observar padrões e transformar reflexão em escolha.</p><section className="surface-card journal-form"><p className="eyebrow">Reflexão de hoje · +10 XP</p>{journalQuestions.map((q, i) => <label key={q}>{q}<textarea rows={2} value={answers[i]} onChange={(e) => { const next = [...answers]; next[i] = e.target.value; setAnswers(next); }} placeholder="Escreva sem julgar..."/></label>)}<button className="gold-button" onClick={save}>Salvar reflexão <BookOpen/></button></section><section className="history"><div className="section-heading"><div><p className="eyebrow">Histórico</p><h2>Sua evolução em palavras</h2></div><span>{entries.length} registros</span></div>{entries.length ? entries.map((entry, idx) => <article key={`${entry.date}-${idx}`}><time>{entry.date}</time><p>{entry.answers.find(Boolean)}</p></article>) : <div className="empty-state"><BookOpen/><p>Seu primeiro registro aparecerá aqui.</p></div>}</section></div>;
+function JourneyView({ profile, plan, snapshot, week, missionDone, ritualDone, completeMission, openRitual }: { profile: Profile; plan: DailyPlan; snapshot: JourneySnapshot; week: WeekDay[]; missionDone: boolean; ritualDone: boolean; completeMission: () => void; openRitual: () => void }) {
+  const [openAchievement, setOpenAchievement] = useState<string | null>(null);
+  const { resolved, unlockedCount, total, next } = useMemo(() => achievementState(snapshot), [snapshot]);
+  const report = useMemo(() => weeklyReport(snapshot, week[1].theme.verb), [snapshot, week]);
+  const selected = resolved.find((item) => item.key === openAchievement);
+  const trailDay = Math.min(snapshot.streak, 7);
+  return <div className="view-stack">
+    <p className="view-intro">Sua jornada acompanha o que você fez de verdade — missão de hoje, sequência, conquistas e o resumo da semana.</p>
+
+    <section className="surface-card streak-card">
+      <div className="streak-ring" style={{ "--streak-fill": Math.min(100, (trailDay / 7) * 100) } as React.CSSProperties} aria-hidden="true"><div><strong>{snapshot.streak}</strong><small>dias</small></div></div>
+      <div><p className="eyebrow">Sua sequência</p><h2>{snapshot.streak === 0 ? "Comece sua sequência hoje" : snapshot.streak >= 7 ? "Sete dias de constância" : `${snapshot.streak} ${snapshot.streak === 1 ? "dia" : "dias"} seguidos`}</h2><p>{snapshot.streak === 0 ? "Concluir o ritual ou a missão de hoje inicia a contagem." : ritualDone || missionDone ? "Hoje já está contado. Volte amanhã para manter a sequência." : "Conclua o ritual ou a missão de hoje para não interromper a contagem."}</p></div>
+    </section>
+
+    <section className={`featured-mission ${missionDone ? "done" : ""}`}>
+      <div className="mission-badge"><Target/><span>Hoje · {plan.theme.name}</span></div>
+      <p className="eyebrow">Missão diária · +20 XP</p>
+      <h2>{plan.mission}</h2>
+      <p>Leva cerca de 15 minutos e foi escolhida para {profile.objective.toLowerCase()}. O valor está na ação realizada, não em uma promessa de resultado.</p>
+      <button className="gold-button" onClick={completeMission} disabled={missionDone}>{missionDone ? <><Check/> Concluída hoje</> : "Concluir missão"}</button>
+    </section>
+
+    {!ritualDone && <section className="achievement-row"><Wind/><div><strong>Ritual de 3 minutos</strong><span>Check-in, respiração e um gesto pequeno.</span></div><button className="ghost-button" onClick={openRitual}>Fazer</button></section>}
+
+    <section className="trail-card">
+      <div className="section-heading"><div><p className="eyebrow">Trilha ativa</p><h2>7 dias de raízes fortes</h2></div><Route/></div>
+      <div className="trail-steps">{Array.from({ length: 7 }, (_, index) => <div key={index} className={index < trailDay ? "done" : index === trailDay ? "current" : ""}>{index + 1}</div>)}</div>
+      <p>{trailDay >= 7 ? "Trilha concluída. Sua árvore recebeu um anel de constelação." : `Dia ${trailDay + 1} de 7 · cada dia com ritual ou missão avança a trilha.`}</p>
+      <button className="gold-button" onClick={() => { track("paywall_viewed", { from: "journey_trails" }); toast("Trilhas de 21 dias, carreira e autoconhecimento chegam no Premium."); }}><Gem/> Ver outras trilhas</button>
+    </section>
+
+    <section className="weekly-report">
+      <div className="section-heading"><div><p className="eyebrow">Relatório da semana</p><h2>Como foram seus últimos 7 dias</h2></div><Compass/></div>
+      <p className="report-range">{report.rangeLabel}</p>
+      <div className="report-grid">
+        <div className="report-metric"><span>Reflexões</span><strong>{report.reflections}</strong><small>{report.moodNote}</small></div>
+        <div className="report-metric"><span>Sequência</span><strong>{report.streak}</strong><small>dias seguidos de presença</small></div>
+        <div className="report-metric"><span>Metas avançando</span><strong>{report.goalsAdvancing}</strong><small>em progresso agora</small></div>
+        <div className="report-metric"><span>Frutos</span><strong>{report.fruits}</strong><small>metas concluídas até aqui</small></div>
+      </div>
+      <div className="report-note"><Sparkles/><div>{report.summary} {report.recommendation}</div></div>
+    </section>
+
+    <section className="surface-card">
+      <div className="section-heading"><div><p className="eyebrow">Conquistas</p><h2>{unlockedCount} de {total} desbloqueadas</h2></div><Trophy/></div>
+      <div className="achievement-grid">{resolved.map((item) => <button key={item.key} className={item.unlocked ? "unlocked" : ""} onClick={() => { haptic(8); setOpenAchievement(item.key); }}><span>{item.unlocked ? achievementIcon[item.icon] : <LockKeyhole/>}</span><small>{item.name}</small></button>)}</div>
+      {next && <p className="disclaimer">Próxima: {next.name} — {next.hint.toLowerCase()} ({next.current}/{next.target}).</p>}
+    </section>
+
+    <Dialog open={selected !== undefined} onOpenChange={(open) => { if (!open) setOpenAchievement(null); }}>
+      <DialogContent className="goal-dialog permission-dialog">
+        <DialogHeader><DialogTitle>{selected?.name ?? "Conquista"}</DialogTitle><DialogDescription>{selected?.unlocked ? "Desbloqueada na sua jornada." : selected?.hint}</DialogDescription></DialogHeader>
+        {selected && <div className="achievement-story">
+          <span className={selected.unlocked ? "" : "locked"}>{selected.unlocked ? achievementIcon[selected.icon] : <LockKeyhole/>}</span>
+          <p>{selected.story}</p>
+          <Progress value={Math.round((selected.current / selected.target) * 100)}/>
+          <b>{selected.unlocked ? selected.reward : `${selected.current} de ${selected.target}`}</b>
+        </div>}
+      </DialogContent>
+    </Dialog>
+  </div>;
+}
+
+function JournalView({ plan, answers, setAnswers, save, entries }: { plan: DailyPlan; answers: string[]; setAnswers: (a: string[]) => void; save: () => void; entries: JournalEntry[] }) {
+  const questions = useMemo(() => [plan.journalQuestion, ...journalAnchors], [plan.journalQuestion]);
+  return <div className="view-stack"><p className="view-intro">Um espaço privado para observar padrões e transformar reflexão em escolha.</p><section className="surface-card journal-form"><p className="eyebrow">Reflexão de hoje · +10 XP</p><p className="journal-hint"><Compass/> A primeira pergunta muda todos os dias — hoje ela vem do tema {plan.theme.name.toLowerCase()}.</p>{questions.map((question, index) => <label key={question}>{question}<textarea rows={2} value={answers[index]} onChange={(event) => { const next = [...answers]; next[index] = event.target.value; setAnswers(next); }} placeholder="Escreva sem julgar..."/></label>)}<button className="gold-button" onClick={save}>Salvar reflexão <BookOpen/></button></section><section className="history"><div className="section-heading"><div><p className="eyebrow">Histórico</p><h2>Sua evolução em palavras</h2></div><span>{entries.length} {entries.length === 1 ? "registro" : "registros"}</span></div>{entries.length ? entries.map((entry, idx) => <article key={`${entry.date}-${idx}`}><time>{entry.date}</time><p>{entry.answers.find(Boolean)}</p></article>) : <div className="empty-state"><BookOpen/><p>Seu primeiro registro aparecerá aqui.</p></div>}</section></div>;
 }
 
 async function prepareAvatar(file: File) {
@@ -505,4 +749,4 @@ function ProfileView({ profile, setProfile, account, guide, goals, advanceGoal, 
   </div>;
 }
 
-function NavButton({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string }) { return <button className={active ? "active" : ""} onClick={onClick}>{icon}<span>{label}</span></button>; }
+function NavButton({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string }) { return <button className={active ? "active" : ""} onClick={onClick} aria-current={active ? "page" : undefined}>{icon}<span>{label}</span></button>; }
