@@ -56,3 +56,5 @@ next-env.d.ts
 /android/*.keystore
 /.gradle-cache/
 /.cache-trash/
+
+.vercel

@@ -22,7 +22,12 @@ export function assertTrustedMutation(request: Request, contentType: "json" | "m
   }
 
   const origin = request.headers.get("origin");
-  const expectedOrigins = new Set([url.origin, "https://veiasdasintonia.com.br", "https://www.veiasdasintonia.com.br"]);
+  const expectedOrigins = new Set([
+    url.origin,
+    "https://veiasdasintonia.com.br",
+    "https://www.veiasdasintonia.com.br",
+    "https://miniapp-awvp9531-1319.vercel.app",
+  ]);
   const frontendOrigin = configuredFrontendOrigin();
   if (frontendOrigin) expectedOrigins.add(frontendOrigin);
   if (!origin || !expectedOrigins.has(origin)) throw new RequestError("Origem da requisição não autorizada.", 403);
