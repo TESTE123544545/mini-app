@@ -36,6 +36,13 @@
       "when": 1790018610636,
       "tag": "0004_rare_echo",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1790023336091,
+      "tag": "0005_quick_thunderbird",
+      "breakpoints": true
     }
   ]
 }

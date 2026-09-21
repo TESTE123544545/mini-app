@@ -94,28 +94,23 @@ export default function HomePage() {
   useEffect(() => {
     const id = localStorage.getItem("vds-device-id") || crypto.randomUUID();
     localStorage.setItem("vds-device-id", id);
+    localStorage.removeItem("vds-state");
     // Initial browser state is intentionally hydrated once after mount.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setDeviceId(id);
-    const saved = localStorage.getItem("vds-state");
-    if (saved) {
-      const state = JSON.parse(saved);
-      setProfile({ ...emptyProfile, ...state.profile }); setXp(state.xp ?? 0); setMissionDone(state.missionDone ?? false);
-      setGoals(state.goals ?? []); setEntries(state.entries ?? []); setOnboarding(3);
-    }
     fetch("/api/auth")
       .then((response) => response.ok ? response.json() : Promise.reject(new Error("auth unavailable")))
       .then(({ user }) => {
         setAccount(user);
         if (!user) return null;
         // eslint-disable-next-line react-hooks/immutability
-        return loadCloudState(user, id, false);
+        return loadCloudState(user, id);
       })
       .catch(() => toast.error("Não foi possível verificar sua conta."))
       .finally(() => setReady(true));
   }, []);
 
-  async function loadCloudState(user: Account, fallbackDeviceId: string, preserveLocal: boolean) {
+  async function loadCloudState(user: Account, fallbackDeviceId: string) {
     try {
       const response = await fetch("/api/sync");
       if (!response.ok) throw new Error("sync unavailable");
@@ -128,11 +123,9 @@ export default function HomePage() {
         const nextProfile = { ...emptyProfile, ...state.profile };
         setProfile(nextProfile); setXp(state.xp ?? 0); setMissionDone(state.missionDone ?? false);
         setGoals(state.goals ?? []); setEntries(state.entries ?? []); setOnboarding(3);
-        localStorage.setItem("vds-state", JSON.stringify({ ...state, profile: nextProfile }));
         if (nextProfile.hasAvatar) setAvatarVersion(Date.now());
-      } else if (!preserveLocal) {
+      } else {
         setProfile(emptyProfile); setXp(0); setMissionDone(false); setGoals([]); setEntries([]); setOnboarding(0);
-        localStorage.removeItem("vds-state");
       }
       setSyncStatus("saved");
       setSyncReady(true);
@@ -142,10 +135,10 @@ export default function HomePage() {
     }
   }
 
-  async function handleAuthenticated(user: Account, mode: "register" | "login") {
+  async function handleAuthenticated(user: Account) {
     setAccount(user);
     const currentId = localStorage.getItem("vds-device-id") || crypto.randomUUID();
-    await loadCloudState(user, currentId, mode === "register");
+    await loadCloudState(user, currentId);
   }
 
   async function logout() {
@@ -155,11 +148,6 @@ export default function HomePage() {
     setAccount(null); setProfile(emptyProfile); setXp(0); setMissionDone(false); setGoals([]); setEntries([]); setOnboarding(0); setView("home"); setSyncReady(false);
     toast.success("Você saiu da sua conta.");
   }
-
-  useEffect(() => {
-    if (!ready || !account || onboarding < 3) return;
-    localStorage.setItem("vds-state", JSON.stringify({ profile, xp, missionDone, goals, entries }));
-  }, [ready, account, onboarding, profile, xp, missionDone, goals, entries]);
 
   useEffect(() => {
     if (!syncReady || !account || !deviceId || onboarding < 3 || !profile.name) return;
@@ -283,7 +271,11 @@ function AuthScreen({ onAuthenticated }: { onAuthenticated: (user: Account, mode
 
   useEffect(() => {
     const token = new URLSearchParams(window.location.search).get("reset");
-    if (token) queueMicrotask(() => { setResetToken(token); setMode("reset"); });
+    if (token) queueMicrotask(() => {
+      setResetToken(token);
+      setMode("reset");
+      window.history.replaceState({}, "", window.location.pathname);
+    });
   }, []);
 
   async function submit(event: React.FormEvent) {

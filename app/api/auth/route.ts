@@ -1,13 +1,13 @@
 import { eq } from "drizzle-orm";
 import { getDb } from "@/db";
 import { users } from "@/db/schema";
-import { createPassword, createSession, deleteSession, getSessionUser, normalizeEmail, publicUser, validEmail, validPassword, verifyPassword } from "@/lib/auth";
+import { createPassword, createSession, deleteSession, getSessionUser, normalizeEmail, PASSWORD_ITERATIONS, publicUser, validEmail, validPassword, verifyPassword } from "@/lib/auth";
+import { enforceRateLimit, readJsonBody, secureErrorResponse } from "@/lib/security";
 
 type AuthPayload = { action?: "register" | "login" | "logout"; email?: string; password?: string };
 
 function errorResponse(error: unknown) {
-  console.error("auth_error", error);
-  return Response.json({ error: "Não foi possível acessar sua conta agora." }, { status: 500 });
+  return secureErrorResponse(error, "Não foi possível acessar sua conta agora.");
 }
 
 export async function GET(request: Request) {
@@ -21,7 +21,8 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const payload = (await request.json()) as AuthPayload;
+    const payload = await readJsonBody<AuthPayload>(request, 2 * 1024);
+    await enforceRateLimit(request, "auth", "all", 20, 15 * 60);
     if (payload.action === "logout") {
       return Response.json({ loggedOut: true }, { headers: { "set-cookie": await deleteSession(request) } });
     }
@@ -36,13 +37,21 @@ export async function POST(request: Request) {
     let user = existing;
 
     if (payload.action === "register") {
+      await enforceRateLimit(request, "register", "new-account", 5, 60 * 60);
       if (existing) return Response.json({ error: "Já existe uma conta com este e-mail." }, { status: 409 });
       const passwordData = await createPassword(password);
       user = { id: crypto.randomUUID(), email, primaryDeviceId: null, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), ...passwordData };
       await db.insert(users).values(user);
     } else if (payload.action === "login") {
-      if (!existing || !(await verifyPassword(password, existing.passwordHash, existing.passwordSalt))) {
+      if (existing) await enforceRateLimit(request, "login-account", existing.id, 7, 15 * 60);
+      const valid = existing
+        ? await verifyPassword(password, existing.passwordHash, existing.passwordSalt, existing.passwordIterations)
+        : await verifyPassword(password, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=", "AAAAAAAAAAAAAAAAAAAAAA==", PASSWORD_ITERATIONS);
+      if (!existing || !valid) {
         return Response.json({ error: "E-mail ou senha incorretos." }, { status: 401 });
+      }
+      if (existing.passwordIterations < PASSWORD_ITERATIONS) {
+        await db.update(users).set({ ...(await createPassword(password)), updatedAt: new Date().toISOString() }).where(eq(users.id, existing.id));
       }
     } else {
       return Response.json({ error: "Ação inválida." }, { status: 400 });

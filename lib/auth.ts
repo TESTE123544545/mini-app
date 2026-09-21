@@ -3,8 +3,11 @@ import { getDb } from "@/db";
 import { sessions, users } from "@/db/schema";
 
 const SESSION_COOKIE = "vds_session";
-const SESSION_DAYS = 30;
-const PASSWORD_ITERATIONS = 100_000;
+const SESSION_DAYS = 7;
+// Cloudflare Workers currently rejects a single PBKDF2 operation above 100,000
+// iterations. Keep this versioned so accounts can be rehashed when authentication
+// moves to the dedicated backend with Argon2id support.
+export const PASSWORD_ITERATIONS = 100_000;
 
 function bytesToBase64(bytes: Uint8Array) {
   let binary = "";
@@ -23,9 +26,9 @@ export async function hashToken(value: string) {
   return bytesToBase64(new Uint8Array(digest));
 }
 
-async function derivePassword(password: string, salt: Uint8Array) {
+async function derivePassword(password: string, salt: Uint8Array, iterations: number) {
   const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
-  const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt, iterations: PASSWORD_ITERATIONS }, key, 256);
+  const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt, iterations }, key, 256);
   return bytesToBase64(new Uint8Array(bits));
 }
 
@@ -59,11 +62,11 @@ export function validPassword(value: string) {
 
 export async function createPassword(password: string) {
   const salt = crypto.getRandomValues(new Uint8Array(16));
-  return { passwordHash: await derivePassword(password, salt), passwordSalt: bytesToBase64(salt) };
+  return { passwordHash: await derivePassword(password, salt, PASSWORD_ITERATIONS), passwordSalt: bytesToBase64(salt), passwordIterations: PASSWORD_ITERATIONS };
 }
 
-export async function verifyPassword(password: string, passwordHash: string, passwordSalt: string) {
-  const candidate = await derivePassword(password, base64ToBytes(passwordSalt));
+export async function verifyPassword(password: string, passwordHash: string, passwordSalt: string, passwordIterations = 100_000) {
+  const candidate = await derivePassword(password, base64ToBytes(passwordSalt), passwordIterations);
   return constantTimeEqual(candidate, passwordHash);
 }
 
@@ -75,7 +78,7 @@ export async function createSession(userId: string) {
   await getDb().insert(sessions).values({ tokenHash, userId, expiresAt: expires.toISOString() });
   return {
     token,
-    cookie: `${SESSION_COOKIE}=${encodeURIComponent(token)}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${SESSION_DAYS * 24 * 60 * 60}`,
+    cookie: `${SESSION_COOKIE}=${encodeURIComponent(token)}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${SESSION_DAYS * 24 * 60 * 60}`,
   };
 }
 
@@ -96,7 +99,7 @@ export async function getSessionUser(request: Request) {
 export async function deleteSession(request: Request) {
   const token = readCookie(request, SESSION_COOKIE);
   if (token) await getDb().delete(sessions).where(eq(sessions.tokenHash, await hashToken(token)));
-  return `${SESSION_COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`;
+  return `${SESSION_COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0`;
 }
 
 export function publicUser(user: { email: string; primaryDeviceId: string | null }) {

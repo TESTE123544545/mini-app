@@ -22,6 +22,7 @@ export const users = sqliteTable("users", {
   email: text("email").notNull(),
   passwordHash: text("password_hash").notNull(),
   passwordSalt: text("password_salt").notNull(),
+  passwordIterations: integer("password_iterations").notNull().default(100000),
   primaryDeviceId: text("primary_device_id"),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
@@ -53,6 +54,13 @@ export const userProgress = sqliteTable("user_progress", {
   lastMissionDate: text("last_mission_date"),
   updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 });
+
+export const rateLimits = sqliteTable("rate_limits", {
+  key: text("key").primaryKey(),
+  count: integer("count").notNull().default(0),
+  windowStartedAt: text("window_started_at").notNull(),
+  expiresAt: text("expires_at").notNull(),
+}, (table) => [index("rate_limits_expires_at_idx").on(table.expiresAt)]);
 
 export const goals = sqliteTable("goals", {
   id: integer("id").primaryKey(),
