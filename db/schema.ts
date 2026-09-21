@@ -7,10 +7,35 @@ export const profiles = sqliteTable("profiles", {
   birthDate: text("birth_date").notNull(),
   sign: text("sign").notNull(),
   objective: text("objective").notNull(),
+  intention: text("intention").notNull().default(""),
+  theme: text("theme").notNull().default("dourado"),
+  avatarKey: text("avatar_key"),
+  avatarData: text("avatar_data"),
+  avatarType: text("avatar_type"),
   plan: text("plan").notNull().default("free"),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 });
+
+export const users = sqliteTable("users", {
+  id: text("id").primaryKey(),
+  email: text("email").notNull(),
+  passwordHash: text("password_hash").notNull(),
+  passwordSalt: text("password_salt").notNull(),
+  primaryDeviceId: text("primary_device_id"),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+  uniqueIndex("users_email_idx").on(table.email),
+  uniqueIndex("users_primary_device_idx").on(table.primaryDeviceId),
+]);
+
+export const sessions = sqliteTable("sessions", {
+  tokenHash: text("token_hash").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  expiresAt: text("expires_at").notNull(),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [index("sessions_user_id_idx").on(table.userId), index("sessions_expires_at_idx").on(table.expiresAt)]);
 
 export const userProgress = sqliteTable("user_progress", {
   deviceId: text("device_id").primaryKey().references(() => profiles.deviceId, { onDelete: "cascade" }),
