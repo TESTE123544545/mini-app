@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
-import { BookOpen, BriefcaseBusiness, Check, ChevronRight, CircleDollarSign, Flame, Gem, Home, Leaf, LockKeyhole, Plus, Rocket, Sparkles, Target, Trophy, UserRound, X } from "lucide-react";
+import { BookOpen, BriefcaseBusiness, Check, ChevronRight, CircleDollarSign, Cloud, Flame, Gem, Home, Leaf, LockKeyhole, Plus, Rocket, Sparkles, Target, Trophy, UserRound } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { Toaster } from "@/components/ui/sonner";
@@ -81,21 +81,54 @@ export default function HomePage() {
   const [answers, setAnswers] = useState(["", "", "", ""]);
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [goalDialog, setGoalDialog] = useState(false);
+  const [deviceId, setDeviceId] = useState("");
+  const [syncReady, setSyncReady] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<"loading" | "saved" | "offline">("loading");
 
   useEffect(() => {
+    const id = localStorage.getItem("vds-device-id") || crypto.randomUUID();
+    localStorage.setItem("vds-device-id", id);
+    setDeviceId(id);
     const saved = localStorage.getItem("vds-state");
     if (saved) {
       const state = JSON.parse(saved);
       setProfile(state.profile); setXp(state.xp ?? 0); setMissionDone(state.missionDone ?? false);
       setGoals(state.goals ?? []); setEntries(state.entries ?? []); setOnboarding(3);
     }
-    setReady(true);
+    fetch(`/api/sync?deviceId=${encodeURIComponent(id)}`)
+      .then((response) => response.ok ? response.json() : Promise.reject(new Error("sync unavailable")))
+      .then(({ state }) => {
+        if (state) {
+          setProfile(state.profile); setXp(state.xp ?? 0); setMissionDone(state.missionDone ?? false);
+          setGoals(state.goals ?? []); setEntries(state.entries ?? []); setOnboarding(3);
+          localStorage.setItem("vds-state", JSON.stringify(state));
+        }
+        setSyncStatus("saved");
+      })
+      .catch(() => setSyncStatus("offline"))
+      .finally(() => { setSyncReady(true); setReady(true); });
   }, []);
 
   useEffect(() => {
     if (!ready || onboarding < 3) return;
     localStorage.setItem("vds-state", JSON.stringify({ profile, xp, missionDone, goals, entries }));
   }, [ready, onboarding, profile, xp, missionDone, goals, entries]);
+
+  useEffect(() => {
+    if (!syncReady || !deviceId || onboarding < 3 || !profile.name) return;
+    setSyncStatus("loading");
+    const timer = window.setTimeout(() => {
+      fetch("/api/sync", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ deviceId, profile, xp, missionDone, goals, entries }),
+      }).then((response) => {
+        if (!response.ok) throw new Error("sync failed");
+        setSyncStatus("saved");
+      }).catch(() => setSyncStatus("offline"));
+    }, 700);
+    return () => window.clearTimeout(timer);
+  }, [syncReady, deviceId, onboarding, profile, xp, missionDone, goals, entries]);
 
   const level = Math.floor(xp / 100) + 1;
   const stage = xp < 40 ? "Semente" : xp < 100 ? "Raiz" : xp < 180 ? "Crescimento" : xp < 300 ? "Árvore" : "Árvore Dourada";
@@ -169,7 +202,7 @@ export default function HomePage() {
         {view === "tree" && <TreeView xp={xp} level={level} stage={stage} mapScores={mapScores} goals={goals} />}
         {view === "missions" && <MissionsView profile={profile} missionDone={missionDone} completeMission={completeMission} />}
         {view === "journal" && <JournalView answers={answers} setAnswers={setAnswers} save={saveJournal} entries={entries} />}
-        {view === "profile" && <ProfileView profile={profile} guide={guide} goals={goals} advanceGoal={advanceGoal} goalDialog={goalDialog} setGoalDialog={setGoalDialog} goalTitle={goalTitle} setGoalTitle={setGoalTitle} goalCategory={goalCategory} setGoalCategory={setGoalCategory} addGoal={() => addGoal()} />}
+        {view === "profile" && <ProfileView profile={profile} guide={guide} goals={goals} advanceGoal={advanceGoal} goalDialog={goalDialog} setGoalDialog={setGoalDialog} goalTitle={goalTitle} setGoalTitle={setGoalTitle} goalCategory={goalCategory} setGoalCategory={setGoalCategory} addGoal={() => addGoal()} syncStatus={syncStatus} />}
 
         <nav className="bottom-nav" aria-label="Navegação principal">
           <NavButton active={view === "home"} onClick={() => setView("home")} icon={<Home/>} label="Início" />
@@ -224,9 +257,10 @@ function JournalView({ answers, setAnswers, save, entries }: { answers: string[]
   return <div className="view-stack"><p className="view-intro">Um espaço privado para observar padrões e transformar reflexão em escolha.</p><section className="surface-card journal-form"><p className="eyebrow">Reflexão de hoje · +10 XP</p>{journalQuestions.map((q, i) => <label key={q}>{q}<textarea rows={2} value={answers[i]} onChange={(e) => { const next = [...answers]; next[i] = e.target.value; setAnswers(next); }} placeholder="Escreva sem julgar..."/></label>)}<button className="gold-button" onClick={save}>Salvar reflexão <BookOpen/></button></section><section className="history"><div className="section-heading"><div><p className="eyebrow">Histórico</p><h2>Sua evolução em palavras</h2></div><span>{entries.length} registros</span></div>{entries.length ? entries.map((entry, idx) => <article key={`${entry.date}-${idx}`}><time>{entry.date}</time><p>{entry.answers.find(Boolean)}</p></article>) : <div className="empty-state"><BookOpen/><p>Seu primeiro registro aparecerá aqui.</p></div>}</section></div>;
 }
 
-function ProfileView({ profile, guide, goals, advanceGoal, goalDialog, setGoalDialog, goalTitle, setGoalTitle, goalCategory, setGoalCategory, addGoal }: { profile: Profile; guide: { strengths: string[]; care: string[]; style: string }; goals: Goal[]; advanceGoal: (id: number) => void; goalDialog: boolean; setGoalDialog: (v: boolean) => void; goalTitle: string; setGoalTitle: (s: string) => void; goalCategory: string; setGoalCategory: (s: string) => void; addGoal: () => void }) {
+function ProfileView({ profile, guide, goals, advanceGoal, goalDialog, setGoalDialog, goalTitle, setGoalTitle, goalCategory, setGoalCategory, addGoal, syncStatus }: { profile: Profile; guide: { strengths: string[]; care: string[]; style: string }; goals: Goal[]; advanceGoal: (id: number) => void; goalDialog: boolean; setGoalDialog: (v: boolean) => void; goalTitle: string; setGoalTitle: (s: string) => void; goalCategory: string; setGoalCategory: (s: string) => void; addGoal: () => void; syncStatus: "loading" | "saved" | "offline" }) {
   return <div className="view-stack"><section className="sign-profile"><div className="zodiac-medallion"><Sparkles/><strong>{profile.sign.slice(0,2).toUpperCase()}</strong></div><p className="eyebrow">Meu signo para prosperar</p><h2>{profile.sign}</h2><p>{guide.style}</p><div className="insight-grid"><div><span>Forças</span>{guide.strengths.map((x) => <b key={x}>{x}</b>)}</div><div><span>Pontos de atenção</span>{guide.care.map((x) => <b key={x}>{x}</b>)}</div></div></section>
     <section className="surface-card goals-card"><div className="section-heading"><div><p className="eyebrow">Minhas metas</p><h2>Frutos em construção</h2></div><Dialog open={goalDialog} onOpenChange={setGoalDialog}><DialogTrigger asChild><button className="round-button" aria-label="Adicionar meta"><Plus/></button></DialogTrigger><DialogContent className="goal-dialog"><DialogHeader><DialogTitle>Plante uma nova meta</DialogTitle><DialogDescription>Defina algo que possa ser acompanhado por pequenas ações.</DialogDescription></DialogHeader><label>Nome da meta<input value={goalTitle} onChange={(e) => setGoalTitle(e.target.value)} placeholder="Ex.: criar minha reserva"/></label><label>Categoria<select value={goalCategory} onChange={(e) => setGoalCategory(e.target.value)}>{["Financeiro","Carreira","Negócios","Conhecimento","Relacionamentos","Desenvolvimento pessoal"].map((x) => <option key={x}>{x}</option>)}</select></label><button className="gold-button" onClick={addGoal}>Criar meta · +15 XP</button></DialogContent></Dialog></div>{goals.length ? goals.map((g) => <article className="goal-item" key={g.id}><div><strong>{g.title}</strong><span>{g.category} · {g.progress}%</span></div><Progress value={g.progress}/><button onClick={() => advanceGoal(g.id)} disabled={g.progress === 100}>{g.progress === 100 ? "Fruto conquistado" : "Avançar +25%"}</button></article>) : <div className="empty-state"><Target/><p>Crie uma meta para começar a cultivar seu primeiro fruto.</p></div>}</section>
+    <section className={`sync-card ${syncStatus}`}><span><Cloud/></span><div><strong>{syncStatus === "saved" ? "Jornada salva na nuvem" : syncStatus === "loading" ? "Salvando sua evolução…" : "Modo offline ativo"}</strong><small>{syncStatus === "saved" ? "Metas, diário e XP protegidos no Cloudflare D1." : syncStatus === "offline" ? "Suas mudanças continuam salvas neste dispositivo e serão sincronizadas depois." : "Aguarde um instante."}</small></div><i aria-hidden="true"/></section>
     <section className="premium-card"><div className="premium-icon"><Gem/></div><p className="eyebrow">Central da Prosperidade</p><h2>Você já descobriu seu signo.<br/>Agora use-o como ferramenta de evolução.</h2><p>Desbloqueie missões personalizadas, histórico completo, metas ilimitadas, mapa de evolução e conteúdos aprofundados.</p><ul><li><Check/> Guia completo dos 12 signos</li><li><Check/> Exercícios, aulas e desafios</li><li><Check/> Evolução completa da árvore</li></ul><button className="gold-button" onClick={() => { track("paywall_viewed"); track("checkout_started", { provider: "not_configured" }); toast("A assinatura será conectada a um checkout seguro em breve."); }}>Desbloquear minha jornada</button><small>Sem promessas financeiras. Uma experiência de autoconhecimento, hábitos e metas.</small></section>
     <section className="content-list"><div className="section-heading"><div><p className="eyebrow">Conteúdo</p><h2>Sua biblioteca</h2></div></div>{[[BookOpen,"Guia Use Seu Signo para Prosperar","Introdução"],[Rocket,"Estratégias para cada signo","Premium"],[BriefcaseBusiness,"Decisões e carreira","Premium"],[CircleDollarSign,"Organização financeira consciente","Premium"]].map(([Icon,title,badge]) => <button key={String(title)} onClick={() => { if (badge === "Premium") { track("paywall_viewed"); toast("Conteúdo disponível no Premium."); } else { track("ebook_opened"); toast("Conteúdo demonstrativo aberto."); } }}><span className="content-icon"><Icon/></span><span><strong>{String(title)}</strong><small>{String(badge)}</small></span><ChevronRight/></button>)}</section>
   </div>;
