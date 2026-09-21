@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, BookOpen, BriefcaseBusiness, Camera, Check, ChevronRight, CircleDollarSign, Cloud, Eye, EyeOff, Flame, Gem, Home, ImagePlus, Leaf, LockKeyhole, LogOut, Mail, Pencil, Plus, Rocket, Save, Sparkles, Target, Trophy, UserRound } from "lucide-react";
+import { ArrowLeft, BookOpen, BriefcaseBusiness, Camera, CameraOff, Check, ChevronRight, CircleDollarSign, Cloud, Eye, EyeOff, Flame, Gem, Home, ImagePlus, Leaf, LockKeyhole, LogOut, Mail, Pencil, Plus, Rocket, Save, Settings2, ShieldCheck, Sparkles, Target, Trophy, UserRound } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { Toaster } from "@/components/ui/sonner";
@@ -247,7 +247,7 @@ export default function HomePage() {
           <button className={`avatar ${profile.hasAvatar ? "has-photo" : ""}`} onClick={() => setView("profile")} aria-label="Abrir perfil">{profile.hasAvatar ? <Image unoptimized src={`/api/profile/avatar?v=${avatarVersion}`} alt="" width={44} height={44} /> : profile.name.slice(0, 2).toUpperCase()}</button>
         </header>
 
-        {view === "home" && <HomeView profile={profile} xp={xp} level={level} stage={stage} missionDone={missionDone} completeMission={completeMission} oracleOpen={oracleOpen} setOracleOpen={setOracleOpen} mainGoal={mainGoal} advanceGoal={advanceGoal} openGoals={() => setView("profile")} />}
+        {view === "home" && <HomeView profile={profile} xp={xp} level={level} stage={stage} missionDone={missionDone} completeMission={completeMission} oracleOpen={oracleOpen} setOracleOpen={setOracleOpen} mainGoal={mainGoal} advanceGoal={advanceGoal} openGoals={() => setView("profile")} navigate={setView} />}
         {view === "tree" && <TreeView xp={xp} level={level} stage={stage} mapScores={mapScores} goals={goals} />}
         {view === "missions" && <MissionsView profile={profile} missionDone={missionDone} completeMission={completeMission} />}
         {view === "journal" && <JournalView answers={answers} setAnswers={setAnswers} save={saveJournal} entries={entries} />}
@@ -356,8 +356,11 @@ function Onboarding({ step, setStep, profile, setProfile, finish }: { step: numb
   </main>;
 }
 
-function HomeView({ profile, xp, level, stage, missionDone, completeMission, oracleOpen, setOracleOpen, mainGoal, advanceGoal, openGoals }: { profile: Profile; xp: number; level: number; stage: string; missionDone: boolean; completeMission: () => void; oracleOpen: boolean; setOracleOpen: (v: boolean) => void; mainGoal?: Goal; advanceGoal: (id: number) => void; openGoals: () => void }) {
-  return <><div className="welcome-copy"><p>Hoje é um novo dia para construir sua prosperidade.</p><span className="sign-pill"><Sparkles size={14}/>{profile.sign}</span></div><TreeCard xp={xp} level={level} stage={stage}/>
+function HomeView({ profile, xp, level, stage, missionDone, completeMission, oracleOpen, setOracleOpen, mainGoal, advanceGoal, openGoals, navigate }: { profile: Profile; xp: number; level: number; stage: string; missionDone: boolean; completeMission: () => void; oracleOpen: boolean; setOracleOpen: (v: boolean) => void; mainGoal?: Goal; advanceGoal: (id: number) => void; openGoals: () => void; navigate: (view: View) => void }) {
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
+  return <><div className="welcome-copy"><p><strong>{greeting}, {profile.name.split(" ")[0]}.</strong><br/>Hoje é um novo dia para construir sua prosperidade.</p><span className="sign-pill"><Sparkles size={14}/>{profile.sign}</span></div><TreeCard xp={xp} level={level} stage={stage}/>
+    <section className="journey-shortcuts" aria-label="Atalhos da jornada"><button onClick={() => navigate("missions")}><span><Target/></span><strong>Missão</strong><small>{missionDone ? "Concluída" : "Fazer agora"}</small></button><button onClick={() => navigate("journal")}><span><BookOpen/></span><strong>Refletir</strong><small>Meu diário</small></button><button onClick={() => navigate("profile")}><span><UserRound/></span><strong>Personalizar</strong><small>Meu perfil</small></button></section>
     <section className={`mission-card ${missionDone ? "done" : ""}`}><div className="mission-icon">{missionDone ? <Check/> : <Target/>}</div><div className="mission-copy"><p className="eyebrow">Missão do dia · {missionDone ? "concluída" : "+20 XP"}</p><h2>{missionDone ? "Intenção em movimento" : "Dê forma ao que importa"}</h2><p>{missions[profile.sign]}</p></div><button className="gold-button" disabled={missionDone} onClick={completeMission}>{missionDone ? <><Check/> Missão concluída</> : <><Target/> Começar missão</>}</button></section>
     <section className="oracle-card"><div><p className="eyebrow">Oráculo do dia</p><h2>{oracleOpen ? "A clareza cresce quando a decisão encontra um gesto." : "Uma mensagem para o seu momento"}</h2>{oracleOpen && <p>Transforme em ação: escolha uma pendência simples e reserve 15 minutos para ela.</p>}</div><button className="ghost-button" onClick={() => { setOracleOpen(!oracleOpen); track("oracle_revealed"); }}>{oracleOpen ? "Recolher" : "Revelar mensagem"}</button></section>
     <section className="goal-snapshot"><div className="section-heading"><div><p className="eyebrow">Meta principal</p><h2>{mainGoal ? mainGoal.title : "Plante sua primeira meta"}</h2></div><button onClick={openGoals}>{mainGoal ? "Ver metas" : <><Plus size={16}/> Criar</>}</button></div>{mainGoal ? <><Progress value={mainGoal.progress}/><div className="goal-foot"><span>{mainGoal.category} · {mainGoal.progress}%</span><button onClick={() => advanceGoal(mainGoal.id)}>Avançar +25%</button></div></> : <p>Metas concluídas se transformam em frutos na sua árvore.</p>}</section>
@@ -399,9 +402,25 @@ async function prepareAvatar(file: File) {
 function ProfileView({ profile, setProfile, account, guide, goals, advanceGoal, goalDialog, setGoalDialog, goalTitle, setGoalTitle, goalCategory, setGoalCategory, addGoal, syncStatus, avatarVersion, setAvatarVersion, logout }: { profile: Profile; setProfile: (profile: Profile) => void; account: Account; guide: { strengths: string[]; care: string[]; style: string }; goals: Goal[]; advanceGoal: (id: number) => void; goalDialog: boolean; setGoalDialog: (v: boolean) => void; goalTitle: string; setGoalTitle: (s: string) => void; goalCategory: string; setGoalCategory: (s: string) => void; addGoal: () => void; syncStatus: "loading" | "saved" | "offline"; avatarVersion: number; setAvatarVersion: (value: number) => void; logout: () => Promise<void> }) {
   const cameraInput = useRef<HTMLInputElement>(null);
   const galleryInput = useRef<HTMLInputElement>(null);
+  const cameraVideo = useRef<HTMLVideoElement>(null);
+  const cameraStream = useRef<MediaStream | null>(null);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(profile);
   const [photoLoading, setPhotoLoading] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [galleryOpen, setGalleryOpen] = useState(false);
+  const [privacyOpen, setPrivacyOpen] = useState(false);
+  const [cameraPermission, setCameraPermission] = useState<"ask" | "granted" | "denied" | "unsupported">("ask");
+  const [cameraActive, setCameraActive] = useState(false);
+
+  useEffect(() => {
+    if (!navigator.permissions?.query) return;
+    navigator.permissions.query({ name: "camera" as PermissionName }).then((status) => {
+      setCameraPermission(status.state === "prompt" ? "ask" : status.state);
+      status.onchange = () => setCameraPermission(status.state === "prompt" ? "ask" : status.state);
+    }).catch(() => setCameraPermission("ask"));
+    return () => { cameraStream.current?.getTracks().forEach((track) => track.stop()); };
+  }, []);
 
   async function uploadPhoto(file?: File) {
     if (!file) return;
@@ -430,13 +449,60 @@ function ProfileView({ profile, setProfile, account, guide, goals, advanceGoal, 
     finally { setPhotoLoading(false); }
   }
 
+  function stopCamera() {
+    cameraStream.current?.getTracks().forEach((track) => track.stop());
+    cameraStream.current = null;
+    setCameraActive(false);
+    if (cameraVideo.current) cameraVideo.current.srcObject = null;
+  }
+
+  async function startCamera() {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setCameraPermission("unsupported");
+      return toast.error("A câmera ao vivo não está disponível neste aparelho. Use a opção de câmera do sistema.");
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 1280 } }, audio: false });
+      cameraStream.current = stream;
+      setCameraActive(true);
+      if (cameraVideo.current) cameraVideo.current.srcObject = stream;
+      setCameraPermission("granted");
+    } catch (reason) {
+      const denied = reason instanceof DOMException && (reason.name === "NotAllowedError" || reason.name === "SecurityError");
+      setCameraPermission(denied ? "denied" : "unsupported");
+      toast.error(denied ? "A câmera não foi permitida. Você pode liberar nas configurações do aplicativo." : "Não foi possível abrir a câmera.");
+    }
+  }
+
+  async function capturePhoto() {
+    const video = cameraVideo.current;
+    if (!video?.videoWidth || !video.videoHeight) return toast.error("Aguarde a imagem da câmera aparecer.");
+    const size = Math.min(video.videoWidth, video.videoHeight);
+    const canvas = document.createElement("canvas"); canvas.width = 512; canvas.height = 512;
+    const context = canvas.getContext("2d");
+    if (!context) return toast.error("Não foi possível capturar a foto.");
+    context.drawImage(video, (video.videoWidth - size) / 2, (video.videoHeight - size) / 2, size, size, 0, 0, 512, 512);
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/webp", .82));
+    if (!blob) return toast.error("Não foi possível capturar a foto.");
+    stopCamera(); setCameraOpen(false);
+    await uploadPhoto(new File([blob], "foto-camera.webp", { type: "image/webp" }));
+  }
+
+  function chooseFromGallery() {
+    setGalleryOpen(false);
+    window.setTimeout(() => galleryInput.current?.click(), 80);
+  }
+
   function saveProfile() {
     if (!draft.name.trim() || !draft.birthDate || !draft.objective) return toast.error("Preencha nome, nascimento e objetivo.");
     setProfile({ ...draft, name: draft.name.trim(), sign: getSign(draft.birthDate) }); setEditing(false); toast.success("Seu perfil foi atualizado.");
   }
 
-  return <div className="view-stack"><section className="profile-identity"><div className={`profile-photo ${profile.hasAvatar ? "has-photo" : ""}`}>{profile.hasAvatar ? <Image unoptimized src={`/api/profile/avatar?v=${avatarVersion}`} alt={`Foto de ${profile.name}`} width={86} height={86}/> : <UserRound/>}<button onClick={() => cameraInput.current?.click()} aria-label="Tirar foto"><Camera/></button></div><div><p className="eyebrow">Meu perfil</p><h2>{profile.name}</h2><span>{account.email}</span></div></section>
-    <section className="surface-card photo-card"><div className="section-heading"><div><p className="eyebrow">Sua imagem</p><h2>Foto de perfil</h2></div></div><p>Use a câmera do celular ou escolha uma foto da galeria.</p><div className="photo-actions"><button disabled={photoLoading} onClick={() => cameraInput.current?.click()}><Camera/> {photoLoading ? "Enviando…" : "Abrir câmera"}</button><button disabled={photoLoading} onClick={() => galleryInput.current?.click()}><ImagePlus/> Galeria</button>{profile.hasAvatar && <button className="danger-button" disabled={photoLoading} onClick={removePhoto}>Remover</button>}</div><input ref={cameraInput} className="file-input" type="file" accept="image/*" capture="user" onChange={(event) => uploadPhoto(event.target.files?.[0])}/><input ref={galleryInput} className="file-input" type="file" accept="image/*" onChange={(event) => uploadPhoto(event.target.files?.[0])}/></section>
+  return <div className="view-stack"><section className="profile-identity"><div className={`profile-photo ${profile.hasAvatar ? "has-photo" : ""}`}>{profile.hasAvatar ? <Image unoptimized src={`/api/profile/avatar?v=${avatarVersion}`} alt={`Foto de ${profile.name}`} width={86} height={86}/> : <UserRound/>}<button onClick={() => setCameraOpen(true)} aria-label="Tirar foto"><Camera/></button></div><div><p className="eyebrow">Meu perfil</p><h2>{profile.name}</h2><span>{account.email}</span></div></section>
+    <section className="surface-card photo-card"><div className="section-heading"><div><p className="eyebrow">Sua imagem</p><h2>Foto de perfil</h2></div><button className="privacy-link" onClick={() => setPrivacyOpen(true)}><ShieldCheck/> Privacidade</button></div><p>Você decide quando usar a câmera e quais fotos compartilhar.</p><div className="photo-actions"><button disabled={photoLoading} onClick={() => setCameraOpen(true)}><Camera/> {photoLoading ? "Enviando…" : "Abrir câmera"}</button><button disabled={photoLoading} onClick={() => setGalleryOpen(true)}><ImagePlus/> Escolher foto</button>{profile.hasAvatar && <button className="danger-button" disabled={photoLoading} onClick={removePhoto}>Remover</button>}</div><input ref={cameraInput} className="file-input" type="file" accept="image/*" capture="user" onChange={(event) => uploadPhoto(event.target.files?.[0])}/><input ref={galleryInput} className="file-input" type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => { uploadPhoto(event.target.files?.[0]); event.target.value = ""; }}/></section>
+    <Dialog open={cameraOpen} onOpenChange={(open) => { setCameraOpen(open); if (!open) stopCamera(); }}><DialogContent className="goal-dialog permission-dialog"><DialogHeader><DialogTitle>Usar a câmera</DialogTitle><DialogDescription>A câmera só será ligada agora, com sua autorização. O Android mostrará as opções disponíveis para este aparelho.</DialogDescription></DialogHeader><div className="permission-visual"><span className={cameraPermission}><Camera/></span><div><strong>{cameraPermission === "granted" ? "Câmera permitida" : cameraPermission === "denied" ? "Câmera bloqueada" : "Você está no controle"}</strong><small>{cameraPermission === "denied" ? "Libere a câmera nas configurações do aplicativo ou use o seletor do sistema." : "Apenas a foto capturada será enviada ao seu perfil."}</small></div></div>{cameraActive ? <><video className="camera-preview" ref={(element) => { cameraVideo.current = element; if (element && cameraStream.current) element.srcObject = cameraStream.current; }} autoPlay playsInline muted/><button className="gold-button" onClick={capturePhoto}><Camera/> Usar esta foto</button></> : <div className="permission-actions"><button className="gold-button" onClick={startCamera}><ShieldCheck/> Solicitar acesso à câmera</button><button className="ghost-button" onClick={() => cameraInput.current?.click()}><Camera/> Abrir câmera do sistema</button></div>}</DialogContent></Dialog>
+    <Dialog open={galleryOpen} onOpenChange={setGalleryOpen}><DialogContent className="goal-dialog permission-dialog"><DialogHeader><DialogTitle>Escolher uma foto</DialogTitle><DialogDescription>O seletor privado do Android permite compartilhar somente a imagem escolhida. O aplicativo não poderá navegar pela sua galeria.</DialogDescription></DialogHeader><div className="permission-visual"><span className="granted"><ImagePlus/></span><div><strong>Acesso limitado por padrão</strong><small>Você pode cancelar sem compartilhar nenhuma foto.</small></div></div><button className="gold-button" onClick={chooseFromGallery}><ImagePlus/> Continuar para a galeria</button></DialogContent></Dialog>
+    <Dialog open={privacyOpen} onOpenChange={setPrivacyOpen}><DialogContent className="goal-dialog permission-dialog"><DialogHeader><DialogTitle>Central de Privacidade</DialogTitle><DialogDescription>Revise como o aplicativo usa os recursos do seu celular.</DialogDescription></DialogHeader><div className="permission-list"><div><span>{cameraPermission === "denied" ? <CameraOff/> : <Camera/>}</span><div><strong>Câmera</strong><small>{cameraPermission === "granted" ? "Permitida durante o uso." : cameraPermission === "denied" ? "Bloqueada nas configurações." : "Será perguntado somente quando você usar."}</small></div><b>{cameraPermission === "granted" ? "Permitida" : cameraPermission === "denied" ? "Bloqueada" : "Perguntar"}</b></div><div><span><ImagePlus/></span><div><strong>Fotos e galeria</strong><small>Somente as imagens que você escolher.</small></div><b>Limitado</b></div><div><span><Cloud/></span><div><strong>Armazenamento</strong><small>Sua foto e jornada ficam vinculadas à sua conta.</small></div><b>Privado</b></div></div><p className="permission-note"><Settings2/> Você pode alterar permissões a qualquer momento em Configurações do Android › Aplicativos › Seu Signo › Permissões.</p></DialogContent></Dialog>
     <section className="surface-card edit-profile"><div className="section-heading"><div><p className="eyebrow">Personalização</p><h2>Deixe o app com a sua cara</h2></div><button onClick={() => { if (editing) { setDraft(profile); setEditing(false); } else setEditing(true); }}>{editing ? "Cancelar" : <><Pencil/> Editar</>}</button></div>{editing ? <div className="profile-form"><label>Seu nome<input value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })}/></label><label>Data de nascimento<input type="date" value={draft.birthDate} onChange={(event) => setDraft({ ...draft, birthDate: event.target.value })}/></label><label>Objetivo principal<select value={draft.objective} onChange={(event) => setDraft({ ...draft, objective: event.target.value })}>{objectives.map((objective) => <option key={objective}>{objective}</option>)}</select></label><label>Minha intenção<textarea rows={3} maxLength={280} value={draft.intention} onChange={(event) => setDraft({ ...draft, intention: event.target.value })} placeholder="O que você quer cultivar nesta fase?"/></label><fieldset><legend>Cor da minha jornada</legend><div className="theme-picker">{([['dourado','Sol dourado'],['lua','Lua azul'],['aurora','Aurora']] as [Theme,string][]).map(([value,label]) => <button type="button" key={value} data-color={value} className={draft.theme === value ? "selected" : ""} onClick={() => setDraft({ ...draft, theme: value })}><i/>{label}</button>)}</div></fieldset><button className="gold-button" onClick={saveProfile}><Save/> Salvar alterações</button></div> : <div className="profile-summary"><div><span>Objetivo</span><strong>{profile.objective}</strong></div><div><span>Signo</span><strong>{profile.sign}</strong></div><div><span>Intenção</span><strong>{profile.intention || "Adicione uma intenção para sua jornada."}</strong></div></div>}</section>
     <section className="sign-profile"><div className="zodiac-medallion"><Sparkles/><strong>{profile.sign.slice(0,2).toUpperCase()}</strong></div><p className="eyebrow">Meu signo para prosperar</p><h2>{profile.sign}</h2><p>{guide.style}</p><div className="insight-grid"><div><span>Forças</span>{guide.strengths.map((x) => <b key={x}>{x}</b>)}</div><div><span>Pontos de atenção</span>{guide.care.map((x) => <b key={x}>{x}</b>)}</div></div></section>
     <section className="surface-card goals-card"><div className="section-heading"><div><p className="eyebrow">Minhas metas</p><h2>Frutos em construção</h2></div><Dialog open={goalDialog} onOpenChange={setGoalDialog}><DialogTrigger asChild><button className="round-button" aria-label="Adicionar meta"><Plus/></button></DialogTrigger><DialogContent className="goal-dialog"><DialogHeader><DialogTitle>Plante uma nova meta</DialogTitle><DialogDescription>Defina algo que possa ser acompanhado por pequenas ações.</DialogDescription></DialogHeader><label>Nome da meta<input value={goalTitle} onChange={(e) => setGoalTitle(e.target.value)} placeholder="Ex.: criar minha reserva"/></label><label>Categoria<select value={goalCategory} onChange={(e) => setGoalCategory(e.target.value)}>{["Financeiro","Carreira","Negócios","Conhecimento","Relacionamentos","Desenvolvimento pessoal"].map((x) => <option key={x}>{x}</option>)}</select></label><button className="gold-button" onClick={addGoal}>Criar meta · +15 XP</button></DialogContent></Dialog></div>{goals.length ? goals.map((g) => <article className="goal-item" key={g.id}><div><strong>{g.title}</strong><span>{g.category} · {g.progress}%</span></div><Progress value={g.progress}/><button onClick={() => advanceGoal(g.id)} disabled={g.progress === 100}>{g.progress === 100 ? "Fruto conquistado" : "Avançar +25%"}</button></article>) : <div className="empty-state"><Target/><p>Crie uma meta para começar a cultivar seu primeiro fruto.</p></div>}</section>

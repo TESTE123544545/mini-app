@@ -50,6 +50,8 @@ export async function POST(request: Request) {
     const db = getDb();
     const now = new Date().toISOString();
     if (!user.primaryDeviceId) {
+      const [owner] = await db.select({ id: users.id }).from(users).where(eq(users.primaryDeviceId, deviceId)).limit(1);
+      if (owner && owner.id !== user.id) return Response.json({ error: "Esta jornada já pertence a outra conta." }, { status: 409 });
       await db.update(users).set({ primaryDeviceId: deviceId, updatedAt: now }).where(eq(users.id, user.id));
     }
     const allowedThemes = ["dourado", "lua", "aurora"];
