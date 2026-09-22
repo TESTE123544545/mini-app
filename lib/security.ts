@@ -26,7 +26,7 @@ export function assertTrustedMutation(request: Request, contentType: "json" | "m
     url.origin,
     "https://veiasdasintonia.com.br",
     "https://www.veiasdasintonia.com.br",
-    "https://miniapp-awvp9531-1319.vercel.app",
+    "https://miniapp-liard-chi.vercel.app",
   ]);
   const frontendOrigin = configuredFrontendOrigin();
   if (frontendOrigin) expectedOrigins.add(frontendOrigin);
