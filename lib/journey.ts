@@ -17,6 +17,14 @@ export type Achievement = {
   reward: string;
   reached: (snapshot: JourneySnapshot) => boolean;
   progress: (snapshot: JourneySnapshot) => { current: number; target: number };
+  /**
+   * XP bonus for unlocking this achievement, when it makes sense to grant one.
+   * Achievements measured directly in xp/level omit this — crediting XP for
+   * reaching an XP threshold is a feedback loop that cascades into several
+   * more thresholds in the same instant, so those are rewarded with the
+   * badge and tree stage alone.
+   */
+  xpBonus?: number;
 };
 
 const completedGoals = (snapshot: JourneySnapshot) => snapshot.goals.filter((goal) => goal.progress === 100).length;
@@ -45,6 +53,7 @@ export const achievements: readonly Achievement[] = [
     reward: "Anel de constelação na árvore",
     reached: (s) => s.streak >= 7,
     progress: (s) => ({ current: Math.min(s.streak, 7), target: 7 }),
+    xpBonus: 100,
   },
   {
     key: "primeiro-fruto", name: "Primeiro Fruto", icon: "apple",
@@ -53,6 +62,7 @@ export const achievements: readonly Achievement[] = [
     reward: "Fruto permanente na árvore",
     reached: (s) => completedGoals(s) >= 1,
     progress: (s) => ({ current: Math.min(completedGoals(s), 1), target: 1 }),
+    xpBonus: 100,
   },
   {
     key: "guardiao", name: "Guardião da Disciplina", icon: "shield",
@@ -61,6 +71,7 @@ export const achievements: readonly Achievement[] = [
     reward: "Histórico com leitura de padrões",
     reached: (s) => s.entries.length >= 7,
     progress: (s) => ({ current: Math.min(s.entries.length, 7), target: 7 }),
+    xpBonus: 100,
   },
   {
     key: "ciclo-completo", name: "Ciclo Completo", icon: "orbit",

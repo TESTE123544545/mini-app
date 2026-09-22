@@ -29,7 +29,6 @@ const emptyProfile: Profile = { name: "", birthDate: "", objective: "", sign: "C
 const FREE_GOAL_LIMIT = 3;
 const TOTAL_ONBOARDING_STEPS = 10;
 const FREE_JOURNAL_HISTORY = 7;
-const ACHIEVEMENT_XP_BONUS = 100;
 const FREE_THEMES: readonly Theme[] = ["dourado"];
 
 const zodiac = [
@@ -264,8 +263,8 @@ export default function HomePage() {
     for (const item of newlyReached) known.add(item.key);
     setUnlockedAchievements((current) => [...current, ...newlyReached.map((item) => item.key)]);
     for (const item of newlyReached) {
-      awardXp(ACHIEVEMENT_XP_BONUS);
-      toast.success(`🏆 Conquista desbloqueada: ${item.name} · +${ACHIEVEMENT_XP_BONUS} XP`);
+      if (item.xpBonus) awardXp(item.xpBonus);
+      toast.success(item.xpBonus ? `🏆 Conquista desbloqueada: ${item.name} · +${item.xpBonus} XP` : `🏆 Conquista desbloqueada: ${item.name}`);
     }
   }, [syncReady, snapshot]);
 
