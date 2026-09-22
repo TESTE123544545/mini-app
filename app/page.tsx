@@ -29,6 +29,7 @@ const emptyProfile: Profile = { name: "", birthDate: "", objective: "", sign: "C
 const FREE_GOAL_LIMIT = 3;
 const TOTAL_ONBOARDING_STEPS = 10;
 const FREE_JOURNAL_HISTORY = 7;
+const ACHIEVEMENT_XP_BONUS = 100;
 const FREE_THEMES: readonly Theme[] = ["dourado"];
 
 const zodiac = [
@@ -131,6 +132,8 @@ export default function HomePage() {
   const [syncReady, setSyncReady] = useState(false);
   const [syncStatus, setSyncStatus] = useState<"loading" | "saved" | "offline">("loading");
   const [avatarVersion, setAvatarVersion] = useState(0);
+  const [unlockedAchievements, setUnlockedAchievements] = useState<string[]>([]);
+  const notifiedAchievements = useRef<Set<string> | null>(null);
 
   useEffect(() => {
     const id = localStorage.getItem("vds-device-id") || crypto.randomUUID();
@@ -152,8 +155,9 @@ export default function HomePage() {
 
   function handleSessionExpired() {
     localStorage.removeItem("vds-state");
-    setAccount(null); setProfile(emptyProfile); setXp(0); setMissionDone(false); setRitualDone(false); setStreak(0); setGoals([]); setEntries([]); setActiveTrail(null); setOnboarding(0); setView("home"); setSyncReady(false);
+    setAccount(null); setProfile(emptyProfile); setXp(0); setMissionDone(false); setRitualDone(false); setStreak(0); setGoals([]); setEntries([]); setActiveTrail(null); setOnboarding(0); setView("home"); setSyncReady(false); setUnlockedAchievements([]);
     levelBaseline.current = null;
+    notifiedAchievements.current = null;
     toast.error("Sua sessão expirou. Entre novamente para continuar sua jornada.");
   }
 
@@ -171,9 +175,12 @@ export default function HomePage() {
         const nextProfile = { ...emptyProfile, ...state.profile };
         setProfile(nextProfile); setXp(state.xp ?? 0); setMissionDone(state.missionDone ?? false); setRitualDone(state.ritualDone ?? false); setStreak(state.streak ?? 0);
         setGoals(state.goals ?? []); setEntries(state.entries ?? []); setActiveTrail(state.trail ?? null); setOnboarding(TOTAL_ONBOARDING_STEPS);
+        setUnlockedAchievements(state.unlockedAchievements ?? []);
+        notifiedAchievements.current = new Set(state.unlockedAchievements ?? []);
         if (nextProfile.hasAvatar) setAvatarVersion(Date.now());
       } else {
-        setProfile(emptyProfile); setXp(0); setMissionDone(false); setRitualDone(false); setStreak(0); setGoals([]); setEntries([]); setActiveTrail(null); setOnboarding(0);
+        setProfile(emptyProfile); setXp(0); setMissionDone(false); setRitualDone(false); setStreak(0); setGoals([]); setEntries([]); setActiveTrail(null); setOnboarding(0); setUnlockedAchievements([]);
+        notifiedAchievements.current = new Set();
       }
       setSyncStatus("saved");
       setSyncReady(true);
@@ -193,8 +200,9 @@ export default function HomePage() {
     await fetch("/api/auth", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "logout" }) });
     localStorage.removeItem("vds-state");
     localStorage.setItem("vds-device-id", crypto.randomUUID());
-    setAccount(null); setProfile(emptyProfile); setXp(0); setMissionDone(false); setRitualDone(false); setStreak(0); setGoals([]); setEntries([]); setActiveTrail(null); setOnboarding(0); setView("home"); setSyncReady(false);
+    setAccount(null); setProfile(emptyProfile); setXp(0); setMissionDone(false); setRitualDone(false); setStreak(0); setGoals([]); setEntries([]); setActiveTrail(null); setOnboarding(0); setView("home"); setSyncReady(false); setUnlockedAchievements([]);
     levelBaseline.current = null;
+    notifiedAchievements.current = null;
     toast.success("Você saiu da sua conta.");
   }
 
@@ -206,7 +214,7 @@ export default function HomePage() {
       fetch("/api/sync", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ deviceId, dayKey, profile: { name: profile.name, birthDate: profile.birthDate, objective: profile.objective, sign: profile.sign, intention: profile.intention, theme: profile.theme }, xp, missionDone, ritualDone, goals, entries, trail: activeTrail }),
+        body: JSON.stringify({ deviceId, dayKey, profile: { name: profile.name, birthDate: profile.birthDate, objective: profile.objective, sign: profile.sign, intention: profile.intention, theme: profile.theme }, xp, missionDone, ritualDone, goals, entries, trail: activeTrail, unlockedAchievements }),
       }).then(async (response) => {
         if (response.status === 401) { handleSessionExpired(); return; }
         if (!response.ok) throw new Error("sync failed");
@@ -219,7 +227,7 @@ export default function HomePage() {
   // dayKey is read but deliberately left out: a rollover must first clear the daily
   // flags below, otherwise this would persist yesterday's mission as today's.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [syncReady, account, deviceId, onboarding, profile, xp, missionDone, ritualDone, goals, entries, activeTrail]);
+  }, [syncReady, account, deviceId, onboarding, profile, xp, missionDone, ritualDone, goals, entries, activeTrail, unlockedAchievements]);
 
   // The app can stay open across a sunset or a midnight: keep the ambience and the day's content honest.
   useEffect(() => {
@@ -247,6 +255,19 @@ export default function HomePage() {
   const plan = useMemo(() => dailyPlan({ dayKey, sign: profile.sign, objective: profile.objective }), [dayKey, profile.sign, profile.objective]);
   const week = useMemo(() => weekPlan(profile.sign, 7, new Date(`${dayKey}T00:00:00`)), [profile.sign, dayKey]);
   const snapshot = useMemo<JourneySnapshot>(() => ({ xp, level, streak, entries, goals }), [xp, level, streak, entries, goals]);
+
+  useEffect(() => {
+    if (!syncReady || !notifiedAchievements.current) return;
+    const known = notifiedAchievements.current;
+    const newlyReached = achievementState(snapshot).resolved.filter((item) => item.unlocked && !known.has(item.key));
+    if (!newlyReached.length) return;
+    for (const item of newlyReached) known.add(item.key);
+    setUnlockedAchievements((current) => [...current, ...newlyReached.map((item) => item.key)]);
+    for (const item of newlyReached) {
+      awardXp(ACHIEVEMENT_XP_BONUS);
+      toast.success(`🏆 Conquista desbloqueada: ${item.name} · +${ACHIEVEMENT_XP_BONUS} XP`);
+    }
+  }, [syncReady, snapshot]);
 
   useEffect(() => {
     if (!syncReady) return;

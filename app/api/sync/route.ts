@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { getDb } from "../../../db";
-import { goals, journalEntries, profiles, trailProgress, userProgress, users } from "../../../db/schema";
+import { achievements, goals, journalEntries, profiles, trailProgress, userProgress, users } from "../../../db/schema";
 import { getSessionUser } from "@/lib/auth";
 import { enforceRateLimit, readJsonBody, RequestError, secureErrorResponse } from "@/lib/security";
 
@@ -34,6 +34,7 @@ const syncSchema = z.object({
     dailyMinutes: z.number().int().min(0).max(1440).optional(),
   }).strict()).max(100).optional().default([]),
   entries: z.array(z.object({ date: z.string().min(1).max(20), answers: z.array(z.string().max(4000)).max(4) }).strict()).max(365).optional().default([]),
+  unlockedAchievements: z.array(z.string().min(1).max(60)).max(50).optional().default([]),
   dayKey: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   trail: z.object({
     trailId: z.string().trim().min(1).max(60),
@@ -85,6 +86,7 @@ export async function GET(request: Request) {
     const savedGoals = await db.select().from(goals).where(and(eq(goals.deviceId, deviceId), eq(goals.status, "active")));
     const savedEntries = await db.select().from(journalEntries).where(eq(journalEntries.deviceId, deviceId));
     const [savedTrail] = await db.select().from(trailProgress).where(eq(trailProgress.deviceId, deviceId)).limit(1);
+    const savedAchievements = await db.select({ achievementKey: achievements.achievementKey }).from(achievements).where(eq(achievements.deviceId, deviceId));
     const today = resolveDay(new URL(request.url).searchParams.get("day"), new Date().toISOString().slice(0, 10));
     const lastActive = lastActiveDay(progress?.lastMissionDate, progress?.lastRitualDate);
     const streakAlive = lastActive === today || lastActive === shiftDay(today, -1);
@@ -94,7 +96,7 @@ export async function GET(request: Request) {
         targetAmount: goal.targetAmount ?? undefined, currentAmount: goal.currentAmount ?? undefined,
         deadline: goal.deadline ?? undefined, motivation: goal.motivation ?? undefined,
         stage: goal.stage ?? undefined, blocker: goal.blocker ?? undefined, dailyMinutes: goal.dailyMinutes ?? undefined,
-      })), entries: savedEntries.map((entry) => ({ date: entry.entryDate, answers: JSON.parse(entry.answersJson) })), trail: savedTrail ? { trailId: savedTrail.trailId, startedAt: savedTrail.startedAt, completedDays: JSON.parse(savedTrail.completedDaysJson) } : null } });
+      })), entries: savedEntries.map((entry) => ({ date: entry.entryDate, answers: JSON.parse(entry.answersJson) })), trail: savedTrail ? { trailId: savedTrail.trailId, startedAt: savedTrail.startedAt, completedDays: JSON.parse(savedTrail.completedDaysJson) } : null, unlockedAchievements: savedAchievements.map((item) => item.achievementKey) } });
   } catch (error) { return errorResponse(error); }
 }
 
@@ -152,6 +154,9 @@ export async function POST(request: Request) {
       ...(payload.trail
         ? [db.insert(trailProgress).values({ deviceId, trailId: payload.trail.trailId, startedAt: payload.trail.startedAt, completedDaysJson: JSON.stringify(payload.trail.completedDays), updatedAt: now }).onConflictDoUpdate({ target: trailProgress.deviceId, set: { trailId: payload.trail.trailId, startedAt: payload.trail.startedAt, completedDaysJson: JSON.stringify(payload.trail.completedDays), updatedAt: now } })]
         : [db.delete(trailProgress).where(eq(trailProgress.deviceId, deviceId))]),
+      ...(payload.unlockedAchievements.length
+        ? [db.insert(achievements).values(payload.unlockedAchievements.map((key) => ({ deviceId, achievementKey: key }))).onConflictDoNothing()]
+        : []),
     ];
     await db.batch(operations as Parameters<typeof db.batch>[0]);
     return Response.json({ saved: true, savedAt: now, deviceId, streak });
