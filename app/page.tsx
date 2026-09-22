@@ -91,6 +91,7 @@ export default function HomePage() {
   const [xpBurst, setXpBurst] = useState<{ id: number; amount: number } | null>(null);
   const [levelUp, setLevelUp] = useState<number | null>(null);
   const [activeTrail, setActiveTrail] = useState<TrailProgress | null>(null);
+  const [paywall, setPaywall] = useState<string | null>(null);
   const levelBaseline = useRef<number | null>(null);
   const lastDay = useRef(dayKey);
   const [goals, setGoals] = useState<Goal[]>([]);
@@ -242,6 +243,12 @@ export default function HomePage() {
     toast.success(`Sua árvore de ${sign} foi plantada.`);
   }
 
+  function openPaywall(reason: string) {
+    haptic(8);
+    track("paywall_viewed", { from: reason });
+    setPaywall(reason);
+  }
+
   function awardXp(amount: number) {
     setXp((value) => value + amount);
     setXpBurst({ id: Date.now(), amount });
@@ -272,11 +279,7 @@ export default function HomePage() {
 
   function addGoal(title = goalTitle, category = goalCategory) {
     if (!title.trim()) return false;
-    if (!isPremium && goals.length >= FREE_GOAL_LIMIT) {
-      track("paywall_viewed", { from: "goal_limit" });
-      toast(`No plano grátis você mantém até ${FREE_GOAL_LIMIT} metas ativas. Desbloqueie metas ilimitadas no Premium.`);
-      return false;
-    }
+    if (!isPremium && goals.length >= FREE_GOAL_LIMIT) { openPaywall("goal_limit"); return false; }
     setGoals((g) => [...g, { id: Date.now(), title: title.trim(), category, progress: 0 }]);
     awardXp(15); setGoalTitle(""); setGoalDialog(false); track("goal_created", { category });
     toast.success("Meta plantada · +15 XP"); return true;
@@ -299,7 +302,7 @@ export default function HomePage() {
   function startTrail(trailId: string) {
     const trail = findTrail(trailId);
     if (!trail) return;
-    if (trail.premium) { track("paywall_viewed", { from: "trail_start", trail: trailId }); toast("Essa trilha é Premium — em breve com checkout seguro."); return; }
+    if (trail.premium) { openPaywall("trail_start"); return; }
     setActiveTrail({ trailId, startedAt: dayKey, completedDays: [] });
     track("trail_started", { trail: trailId });
     toast.success(`${trail.title} · dia 1 começou`);
@@ -362,9 +365,9 @@ export default function HomePage() {
         <div className="view-swap" key={view}>
           {view === "home" && <HomeView profile={profile} plan={plan} week={week} part={part} xp={xp} level={level} stage={stage} streak={streak} fruits={goals.filter((goal) => goal.progress === 100).length} missionDone={missionDone} ritualDone={ritualDone} treeCelebrating={treeCelebrating} completeMission={completeMission} openRitual={() => { haptic(8); setRitualOpen(true); }} oracleOpen={oracleOpen} setOracleOpen={setOracleOpen} mainGoal={mainGoal} advanceGoal={advanceGoal} openGoals={() => navigate("profile")} navigate={navigate} />}
           {view === "tree" && <TreeView xp={xp} level={level} stage={stage} streak={streak} mapScores={mapScores} goals={goals} />}
-          {view === "missions" && <JourneyView profile={profile} plan={plan} snapshot={snapshot} week={week} missionDone={missionDone} ritualDone={ritualDone} completeMission={completeMission} openRitual={() => { haptic(8); setRitualOpen(true); }} activeTrail={activeTrail} startTrail={startTrail} completeTrailDay={completeTrailDay} abandonTrail={abandonTrail} isPremium={isPremium} />}
-          {view === "journal" && <JournalView plan={plan} answers={answers} setAnswers={setAnswers} save={saveJournal} entries={entries} isPremium={isPremium} />}
-          {view === "profile" && <ProfileView profile={profile} setProfile={setProfile} account={account} guide={guide} goals={goals} advanceGoal={advanceGoal} goalDialog={goalDialog} setGoalDialog={setGoalDialog} goalTitle={goalTitle} setGoalTitle={setGoalTitle} goalCategory={goalCategory} setGoalCategory={setGoalCategory} addGoal={() => addGoal()} syncStatus={syncStatus} avatarVersion={avatarVersion} setAvatarVersion={setAvatarVersion} logout={logout} isPremium={isPremium} />}
+          {view === "missions" && <JourneyView profile={profile} plan={plan} snapshot={snapshot} week={week} missionDone={missionDone} ritualDone={ritualDone} completeMission={completeMission} openRitual={() => { haptic(8); setRitualOpen(true); }} activeTrail={activeTrail} startTrail={startTrail} completeTrailDay={completeTrailDay} abandonTrail={abandonTrail} isPremium={isPremium} openPaywall={openPaywall} />}
+          {view === "journal" && <JournalView plan={plan} answers={answers} setAnswers={setAnswers} save={saveJournal} entries={entries} isPremium={isPremium} openPaywall={openPaywall} />}
+          {view === "profile" && <ProfileView profile={profile} setProfile={setProfile} account={account} guide={guide} goals={goals} advanceGoal={advanceGoal} goalDialog={goalDialog} setGoalDialog={setGoalDialog} goalTitle={goalTitle} setGoalTitle={setGoalTitle} goalCategory={goalCategory} setGoalCategory={setGoalCategory} addGoal={() => addGoal()} syncStatus={syncStatus} avatarVersion={avatarVersion} setAvatarVersion={setAvatarVersion} logout={logout} isPremium={isPremium} openPaywall={openPaywall} />}
         </div>
 
         <nav className="bottom-nav" aria-label="Navegação principal">
@@ -376,6 +379,7 @@ export default function HomePage() {
         </nav>
       </section>
       <DailyRitual open={ritualOpen} onOpenChange={setRitualOpen} profile={profile} plan={plan} done={ritualDone} onComplete={completeRitual} />
+      <PaywallDialog reason={paywall} onOpenChange={(open) => { if (!open) setPaywall(null); }} />
       {xpBurst && <div className="xp-float" key={xpBurst.id} aria-hidden="true">+{xpBurst.amount} XP</div>}
       {levelUp !== null && <LevelUpOverlay level={levelUp} stage={stage} />}
       <Toaster richColors position="top-center" />
@@ -387,6 +391,49 @@ const viewLabels: Record<View, string> = { home: "Início", tree: "Sua Árvore",
 
 function AppSplash() {
   return <main className="app-splash"><div className="stars" aria-hidden="true"/><div><div className="brand-mark"><Leaf/></div><p>Veias da Sintonia</p><div className="splash-bar" aria-hidden="true"><i/></div></div></main>;
+}
+
+const paywallHeadline: Record<string, string> = {
+  goal_limit: `Você atingiu o limite de ${FREE_GOAL_LIMIT} metas do plano grátis`,
+  journal_history: "Seu histórico completo tem mais reflexões esperando",
+  weekly_report: "A leitura completa do seu relatório está pronta",
+  theme_lock: "Esse tema é exclusivo do Premium",
+  trail_start: "Essa trilha é Premium",
+  premium_card: "Destrave a jornada completa",
+};
+
+const comparisonRows: [string, string, string][] = [
+  ["Metas ativas", `Até ${FREE_GOAL_LIMIT}`, "Ilimitadas"],
+  ["Histórico do diário", `Últimos ${FREE_JOURNAL_HISTORY} registros`, "Completo"],
+  ["Relatório semanal", "Só os números", "Leitura e recomendação completas"],
+  ["Trilhas guiadas", "1 introdutória (7 dias)", "Todas, incluindo 21 dias de constância"],
+  ["Temas da árvore", "Sol dourado", "Sol dourado, Lua azul e Aurora"],
+];
+
+function PaywallDialog({ reason, onOpenChange }: { reason: string | null; onOpenChange: (open: boolean) => void }) {
+  const previewDay = findTrail("constancia-21")?.days[0];
+  return <Dialog open={reason !== null} onOpenChange={onOpenChange}>
+    <DialogContent className="goal-dialog paywall-dialog">
+      <DialogHeader>
+        <div className="paywall-icon"><Gem/></div>
+        <DialogTitle>{reason ? paywallHeadline[reason] ?? "Destrave a jornada completa" : ""}</DialogTitle>
+        <DialogDescription>Sem promessas financeiras — uma experiência mais completa de autoconhecimento, hábitos e metas.</DialogDescription>
+      </DialogHeader>
+
+      {previewDay && <div className="paywall-preview">
+        <span className="paywall-preview-tag"><LockKeyhole size={12}/> 21 dias de constância · Dia 1</span>
+        <div className="paywall-preview-blur"><strong>{previewDay.title}</strong><p>{previewDay.message}</p></div>
+      </div>}
+
+      <div className="paywall-compare">
+        <div className="paywall-compare-head"><span/><span>Grátis</span><span>Premium</span></div>
+        {comparisonRows.map(([label, free, premium]) => <div className="paywall-compare-row" key={label}><span>{label}</span><span>{free}</span><span className="is-premium"><Check size={13}/>{premium}</span></div>)}
+      </div>
+
+      <button className="gold-button" onClick={() => { track("checkout_started", { provider: "not_configured", from: reason }); toast("A assinatura será conectada a um checkout seguro em breve."); onOpenChange(false); }}>Assinar Premium</button>
+      <p className="paywall-fine-print">Assinatura mensal, sem contagem regressiva nem letras miúdas. Cancele quando quiser — os detalhes de preço aparecem aqui assim que o checkout estiver ativo.</p>
+    </DialogContent>
+  </Dialog>;
 }
 
 function LevelUpOverlay({ level, stage }: { level: number; stage: string }) {
@@ -592,7 +639,7 @@ function DailyRitual({ open, onOpenChange, profile, plan, done, onComplete }: { 
   </DialogContent></Dialog>;
 }
 
-function JourneyView({ profile, plan, snapshot, week, missionDone, ritualDone, completeMission, openRitual, activeTrail, startTrail, completeTrailDay, abandonTrail, isPremium }: { profile: Profile; plan: DailyPlan; snapshot: JourneySnapshot; week: WeekDay[]; missionDone: boolean; ritualDone: boolean; completeMission: () => void; openRitual: () => void; activeTrail: TrailProgress | null; startTrail: (id: string) => void; completeTrailDay: (day: number) => void; abandonTrail: () => void; isPremium: boolean }) {
+function JourneyView({ profile, plan, snapshot, week, missionDone, ritualDone, completeMission, openRitual, activeTrail, startTrail, completeTrailDay, abandonTrail, isPremium, openPaywall }: { profile: Profile; plan: DailyPlan; snapshot: JourneySnapshot; week: WeekDay[]; missionDone: boolean; ritualDone: boolean; completeMission: () => void; openRitual: () => void; activeTrail: TrailProgress | null; startTrail: (id: string) => void; completeTrailDay: (day: number) => void; abandonTrail: () => void; isPremium: boolean; openPaywall: (reason: string) => void }) {
   const [openAchievement, setOpenAchievement] = useState<string | null>(null);
   const { resolved, unlockedCount, total, next } = useMemo(() => achievementState(snapshot), [snapshot]);
   const report = useMemo(() => weeklyReport(snapshot, week[1].theme.verb), [snapshot, week]);
@@ -628,7 +675,7 @@ function JourneyView({ profile, plan, snapshot, week, missionDone, ritualDone, c
         <div className="report-metric"><span>Frutos</span><strong>{report.fruits}</strong><small>metas concluídas até aqui</small></div>
       </div>
       {isPremium ? <div className="report-note"><Sparkles/><div>{report.summary} {report.recommendation}</div></div>
-        : <button className="report-locked" onClick={() => { track("paywall_viewed", { from: "weekly_report" }); toast("A leitura completa do relatório é Premium."); }}>
+        : <button className="report-locked" onClick={() => openPaywall("weekly_report")}>
             <span className="report-locked-blur"><Sparkles/><div>{report.summary} {report.recommendation}</div></span>
             <span className="report-locked-cta"><LockKeyhole/> Desbloquear leitura completa da semana</span>
           </button>}
@@ -692,11 +739,11 @@ function TrailHub({ activeTrail, startTrail, completeTrailDay, abandonTrail }: {
   </section>;
 }
 
-function JournalView({ plan, answers, setAnswers, save, entries, isPremium }: { plan: DailyPlan; answers: string[]; setAnswers: (a: string[]) => void; save: () => void; entries: JournalEntry[]; isPremium: boolean }) {
+function JournalView({ plan, answers, setAnswers, save, entries, isPremium, openPaywall }: { plan: DailyPlan; answers: string[]; setAnswers: (a: string[]) => void; save: () => void; entries: JournalEntry[]; isPremium: boolean; openPaywall: (reason: string) => void }) {
   const questions = useMemo(() => [plan.journalQuestion, ...journalAnchors], [plan.journalQuestion]);
   const visibleEntries = isPremium ? entries : entries.slice(0, FREE_JOURNAL_HISTORY);
   const hiddenCount = entries.length - visibleEntries.length;
-  return <div className="view-stack"><p className="view-intro">Um espaço privado para observar padrões e transformar reflexão em escolha.</p><section className="surface-card journal-form"><p className="eyebrow">Reflexão de hoje · +10 XP</p><p className="journal-hint"><Compass/> A primeira pergunta muda todos os dias — hoje ela vem do tema {plan.theme.name.toLowerCase()}.</p>{questions.map((question, index) => <label key={question}>{question}<textarea rows={2} value={answers[index]} onChange={(event) => { const next = [...answers]; next[index] = event.target.value; setAnswers(next); }} placeholder="Escreva sem julgar..."/></label>)}<button className="gold-button" onClick={save}>Salvar reflexão <BookOpen/></button></section><section className="history"><div className="section-heading"><div><p className="eyebrow">Histórico</p><h2>Sua evolução em palavras</h2></div><span>{entries.length} {entries.length === 1 ? "registro" : "registros"}</span></div>{entries.length ? visibleEntries.map((entry, idx) => <article key={`${entry.date}-${idx}`}><time>{entry.date}</time><p>{entry.answers.find(Boolean)}</p></article>) : <div className="empty-state"><BookOpen/><p>Seu primeiro registro aparecerá aqui.</p></div>}{hiddenCount > 0 && <button className="history-locked" onClick={() => { track("paywall_viewed", { from: "journal_history" }); toast(`Mais ${hiddenCount} ${hiddenCount === 1 ? "registro" : "registros"} no seu histórico completo — disponível no Premium.`); }}><LockKeyhole/> Ver mais {hiddenCount} {hiddenCount === 1 ? "registro" : "registros"} · Premium</button>}</section></div>;
+  return <div className="view-stack"><p className="view-intro">Um espaço privado para observar padrões e transformar reflexão em escolha.</p><section className="surface-card journal-form"><p className="eyebrow">Reflexão de hoje · +10 XP</p><p className="journal-hint"><Compass/> A primeira pergunta muda todos os dias — hoje ela vem do tema {plan.theme.name.toLowerCase()}.</p>{questions.map((question, index) => <label key={question}>{question}<textarea rows={2} value={answers[index]} onChange={(event) => { const next = [...answers]; next[index] = event.target.value; setAnswers(next); }} placeholder="Escreva sem julgar..."/></label>)}<button className="gold-button" onClick={save}>Salvar reflexão <BookOpen/></button></section><section className="history"><div className="section-heading"><div><p className="eyebrow">Histórico</p><h2>Sua evolução em palavras</h2></div><span>{entries.length} {entries.length === 1 ? "registro" : "registros"}</span></div>{entries.length ? visibleEntries.map((entry, idx) => <article key={`${entry.date}-${idx}`}><time>{entry.date}</time><p>{entry.answers.find(Boolean)}</p></article>) : <div className="empty-state"><BookOpen/><p>Seu primeiro registro aparecerá aqui.</p></div>}{hiddenCount > 0 && <button className="history-locked" onClick={() => openPaywall("journal_history")}><LockKeyhole/> Ver mais {hiddenCount} {hiddenCount === 1 ? "registro" : "registros"} · Premium</button>}</section></div>;
 }
 
 async function prepareAvatar(file: File) {
@@ -713,7 +760,7 @@ async function prepareAvatar(file: File) {
   return new File([blob], "foto-perfil.webp", { type: "image/webp" });
 }
 
-function ProfileView({ profile, setProfile, account, guide, goals, advanceGoal, goalDialog, setGoalDialog, goalTitle, setGoalTitle, goalCategory, setGoalCategory, addGoal, syncStatus, avatarVersion, setAvatarVersion, logout, isPremium }: { profile: Profile; setProfile: (profile: Profile) => void; account: Account; guide: { strengths: string[]; care: string[]; style: string }; goals: Goal[]; advanceGoal: (id: number) => void; goalDialog: boolean; setGoalDialog: (v: boolean) => void; goalTitle: string; setGoalTitle: (s: string) => void; goalCategory: string; setGoalCategory: (s: string) => void; addGoal: () => void; syncStatus: "loading" | "saved" | "offline"; avatarVersion: number; setAvatarVersion: (value: number) => void; logout: () => Promise<void>; isPremium: boolean }) {
+function ProfileView({ profile, setProfile, account, guide, goals, advanceGoal, goalDialog, setGoalDialog, goalTitle, setGoalTitle, goalCategory, setGoalCategory, addGoal, syncStatus, avatarVersion, setAvatarVersion, logout, isPremium, openPaywall }: { profile: Profile; setProfile: (profile: Profile) => void; account: Account; guide: { strengths: string[]; care: string[]; style: string }; goals: Goal[]; advanceGoal: (id: number) => void; goalDialog: boolean; setGoalDialog: (v: boolean) => void; goalTitle: string; setGoalTitle: (s: string) => void; goalCategory: string; setGoalCategory: (s: string) => void; addGoal: () => void; syncStatus: "loading" | "saved" | "offline"; avatarVersion: number; setAvatarVersion: (value: number) => void; logout: () => Promise<void>; isPremium: boolean; openPaywall: (reason: string) => void }) {
   const cameraInput = useRef<HTMLInputElement>(null);
   const galleryInput = useRef<HTMLInputElement>(null);
   const cameraVideo = useRef<HTMLVideoElement>(null);
@@ -817,13 +864,13 @@ function ProfileView({ profile, setProfile, account, guide, goals, advanceGoal, 
     <Dialog open={cameraOpen} onOpenChange={(open) => { setCameraOpen(open); if (!open) stopCamera(); }}><DialogContent className="goal-dialog permission-dialog"><DialogHeader><DialogTitle>Usar a câmera</DialogTitle><DialogDescription>A câmera só será ligada agora, com sua autorização. O Android mostrará as opções disponíveis para este aparelho.</DialogDescription></DialogHeader><div className="permission-visual"><span className={cameraPermission}><Camera/></span><div><strong>{cameraPermission === "granted" ? "Câmera permitida" : cameraPermission === "denied" ? "Câmera bloqueada" : "Você está no controle"}</strong><small>{cameraPermission === "denied" ? "Libere a câmera nas configurações do aplicativo ou use o seletor do sistema." : "Apenas a foto capturada será enviada ao seu perfil."}</small></div></div>{cameraActive ? <><video className="camera-preview" ref={(element) => { cameraVideo.current = element; if (element && cameraStream.current) element.srcObject = cameraStream.current; }} autoPlay playsInline muted/><button className="gold-button" onClick={capturePhoto}><Camera/> Usar esta foto</button></> : <div className="permission-actions"><button className="gold-button" onClick={startCamera}><ShieldCheck/> Solicitar acesso à câmera</button><button className="ghost-button" onClick={() => cameraInput.current?.click()}><Camera/> Abrir câmera do sistema</button></div>}</DialogContent></Dialog>
     <Dialog open={galleryOpen} onOpenChange={setGalleryOpen}><DialogContent className="goal-dialog permission-dialog"><DialogHeader><DialogTitle>Escolher uma foto</DialogTitle><DialogDescription>O seletor privado do Android permite compartilhar somente a imagem escolhida. O aplicativo não poderá navegar pela sua galeria.</DialogDescription></DialogHeader><div className="permission-visual"><span className="granted"><ImagePlus/></span><div><strong>Acesso limitado por padrão</strong><small>Você pode cancelar sem compartilhar nenhuma foto.</small></div></div><button className="gold-button" onClick={chooseFromGallery}><ImagePlus/> Continuar para a galeria</button></DialogContent></Dialog>
     <Dialog open={privacyOpen} onOpenChange={setPrivacyOpen}><DialogContent className="goal-dialog permission-dialog"><DialogHeader><DialogTitle>Central de Privacidade</DialogTitle><DialogDescription>Revise como o aplicativo usa os recursos do seu celular.</DialogDescription></DialogHeader><div className="permission-list"><div><span>{cameraPermission === "denied" ? <CameraOff/> : <Camera/>}</span><div><strong>Câmera</strong><small>{cameraPermission === "granted" ? "Permitida durante o uso." : cameraPermission === "denied" ? "Bloqueada nas configurações." : "Será perguntado somente quando você usar."}</small></div><b>{cameraPermission === "granted" ? "Permitida" : cameraPermission === "denied" ? "Bloqueada" : "Perguntar"}</b></div><div><span><ImagePlus/></span><div><strong>Fotos e galeria</strong><small>Somente as imagens que você escolher.</small></div><b>Limitado</b></div><div><span><Cloud/></span><div><strong>Armazenamento</strong><small>Sua foto e jornada ficam vinculadas à sua conta.</small></div><b>Privado</b></div></div><p className="permission-note"><Settings2/> Você pode alterar permissões a qualquer momento em Configurações do Android › Aplicativos › Seu Signo › Permissões.</p></DialogContent></Dialog>
-    <section className="surface-card edit-profile"><div className="section-heading"><div><p className="eyebrow">Personalização</p><h2>Deixe o app com a sua cara</h2></div><button onClick={() => { if (editing) { setDraft(profile); setEditing(false); } else setEditing(true); }}>{editing ? "Cancelar" : <><Pencil/> Editar</>}</button></div>{editing ? <div className="profile-form"><label>Seu nome<input value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })}/></label><label>Data de nascimento<input type="date" value={draft.birthDate} onChange={(event) => setDraft({ ...draft, birthDate: event.target.value })}/></label><label>Objetivo principal<select value={draft.objective} onChange={(event) => setDraft({ ...draft, objective: event.target.value })}>{objectives.map((objective) => <option key={objective}>{objective}</option>)}</select></label><label>Minha intenção<textarea rows={3} maxLength={280} value={draft.intention} onChange={(event) => setDraft({ ...draft, intention: event.target.value })} placeholder="O que você quer cultivar nesta fase?"/></label><fieldset><legend>Cor da minha jornada</legend><div className="theme-picker">{([['dourado','Sol dourado'],['lua','Lua azul'],['aurora','Aurora']] as [Theme,string][]).map(([value,label]) => { const locked = !isPremium && !FREE_THEMES.includes(value); return <button type="button" key={value} data-color={value} className={`${draft.theme === value ? "selected" : ""} ${locked ? "locked" : ""}`} onClick={() => { if (locked) { track("paywall_viewed", { from: "theme_lock" }); toast("Esse tema é Premium."); return; } setDraft({ ...draft, theme: value }); }}><i/>{label}{locked && <LockKeyhole size={12}/>}</button>; })}</div></fieldset><button className="gold-button" onClick={saveProfile}><Save/> Salvar alterações</button></div> : <div className="profile-summary"><div><span>Objetivo</span><strong>{profile.objective}</strong></div><div><span>Signo</span><strong>{profile.sign}</strong></div><div><span>Intenção</span><strong>{profile.intention || "Adicione uma intenção para sua jornada."}</strong></div></div>}</section>
+    <section className="surface-card edit-profile"><div className="section-heading"><div><p className="eyebrow">Personalização</p><h2>Deixe o app com a sua cara</h2></div><button onClick={() => { if (editing) { setDraft(profile); setEditing(false); } else setEditing(true); }}>{editing ? "Cancelar" : <><Pencil/> Editar</>}</button></div>{editing ? <div className="profile-form"><label>Seu nome<input value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })}/></label><label>Data de nascimento<input type="date" value={draft.birthDate} onChange={(event) => setDraft({ ...draft, birthDate: event.target.value })}/></label><label>Objetivo principal<select value={draft.objective} onChange={(event) => setDraft({ ...draft, objective: event.target.value })}>{objectives.map((objective) => <option key={objective}>{objective}</option>)}</select></label><label>Minha intenção<textarea rows={3} maxLength={280} value={draft.intention} onChange={(event) => setDraft({ ...draft, intention: event.target.value })} placeholder="O que você quer cultivar nesta fase?"/></label><fieldset><legend>Cor da minha jornada</legend><div className="theme-picker">{([['dourado','Sol dourado'],['lua','Lua azul'],['aurora','Aurora']] as [Theme,string][]).map(([value,label]) => { const locked = !isPremium && !FREE_THEMES.includes(value); return <button type="button" key={value} data-color={value} className={`${draft.theme === value ? "selected" : ""} ${locked ? "locked" : ""}`} onClick={() => { if (locked) { openPaywall("theme_lock"); return; } setDraft({ ...draft, theme: value }); }}><i/>{label}{locked && <LockKeyhole size={12}/>}</button>; })}</div></fieldset><button className="gold-button" onClick={saveProfile}><Save/> Salvar alterações</button></div> : <div className="profile-summary"><div><span>Objetivo</span><strong>{profile.objective}</strong></div><div><span>Signo</span><strong>{profile.sign}</strong></div><div><span>Intenção</span><strong>{profile.intention || "Adicione uma intenção para sua jornada."}</strong></div></div>}</section>
     <section className="sign-profile"><div className="zodiac-medallion"><Sparkles/><strong>{profile.sign.slice(0,2).toUpperCase()}</strong></div><p className="eyebrow">Meu signo para prosperar</p><h2>{profile.sign}</h2><p>{guide.style}</p><div className="insight-grid"><div><span>Forças</span>{guide.strengths.map((x) => <b key={x}>{x}</b>)}</div><div><span>Pontos de atenção</span>{guide.care.map((x) => <b key={x}>{x}</b>)}</div></div></section>
-    <section className="surface-card goals-card"><div className="section-heading"><div><p className="eyebrow">Minhas metas {!isPremium && `· ${goals.length}/${FREE_GOAL_LIMIT}`}</p><h2>Frutos em construção</h2></div>{!isPremium && goals.length >= FREE_GOAL_LIMIT ? <button className="round-button" aria-label="Limite de metas atingido" onClick={() => { track("paywall_viewed", { from: "goal_limit" }); toast("Limite de 3 metas do plano grátis. Desbloqueie metas ilimitadas no Premium."); }}><LockKeyhole/></button> : <Dialog open={goalDialog} onOpenChange={setGoalDialog}><DialogTrigger asChild><button className="round-button" aria-label="Adicionar meta"><Plus/></button></DialogTrigger><DialogContent className="goal-dialog"><DialogHeader><DialogTitle>Plante uma nova meta</DialogTitle><DialogDescription>Defina algo que possa ser acompanhado por pequenas ações.</DialogDescription></DialogHeader><label>Nome da meta<input value={goalTitle} onChange={(e) => setGoalTitle(e.target.value)} placeholder="Ex.: criar minha reserva"/></label><label>Categoria<select value={goalCategory} onChange={(e) => setGoalCategory(e.target.value)}>{["Financeiro","Carreira","Negócios","Conhecimento","Relacionamentos","Desenvolvimento pessoal"].map((x) => <option key={x}>{x}</option>)}</select></label><button className="gold-button" onClick={addGoal}>Criar meta · +15 XP</button></DialogContent></Dialog>}</div>{goals.length ? goals.map((g) => <article className="goal-item" key={g.id}><div><strong>{g.title}</strong><span>{g.category} · {g.progress}%</span></div><Progress value={g.progress}/><button onClick={() => advanceGoal(g.id)} disabled={g.progress === 100}>{g.progress === 100 ? "Fruto conquistado" : "Avançar +25%"}</button></article>) : <div className="empty-state"><Target/><p>Crie uma meta para começar a cultivar seu primeiro fruto.</p></div>}{!isPremium && goals.length >= FREE_GOAL_LIMIT && <p className="disclaimer">Limite do plano grátis: {FREE_GOAL_LIMIT} metas ativas.</p>}</section>
+    <section className="surface-card goals-card"><div className="section-heading"><div><p className="eyebrow">Minhas metas {!isPremium && `· ${goals.length}/${FREE_GOAL_LIMIT}`}</p><h2>Frutos em construção</h2></div>{!isPremium && goals.length >= FREE_GOAL_LIMIT ? <button className="round-button" aria-label="Limite de metas atingido" onClick={() => openPaywall("goal_limit")}><LockKeyhole/></button> : <Dialog open={goalDialog} onOpenChange={setGoalDialog}><DialogTrigger asChild><button className="round-button" aria-label="Adicionar meta"><Plus/></button></DialogTrigger><DialogContent className="goal-dialog"><DialogHeader><DialogTitle>Plante uma nova meta</DialogTitle><DialogDescription>Defina algo que possa ser acompanhado por pequenas ações.</DialogDescription></DialogHeader><label>Nome da meta<input value={goalTitle} onChange={(e) => setGoalTitle(e.target.value)} placeholder="Ex.: criar minha reserva"/></label><label>Categoria<select value={goalCategory} onChange={(e) => setGoalCategory(e.target.value)}>{["Financeiro","Carreira","Negócios","Conhecimento","Relacionamentos","Desenvolvimento pessoal"].map((x) => <option key={x}>{x}</option>)}</select></label><button className="gold-button" onClick={addGoal}>Criar meta · +15 XP</button></DialogContent></Dialog>}</div>{goals.length ? goals.map((g) => <article className="goal-item" key={g.id}><div><strong>{g.title}</strong><span>{g.category} · {g.progress}%</span></div><Progress value={g.progress}/><button onClick={() => advanceGoal(g.id)} disabled={g.progress === 100}>{g.progress === 100 ? "Fruto conquistado" : "Avançar +25%"}</button></article>) : <div className="empty-state"><Target/><p>Crie uma meta para começar a cultivar seu primeiro fruto.</p></div>}{!isPremium && goals.length >= FREE_GOAL_LIMIT && <p className="disclaimer">Limite do plano grátis: {FREE_GOAL_LIMIT} metas ativas.</p>}</section>
     <section className={`sync-card ${syncStatus}`}><span><Cloud/></span><div><strong>{syncStatus === "saved" ? "Jornada salva na sua conta" : syncStatus === "loading" ? "Salvando sua evolução…" : "Modo offline ativo"}</strong><small>{syncStatus === "saved" ? "Entre em outro celular com o mesmo e-mail para continuar." : syncStatus === "offline" ? "Suas mudanças continuam salvas neste dispositivo e serão sincronizadas depois." : "Aguarde um instante."}</small></div><i aria-hidden="true"/></section>
     {isPremium ? <section className="premium-card is-active"><div className="premium-icon"><Gem/></div><p className="eyebrow">Central da Prosperidade</p><h2>Sua jornada está completa.</h2><p>Trilhas ilimitadas, histórico completo, metas sem limite e todos os temas já estão liberados na sua conta.</p></section>
-      : <section className="premium-card"><div className="premium-icon"><Gem/></div><p className="eyebrow">Central da Prosperidade</p><h2>Você já descobriu seu signo.<br/>Agora destrave a jornada completa.</h2><p>Hoje seu plano grátis tem 1 trilha, {FREE_GOAL_LIMIT} metas e {FREE_JOURNAL_HISTORY} registros de histórico. O Premium remove esses limites.</p><ul><li><Check/> Trilhas de 21 dias e temas por objetivo</li><li><Check/> Metas e histórico do diário sem limite</li><li><Check/> Relatório semanal completo e temas da árvore</li></ul><button className="gold-button" onClick={() => { track("paywall_viewed", { from: "premium_card" }); track("checkout_started", { provider: "not_configured" }); toast("A assinatura será conectada a um checkout seguro em breve."); }}>Desbloquear minha jornada</button><small>Sem promessas financeiras. Uma experiência de autoconhecimento, hábitos e metas.</small></section>}
-    <section className="content-list"><div className="section-heading"><div><p className="eyebrow">Conteúdo</p><h2>Sua biblioteca</h2></div></div>{[[BookOpen,"Guia Use Seu Signo para Prosperar","Introdução"],[Rocket,"Estratégias para cada signo","Premium"],[BriefcaseBusiness,"Decisões e carreira","Premium"],[CircleDollarSign,"Organização financeira consciente","Premium"]].map(([Icon,title,badge]) => <button key={String(title)} onClick={() => { if (badge === "Premium") { track("paywall_viewed"); toast("Conteúdo disponível no Premium."); } else { track("ebook_opened"); toast("Conteúdo demonstrativo aberto."); } }}><span className="content-icon"><Icon/></span><span><strong>{String(title)}</strong><small>{String(badge)}</small></span><ChevronRight/></button>)}</section>
+      : <section className="premium-card"><div className="premium-icon"><Gem/></div><p className="eyebrow">Central da Prosperidade</p><h2>Você já descobriu seu signo.<br/>Agora destrave a jornada completa.</h2><p>Hoje seu plano grátis tem 1 trilha, {FREE_GOAL_LIMIT} metas e {FREE_JOURNAL_HISTORY} registros de histórico. O Premium remove esses limites.</p><ul><li><Check/> Trilhas de 21 dias e temas por objetivo</li><li><Check/> Metas e histórico do diário sem limite</li><li><Check/> Relatório semanal completo e temas da árvore</li></ul><button className="gold-button" onClick={() => openPaywall("premium_card")}>Desbloquear minha jornada</button><small>Sem promessas financeiras. Uma experiência de autoconhecimento, hábitos e metas.</small></section>}
+    <section className="content-list"><div className="section-heading"><div><p className="eyebrow">Conteúdo</p><h2>Sua biblioteca</h2></div></div>{[[BookOpen,"Guia Use Seu Signo para Prosperar","Introdução"],[Rocket,"Estratégias para cada signo","Premium"],[BriefcaseBusiness,"Decisões e carreira","Premium"],[CircleDollarSign,"Organização financeira consciente","Premium"]].map(([Icon,title,badge]) => <button key={String(title)} onClick={() => { if (badge === "Premium") { openPaywall("content_library"); } else { track("ebook_opened"); toast("Conteúdo demonstrativo aberto."); } }}><span className="content-icon"><Icon/></span><span><strong>{String(title)}</strong><small>{String(badge)}</small></span><ChevronRight/></button>)}</section>
     <section className="account-card"><div><Mail/><span><small>Conta conectada</small><strong>{account.email}</strong></span></div><button onClick={logout}><LogOut/> Sair da conta</button></section>
   </div>;
 }
