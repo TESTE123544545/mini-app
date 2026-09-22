@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Anchor, Apple, ArrowLeft, BookOpen, BriefcaseBusiness, CalendarDays, Camera, CameraOff, Check, ChevronRight, CircleDollarSign, Cloud, Compass, Crown, Eye, EyeOff, Flame, Flower2, Gem, Home, ImagePlus, Leaf, LockKeyhole, LogOut, Mail, MoonStar, Orbit, Pencil, Play, Plus, Rocket, Route, Save, Settings2, ShieldCheck, Sparkles, Sprout, Sun, Sunrise, Sunset, Target, TreeDeciduous, Trophy, UserRound, Wind } from "lucide-react";
+import { Anchor, Apple, ArrowLeft, BookOpen, BriefcaseBusiness, CalendarDays, Camera, CameraOff, Check, ChevronRight, CircleDollarSign, Cloud, Compass, Crown, Eye, EyeOff, Flame, Flower2, Gem, Home, ImagePlus, Leaf, LockKeyhole, LogOut, Mail, MoonStar, Orbit, Pencil, Play, Plus, Rocket, Route, Save, Send, Settings2, ShieldCheck, Sparkles, Sprout, Sun, Sunrise, Sunset, Target, TreeDeciduous, Trophy, UserRound, Wind } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { Toaster } from "@/components/ui/sonner";
@@ -10,9 +10,15 @@ import { toast } from "sonner";
 import { dailyPlan, dayPart, dayPartLabel, greetingLabel, journalAnchors, localDayKey, weekPlan, type DailyPlan, type DayPart } from "@/lib/daily";
 import { achievementState, treeParts, weeklyReport, type Achievement, type JourneySnapshot, type TreePart } from "@/lib/journey";
 import { findTrail, trailStatus, trails, type Trail, type TrailProgress } from "@/lib/trails";
+import { fetchPremiumPrice, isPlayBillingAvailable, purchasePremium, verifyPurchaseWithServer } from "@/lib/billing";
 
-type View = "home" | "tree" | "missions" | "journal" | "profile";
-type Goal = { id: number; title: string; category: string; progress: number };
+type View = "home" | "tree" | "missions" | "journal" | "profile" | "goal" | "chat";
+type GoalKind = "financial" | "non_financial" | "partial";
+type Goal = {
+  id: number; title: string; category: string; progress: number; isPrimary?: boolean;
+  kind?: GoalKind; targetAmount?: number; currentAmount?: number; deadline?: string;
+  motivation?: string; stage?: string; blocker?: string; dailyMinutes?: number;
+};
 type JournalEntry = { date: string; answers: string[] };
 type Theme = "dourado" | "lua" | "aurora";
 type Plan = "free" | "premium";
@@ -21,6 +27,7 @@ type Account = { email: string; deviceId: string | null };
 
 const emptyProfile: Profile = { name: "", birthDate: "", objective: "", sign: "Capricórnio", intention: "", theme: "dourado", hasAvatar: false, plan: "free" };
 const FREE_GOAL_LIMIT = 3;
+const TOTAL_ONBOARDING_STEPS = 10;
 const FREE_JOURNAL_HISTORY = 7;
 const FREE_THEMES: readonly Theme[] = ["dourado"];
 
@@ -46,6 +53,20 @@ const signGuides: Record<string, { strengths: string[]; care: string[]; style: s
 };
 
 const objectives = ["Dinheiro", "Carreira", "Negócios", "Organização financeira", "Disciplina", "Desenvolvimento pessoal"];
+
+const goalAmountPresets = [100, 500, 1000, 5000, 10000, 50000];
+const stageOptions: readonly [string, string][] = [
+  ["starting", "Estou começando agora"], ["lost", "Já comecei, mas estou perdido(a)"],
+  ["advancing", "Já estou avançando"], ["close", "Estou perto de conseguir"], ["restart", "Preciso recomeçar"],
+];
+const blockerOptions: readonly [string, string][] = [
+  ["money", "Falta de dinheiro"], ["organization", "Falta de organização"], ["discipline", "Falta de disciplina"],
+  ["fear", "Medo de começar"], ["knowledge", "Falta de conhecimento"], ["opportunity", "Falta de oportunidades"],
+  ["consistency", "Falta de constância"], ["unclear", "Não sei exatamente o que fazer"], ["other", "Outro"],
+];
+const dailyMinutesOptions: readonly [number, string][] = [[5, "5 minutos"], [10, "10 minutos"], [15, "15 minutos"], [30, "30 minutos"], [60, "1 hora ou mais"]];
+const stageLabelByKey = Object.fromEntries(stageOptions) as Record<string, string>;
+const blockerLabelByKey = Object.fromEntries(blockerOptions) as Record<string, string>;
 
 const dayPartIcon: Record<DayPart, React.ReactNode> = { dawn: <Sunrise />, day: <Sun />, dusk: <Sunset />, night: <MoonStar /> };
 const achievementIcon: Record<Achievement["icon"], React.ReactNode> = { sprout: <Sprout />, anchor: <Anchor />, flame: <Flame />, apple: <Apple />, shield: <ShieldCheck />, orbit: <Orbit />, crown: <Crown /> };
@@ -97,6 +118,12 @@ export default function HomePage() {
   const [goals, setGoals] = useState<Goal[]>([]);
   const [goalTitle, setGoalTitle] = useState("");
   const [goalCategory, setGoalCategory] = useState("Carreira");
+  const [obGoalKind, setObGoalKind] = useState<GoalKind | "">("");
+  const [obGoalAmount, setObGoalAmount] = useState<number | "">("");
+  const [obGoalStage, setObGoalStage] = useState("");
+  const [obGoalBlocker, setObGoalBlocker] = useState("");
+  const [obGoalDailyMinutes, setObGoalDailyMinutes] = useState<number | "">("");
+  const [obGoalMotivation, setObGoalMotivation] = useState("");
   const [answers, setAnswers] = useState(["", "", "", ""]);
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [goalDialog, setGoalDialog] = useState(false);
@@ -123,9 +150,17 @@ export default function HomePage() {
       .finally(() => setReady(true));
   }, []);
 
+  function handleSessionExpired() {
+    localStorage.removeItem("vds-state");
+    setAccount(null); setProfile(emptyProfile); setXp(0); setMissionDone(false); setRitualDone(false); setStreak(0); setGoals([]); setEntries([]); setActiveTrail(null); setOnboarding(0); setView("home"); setSyncReady(false);
+    levelBaseline.current = null;
+    toast.error("Sua sessão expirou. Entre novamente para continuar sua jornada.");
+  }
+
   async function loadCloudState(user: Account, fallbackDeviceId: string) {
     try {
       const response = await fetch(`/api/sync?day=${localDayKey()}`);
+      if (response.status === 401) { handleSessionExpired(); return; }
       if (!response.ok) throw new Error("sync unavailable");
       const { state, deviceId: cloudDeviceId } = await response.json();
       const resolvedId = cloudDeviceId || fallbackDeviceId;
@@ -135,7 +170,7 @@ export default function HomePage() {
       if (state) {
         const nextProfile = { ...emptyProfile, ...state.profile };
         setProfile(nextProfile); setXp(state.xp ?? 0); setMissionDone(state.missionDone ?? false); setRitualDone(state.ritualDone ?? false); setStreak(state.streak ?? 0);
-        setGoals(state.goals ?? []); setEntries(state.entries ?? []); setActiveTrail(state.trail ?? null); setOnboarding(3);
+        setGoals(state.goals ?? []); setEntries(state.entries ?? []); setActiveTrail(state.trail ?? null); setOnboarding(TOTAL_ONBOARDING_STEPS);
         if (nextProfile.hasAvatar) setAvatarVersion(Date.now());
       } else {
         setProfile(emptyProfile); setXp(0); setMissionDone(false); setRitualDone(false); setStreak(0); setGoals([]); setEntries([]); setActiveTrail(null); setOnboarding(0);
@@ -164,7 +199,7 @@ export default function HomePage() {
   }
 
   useEffect(() => {
-    if (!syncReady || !account || !deviceId || onboarding < 3 || !profile.name) return;
+    if (!syncReady || !account || !deviceId || onboarding < TOTAL_ONBOARDING_STEPS || !profile.name) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSyncStatus("loading");
     const timer = window.setTimeout(() => {
@@ -173,6 +208,7 @@ export default function HomePage() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ deviceId, dayKey, profile: { name: profile.name, birthDate: profile.birthDate, objective: profile.objective, sign: profile.sign, intention: profile.intention, theme: profile.theme }, xp, missionDone, ritualDone, goals, entries, trail: activeTrail }),
       }).then(async (response) => {
+        if (response.status === 401) { handleSessionExpired(); return; }
         if (!response.ok) throw new Error("sync failed");
         const result = await response.json().catch(() => null);
         if (result && typeof result.streak === "number") setStreak(result.streak);
@@ -238,8 +274,28 @@ export default function HomePage() {
 
   function finishOnboarding() {
     const sign = getSign(profile.birthDate);
-    setProfile({ ...profile, sign }); setXp(30); setOnboarding(3);
-    track("signup"); track("onboarding_completed", { sign, objective: profile.objective }); track("first_tree_created");
+    const kind: GoalKind = obGoalKind || "non_financial";
+    const hasAmount = kind !== "non_financial" && obGoalAmount !== "";
+    const primaryGoal: Goal = {
+      id: Date.now(),
+      title: goalTitle.trim() || profile.objective,
+      category: profile.objective,
+      progress: 0,
+      isPrimary: true,
+      kind,
+      targetAmount: hasAmount ? (obGoalAmount as number) : undefined,
+      currentAmount: hasAmount ? 0 : undefined,
+      motivation: obGoalMotivation.trim(),
+      stage: obGoalStage || undefined,
+      blocker: obGoalBlocker || undefined,
+      dailyMinutes: obGoalDailyMinutes === "" ? undefined : obGoalDailyMinutes,
+    };
+    setProfile({ ...profile, sign });
+    setGoals((current) => [primaryGoal, ...current]);
+    setXp(30); setOnboarding(TOTAL_ONBOARDING_STEPS);
+    setGoalTitle(""); setObGoalKind(""); setObGoalAmount(""); setObGoalStage(""); setObGoalBlocker(""); setObGoalDailyMinutes(""); setObGoalMotivation("");
+    track("signup"); track("onboarding_completed", { sign, objective: profile.objective, goalKind: kind });
+    track("first_tree_created"); track("goal_created", { category: profile.objective, primary: true });
     toast.success(`Sua árvore de ${sign} foi plantada.`);
   }
 
@@ -299,6 +355,22 @@ export default function HomePage() {
     }
   }
 
+  /** For financial goals: adds to the saved amount and recomputes progress from it, instead of a flat +25%. */
+  function addGoalAmount(id: number, amount: number) {
+    const goal = goals.find((item) => item.id === id);
+    if (!goal || !goal.targetAmount || amount <= 0 || goal.progress === 100) return;
+    const currentAmount = Math.min(goal.targetAmount, (goal.currentAmount ?? 0) + amount);
+    const next = Math.round((currentAmount / goal.targetAmount) * 100);
+    setGoals((items) => items.map((item) => (item.id === id ? { ...item, currentAmount, progress: next } : item)));
+    if (next === 100) {
+      awardXp(50); celebrateTree(); track("goal_completed", { category: goal.category });
+      toast.success("Meta alcançada · um novo fruto nasceu na sua árvore · +50 XP");
+    } else {
+      haptic(10);
+      toast.success(`+R$${amount.toLocaleString("pt-BR")} guardados · ${next}%`);
+    }
+  }
+
   function startTrail(trailId: string) {
     const trail = findTrail(trailId);
     if (!trail) return;
@@ -334,7 +406,7 @@ export default function HomePage() {
 
   useEffect(() => {
     const context = typeof document === "undefined" ? undefined : (document as Document & { modelContext?: { registerTool: (tool: unknown, options?: unknown) => unknown } }).modelContext;
-    if (!context?.registerTool || onboarding < 3) return;
+    if (!context?.registerTool || onboarding < TOTAL_ONBOARDING_STEPS) return;
     const controller = new AbortController();
     const register = (tool: unknown) => Promise.resolve(context.registerTool(tool, { signal: controller.signal })).catch(() => undefined);
     void register({ name: "complete_daily_mission", title: "Concluir missão diária", description: "Conclui a missão diária visível e adiciona 20 XP à árvore.", inputSchema: { type: "object", properties: {}, additionalProperties: false }, annotations: { readOnlyHint: false, untrustedContentHint: false }, execute: () => { completeMission(); return { completed: true, xpAdded: missionDone ? 0 : 20 }; } });
@@ -345,7 +417,10 @@ export default function HomePage() {
 
   if (!ready) return <AppSplash />;
   if (!account) return <AuthScreen onAuthenticated={handleAuthenticated} />;
-  if (onboarding < 3) return <Onboarding step={onboarding} setStep={setOnboarding} profile={profile} setProfile={setProfile} finish={finishOnboarding} />;
+  if (onboarding < TOTAL_ONBOARDING_STEPS) return <Onboarding step={onboarding} setStep={setOnboarding} profile={profile} setProfile={setProfile} finish={finishOnboarding}
+    goalTitle={goalTitle} setGoalTitle={setGoalTitle} goalKind={obGoalKind} setGoalKind={setObGoalKind} goalAmount={obGoalAmount} setGoalAmount={setObGoalAmount}
+    goalStage={obGoalStage} setGoalStage={setObGoalStage} goalBlocker={obGoalBlocker} setGoalBlocker={setObGoalBlocker}
+    goalDailyMinutes={obGoalDailyMinutes} setGoalDailyMinutes={setObGoalDailyMinutes} goalMotivation={obGoalMotivation} setGoalMotivation={setObGoalMotivation} />;
 
   function navigate(next: View) {
     if (next === view) return;
@@ -363,11 +438,13 @@ export default function HomePage() {
         </header>
 
         <div className="view-swap" key={view}>
-          {view === "home" && <HomeView profile={profile} plan={plan} week={week} part={part} xp={xp} level={level} stage={stage} streak={streak} fruits={goals.filter((goal) => goal.progress === 100).length} missionDone={missionDone} ritualDone={ritualDone} treeCelebrating={treeCelebrating} completeMission={completeMission} openRitual={() => { haptic(8); setRitualOpen(true); }} oracleOpen={oracleOpen} setOracleOpen={setOracleOpen} mainGoal={mainGoal} advanceGoal={advanceGoal} openGoals={() => navigate("profile")} navigate={navigate} />}
+          {view === "home" && <HomeView profile={profile} plan={plan} week={week} part={part} xp={xp} level={level} stage={stage} streak={streak} fruits={goals.filter((goal) => goal.progress === 100).length} missionDone={missionDone} ritualDone={ritualDone} treeCelebrating={treeCelebrating} completeMission={completeMission} openRitual={() => { haptic(8); setRitualOpen(true); }} oracleOpen={oracleOpen} setOracleOpen={setOracleOpen} mainGoal={mainGoal} advanceGoal={advanceGoal} openGoals={() => navigate(mainGoal ? "goal" : "profile")} navigate={navigate} isPremium={isPremium} openPaywall={openPaywall} />}
           {view === "tree" && <TreeView xp={xp} level={level} stage={stage} streak={streak} mapScores={mapScores} goals={goals} />}
           {view === "missions" && <JourneyView profile={profile} plan={plan} snapshot={snapshot} week={week} missionDone={missionDone} ritualDone={ritualDone} completeMission={completeMission} openRitual={() => { haptic(8); setRitualOpen(true); }} activeTrail={activeTrail} startTrail={startTrail} completeTrailDay={completeTrailDay} abandonTrail={abandonTrail} isPremium={isPremium} openPaywall={openPaywall} />}
           {view === "journal" && <JournalView plan={plan} answers={answers} setAnswers={setAnswers} save={saveJournal} entries={entries} isPremium={isPremium} openPaywall={openPaywall} />}
           {view === "profile" && <ProfileView profile={profile} setProfile={setProfile} account={account} guide={guide} goals={goals} advanceGoal={advanceGoal} goalDialog={goalDialog} setGoalDialog={setGoalDialog} goalTitle={goalTitle} setGoalTitle={setGoalTitle} goalCategory={goalCategory} setGoalCategory={setGoalCategory} addGoal={() => addGoal()} syncStatus={syncStatus} avatarVersion={avatarVersion} setAvatarVersion={setAvatarVersion} logout={logout} isPremium={isPremium} openPaywall={openPaywall} />}
+          {view === "goal" && <GoalDetailView goal={mainGoal} advanceGoal={advanceGoal} addGoalAmount={addGoalAmount} navigate={navigate} isPremium={isPremium} openPaywall={openPaywall} />}
+          {view === "chat" && <ChatView profile={profile} isPremium={isPremium} navigate={navigate} openPaywall={openPaywall} onSessionExpired={handleSessionExpired} />}
         </div>
 
         <nav className="bottom-nav" aria-label="Navegação principal">
@@ -379,7 +456,10 @@ export default function HomePage() {
         </nav>
       </section>
       <DailyRitual open={ritualOpen} onOpenChange={setRitualOpen} profile={profile} plan={plan} done={ritualDone} onComplete={completeRitual} />
-      <PaywallDialog reason={paywall} onOpenChange={(open) => { if (!open) setPaywall(null); }} />
+      <PaywallDialog reason={paywall} onOpenChange={(open) => { if (!open) setPaywall(null); }} onPurchased={async () => {
+        setProfile((current) => ({ ...current, plan: "premium" }));
+        if (account && deviceId) await loadCloudState(account, deviceId);
+      }} />
       {xpBurst && <div className="xp-float" key={xpBurst.id} aria-hidden="true">+{xpBurst.amount} XP</div>}
       {levelUp !== null && <LevelUpOverlay level={levelUp} stage={stage} />}
       <Toaster richColors position="top-center" />
@@ -387,7 +467,7 @@ export default function HomePage() {
   );
 }
 
-const viewLabels: Record<View, string> = { home: "Início", tree: "Sua Árvore", missions: "Sua Jornada", journal: "Seu Diário", profile: "Seu Caminho" };
+const viewLabels: Record<View, string> = { home: "Início", tree: "Sua Árvore", missions: "Sua Jornada", journal: "Seu Diário", profile: "Seu Caminho", goal: "Meu Objetivo", chat: "Conversar" };
 
 function AppSplash() {
   return <main className="app-splash"><div className="stars" aria-hidden="true"/><div><div className="brand-mark"><Leaf/></div><p>Veias da Sintonia</p><div className="splash-bar" aria-hidden="true"><i/></div></div></main>;
@@ -400,6 +480,8 @@ const paywallHeadline: Record<string, string> = {
   theme_lock: "Esse tema é exclusivo do Premium",
   trail_start: "Essa trilha é Premium",
   premium_card: "Destrave a jornada completa",
+  chat: "Converse com a IA sempre que precisar",
+  goal_steps: "Passos personalizados pro seu objetivo",
 };
 
 const comparisonRows: [string, string, string][] = [
@@ -410,8 +492,37 @@ const comparisonRows: [string, string, string][] = [
   ["Temas da árvore", "Sol dourado", "Sol dourado, Lua azul e Aurora"],
 ];
 
-function PaywallDialog({ reason, onOpenChange }: { reason: string | null; onOpenChange: (open: boolean) => void }) {
+function PaywallDialog({ reason, onOpenChange, onPurchased }: { reason: string | null; onOpenChange: (open: boolean) => void; onPurchased: () => void | Promise<void> }) {
   const previewDay = findTrail("constancia-21")?.days[0];
+  const [available, setAvailable] = useState(false);
+  const [price, setPrice] = useState<{ currency: string; value: string } | null>(null);
+  const [buying, setBuying] = useState(false);
+
+  useEffect(() => {
+    if (reason === null) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setAvailable(isPlayBillingAvailable());
+    fetchPremiumPrice().then(setPrice);
+  }, [reason]);
+
+  async function buy() {
+    setBuying(true);
+    track("checkout_started", { provider: "google_play", from: reason });
+    try {
+      const { purchaseToken, itemId } = await purchasePremium();
+      await verifyPurchaseWithServer(purchaseToken, itemId);
+      track("checkout_completed", { provider: "google_play", from: reason });
+      toast.success("Assinatura ativada. Bem-vindo ao Premium.");
+      await onPurchased();
+      onOpenChange(false);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Não foi possível concluir a compra.";
+      if (message !== "AbortError") toast.error(message);
+    } finally {
+      setBuying(false);
+    }
+  }
+
   return <Dialog open={reason !== null} onOpenChange={onOpenChange}>
     <DialogContent className="goal-dialog paywall-dialog">
       <DialogHeader>
@@ -430,8 +541,15 @@ function PaywallDialog({ reason, onOpenChange }: { reason: string | null; onOpen
         {comparisonRows.map(([label, free, premium]) => <div className="paywall-compare-row" key={label}><span>{label}</span><span>{free}</span><span className="is-premium"><Check size={13}/>{premium}</span></div>)}
       </div>
 
-      <button className="gold-button" onClick={() => { track("checkout_started", { provider: "not_configured", from: reason }); toast("A assinatura será conectada a um checkout seguro em breve."); onOpenChange(false); }}>Assinar Premium</button>
-      <p className="paywall-fine-print">Assinatura mensal, sem contagem regressiva nem letras miúdas. Cancele quando quiser — os detalhes de preço aparecem aqui assim que o checkout estiver ativo.</p>
+      {available
+        ? <button className="gold-button" disabled={buying} onClick={buy}>
+            {buying ? "Abrindo o Google Play…" : price ? `Assinar Premium · ${price.currency} ${price.value}/mês` : "Assinar Premium"}
+          </button>
+        : <div className="paywall-fallback">
+            <button className="gold-button" disabled>Assinar Premium</button>
+            <p className="paywall-fine-print">Abra o app instalado pela Google Play Store para assinar — a compra é processada com segurança pelo Google.</p>
+          </div>}
+      <p className="paywall-fine-print">Assinatura mensal via Google Play, sem contagem regressiva nem letras miúdas. Cancele quando quiser, direto nas assinaturas da sua conta Google.</p>
     </DialogContent>
   </Dialog>;
 }
@@ -527,24 +645,51 @@ function AuthScreen({ onAuthenticated }: { onAuthenticated: (user: Account, mode
   </section><Toaster richColors position="top-center"/></main>;
 }
 
-function Onboarding({ step, setStep, profile, setProfile, finish }: { step: number; setStep: (n: number) => void; profile: Profile; setProfile: (p: Profile) => void; finish: () => void }) {
+type OnboardingProps = {
+  step: number; setStep: (n: number) => void; profile: Profile; setProfile: (p: Profile) => void; finish: () => void;
+  goalTitle: string; setGoalTitle: (v: string) => void;
+  goalKind: GoalKind | ""; setGoalKind: (v: GoalKind | "") => void;
+  goalAmount: number | ""; setGoalAmount: (v: number | "") => void;
+  goalStage: string; setGoalStage: (v: string) => void;
+  goalBlocker: string; setGoalBlocker: (v: string) => void;
+  goalDailyMinutes: number | ""; setGoalDailyMinutes: (v: number | "") => void;
+  goalMotivation: string; setGoalMotivation: (v: string) => void;
+};
+
+function Onboarding({ step, setStep, profile, setProfile, finish, goalTitle, setGoalTitle, goalKind, setGoalKind, goalAmount, setGoalAmount, goalStage, setGoalStage, goalBlocker, setGoalBlocker, goalDailyMinutes, setGoalDailyMinutes, goalMotivation, setGoalMotivation }: OnboardingProps) {
+  const needsAmount = goalKind === "financial" || goalKind === "partial";
+  const previewSign = profile.birthDate ? getSign(profile.birthDate) : null;
   return <main className="onboarding">
     <div className="stars" aria-hidden="true" />
     <section className="onboarding-card">
       <div className="brand-mark"><Leaf/></div><p className="brand-name">Veias da Sintonia</p>
-      {step === 0 && <><div className="onboarding-tree"><Image src="/prosperity-tree.png" alt="Árvore da Prosperidade" width={500} height={750} priority /></div><p className="step-count">01 · 03</p><h1>E se o seu signo pudesse ser um guia para você entender melhor a sua forma de prosperar?</h1><p>Uma jornada simbólica para transformar autoconhecimento em pequenas ações.</p><button className="gold-button" onClick={() => setStep(1)}>Começar minha jornada <ChevronRight/></button></>}
-      {step === 1 && <><div className="symbol-ring"><Sparkles/><span>✦</span></div><p className="step-count">02 · 03</p><h1>Conheça seus padrões. Cultive seus hábitos.</h1><p>Descubra forças, organize objetivos e transforme intenção em ação — no seu ritmo.</p><div className="mini-pill-row"><span>Reflexão</span><span>Constância</span><span>Metas</span></div><button className="gold-button" onClick={() => setStep(2)}>Descobrir meu signo <ChevronRight/></button></>}
-      {step === 2 && <><p className="step-count">03 · 03</p><h1>Plante sua primeira intenção.</h1><p>Esses dados personalizam sua experiência e ficam protegidos na sua conta.</p><div className="form-stack"><label>Como podemos chamar você?<input value={profile.name} onChange={(e) => setProfile({ ...profile, name: e.target.value })} placeholder="Seu nome" /></label><label>Data de nascimento<input type="date" value={profile.birthDate} onChange={(e) => setProfile({ ...profile, birthDate: e.target.value })} /></label><fieldset><legend>Seu objetivo principal</legend><div className="choice-grid">{objectives.map((o) => <button type="button" className={profile.objective === o ? "selected" : ""} onClick={() => setProfile({ ...profile, objective: o })} key={o}>{o}</button>)}</div></fieldset></div><button className="gold-button" disabled={!profile.name.trim() || !profile.birthDate || !profile.objective} onClick={finish}>Criar minha árvore <Leaf/></button></>}
+      {step >= 2 && <div className="onboarding-chrome">{step >= 3 && <button type="button" className="auth-back" onClick={() => setStep(step - 1)}><ArrowLeft size={16}/> Voltar</button>}<div className="onboarding-progress-bar" aria-hidden="true"><i style={{ width: `${((step - 1) / 8) * 100}%` }}/></div></div>}
+      {step === 0 && <><div className="onboarding-tree"><Image src="/prosperity-tree.png" alt="Árvore da Prosperidade" width={500} height={750} priority /></div><p className="step-count">01 · 10</p><h1>E se o seu signo pudesse ser um guia para você entender melhor a sua forma de prosperar?</h1><p>Uma jornada simbólica para transformar autoconhecimento em pequenas ações.</p><button className="gold-button" onClick={() => setStep(1)}>Começar minha jornada <ChevronRight/></button></>}
+      {step === 1 && <><div className="symbol-ring"><Sparkles/><span>✦</span></div><p className="step-count">02 · 10</p><h1>Conheça seus padrões. Cultive seus hábitos.</h1><p>Descubra forças, organize objetivos e transforme intenção em ação — no seu ritmo.</p><div className="mini-pill-row"><span>Reflexão</span><span>Constância</span><span>Metas</span></div><button className="gold-button" onClick={() => setStep(2)}>Descobrir meu signo <ChevronRight/></button></>}
+      {step === 2 && <><p className="step-count">03 · 10</p><h1>Vamos começar por você.</h1><p>Esses dados personalizam sua experiência e ficam protegidos na sua conta.</p><div className="form-stack"><label>Como podemos chamar você?<input value={profile.name} onChange={(e) => setProfile({ ...profile, name: e.target.value })} placeholder="Seu nome" /></label><label>Data de nascimento<input type="date" value={profile.birthDate} onChange={(e) => setProfile({ ...profile, birthDate: e.target.value })} /></label><fieldset><legend>O que mais te chama agora?</legend><div className="choice-grid">{objectives.map((o) => <button type="button" className={profile.objective === o ? "selected" : ""} onClick={() => setProfile({ ...profile, objective: o })} key={o}>{o}</button>)}</div></fieldset></div><button className="gold-button" disabled={!profile.name.trim() || !profile.birthDate || !profile.objective} onClick={() => setStep(3)}>Continuar <ChevronRight/></button></>}
+      {step === 3 && <><p className="step-count">04 · 10</p><h1>Se você pudesse conquistar UMA coisa importante nos próximos meses, o que seria?</h1><p>Pode ser específico — isso vai moldar sua árvore e seus desafios.</p><div className="form-stack"><label>Meu objetivo<input value={goalTitle} onChange={(e) => setGoalTitle(e.target.value)} placeholder="Ex: comprar meu primeiro carro" /></label></div><button className="gold-button" disabled={!goalTitle.trim()} onClick={() => setStep(4)}>Continuar <ChevronRight/></button></>}
+      {step === 4 && <><p className="step-count">05 · 10</p><h1>Esse objetivo envolve dinheiro?</h1><p>Nem toda conquista é financeira — sem problema se não for.</p><div className="choice-grid">{([["financial", "Sim"], ["partial", "Parcialmente"], ["non_financial", "Não"]] as [GoalKind, string][]).map(([value, label]) => <button type="button" className={goalKind === value ? "selected" : ""} onClick={() => setGoalKind(value)} key={value}>{label}</button>)}</div>{needsAmount && <div className="form-stack"><label>Quanto você deseja alcançar?<div className="choice-grid">{goalAmountPresets.map((amount) => <button type="button" className={goalAmount === amount ? "selected" : ""} onClick={() => setGoalAmount(amount)} key={amount}>R${amount.toLocaleString("pt-BR")}</button>)}</div></label><label>Outro valor<input type="number" min={0} value={goalAmount === "" ? "" : goalAmount} onChange={(e) => setGoalAmount(e.target.value === "" ? "" : Number(e.target.value))} placeholder="R$" /></label></div>}<button className="gold-button" disabled={!goalKind || (needsAmount && goalAmount === "")} onClick={() => setStep(5)}>Continuar <ChevronRight/></button></>}
+      {step === 5 && <><p className="step-count">06 · 10</p><h1>Como você se sente hoje em relação a esse objetivo?</h1><div className="choice-grid">{stageOptions.map(([value, label]) => <button type="button" className={goalStage === value ? "selected" : ""} onClick={() => setGoalStage(value)} key={value}>{label}</button>)}</div><button className="gold-button" disabled={!goalStage} onClick={() => setStep(6)}>Continuar <ChevronRight/></button></>}
+      {step === 6 && <><p className="step-count">07 · 10</p><h1>O que mais está segurando você neste momento?</h1><div className="choice-grid">{blockerOptions.map(([value, label]) => <button type="button" className={goalBlocker === value ? "selected" : ""} onClick={() => setGoalBlocker(value)} key={value}>{label}</button>)}</div><button className="gold-button" disabled={!goalBlocker} onClick={() => setStep(7)}>Continuar <ChevronRight/></button></>}
+      {step === 7 && <><p className="step-count">08 · 10</p><h1>Quanto tempo você consegue dedicar à sua evolução todos os dias?</h1><div className="choice-grid">{dailyMinutesOptions.map(([value, label]) => <button type="button" className={goalDailyMinutes === value ? "selected" : ""} onClick={() => setGoalDailyMinutes(value)} key={value}>{label}</button>)}</div><button className="gold-button" disabled={goalDailyMinutes === ""} onClick={() => setStep(8)}>Continuar <ChevronRight/></button></>}
+      {step === 8 && <><p className="step-count">09 · 10</p><h1>Por que esse objetivo é importante para você?</h1><p>Você vai rever essa resposta nos momentos em que precisar lembrar por que começou.</p><div className="form-stack"><label>Meu motivo<textarea maxLength={280} rows={4} value={goalMotivation} onChange={(e) => setGoalMotivation(e.target.value)} placeholder="Ex: quero mais segurança para minha família." /></label></div><button className="gold-button" onClick={() => setStep(9)}>Continuar <ChevronRight/></button></>}
+      {step === 9 && <><p className="step-count">10 · 10</p><h1>Seu Perfil de Prosperidade está pronto.</h1><p>Seu signo é uma camada simbólica de personalização — não uma previsão. O que move sua árvore são suas ações registradas aqui.</p><div className="prosperity-summary"><div><span>Signo</span><strong>{previewSign ?? "—"}</strong></div><div><span>Objetivo</span><strong>{goalTitle || profile.objective}</strong></div></div><button className="gold-button" onClick={finish}>🌱 Plantar minha semente</button></>}
     </section>
   </main>;
 }
 
 type WeekDay = ReturnType<typeof weekPlan>[number];
 
-function HomeView({ profile, plan, week, part, xp, level, stage, streak, fruits, missionDone, ritualDone, treeCelebrating, completeMission, openRitual, oracleOpen, setOracleOpen, mainGoal, advanceGoal, openGoals, navigate }: { profile: Profile; plan: DailyPlan; week: WeekDay[]; part: DayPart; xp: number; level: number; stage: string; streak: number; fruits: number; missionDone: boolean; ritualDone: boolean; treeCelebrating: boolean; completeMission: () => void; openRitual: () => void; oracleOpen: boolean; setOracleOpen: (v: boolean) => void; mainGoal?: Goal; advanceGoal: (id: number) => void; openGoals: () => void; navigate: (view: View) => void }) {
+function HomeView({ profile, plan, week, part, xp, level, stage, streak, fruits, missionDone, ritualDone, treeCelebrating, completeMission, openRitual, oracleOpen, setOracleOpen, mainGoal, advanceGoal, openGoals, navigate, isPremium, openPaywall }: { profile: Profile; plan: DailyPlan; week: WeekDay[]; part: DayPart; xp: number; level: number; stage: string; streak: number; fruits: number; missionDone: boolean; ritualDone: boolean; treeCelebrating: boolean; completeMission: () => void; openRitual: () => void; oracleOpen: boolean; setOracleOpen: (v: boolean) => void; mainGoal?: Goal; advanceGoal: (id: number) => void; openGoals: () => void; navigate: (view: View) => void; isPremium: boolean; openPaywall: (reason: string) => void }) {
   const firstName = profile.name.split(" ")[0];
   const tomorrow = week[1];
   return <div className="home-flow">
+    <button type="button" className="chat-entry" onClick={() => (isPremium ? navigate("chat") : openPaywall("chat"))}>
+      <span className="chat-entry-icon"><Sparkles/></span>
+      <span><strong>Conversar com a IA</strong><small>Desabafe, pense em voz alta ou peça um conselho — a qualquer hora</small></span>
+      {!isPremium && <LockKeyhole size={16}/>}
+      <ChevronRight/>
+    </button>
     <section className="daily-briefing">
       <div className="briefing-orbit" aria-hidden="true"><span/><span/><span/></div>
       <div className="briefing-top"><span className="theme-pill"><Compass/>Dia de {plan.theme.name}</span><span className="day-phase">{dayPartIcon[part]}{dayPartLabel[part]}</span></div>
@@ -563,8 +708,47 @@ function HomeView({ profile, plan, week, part, xp, level, stage, streak, fruits,
     <section className="journey-shortcuts" aria-label="Atalhos da jornada"><button onClick={() => navigate("missions")}><span><Route/></span><strong>Jornada</strong><small>{missionDone ? "Missão feita" : "Missão de hoje"}</small></button><button onClick={() => navigate("journal")}><span><BookOpen/></span><strong>Refletir</strong><small>Meu diário</small></button><button onClick={() => navigate("tree")}><span><Leaf/></span><strong>Minha árvore</strong><small>{stage}</small></button></section>
     <section className={`mission-card ${missionDone ? "done" : ""}`}><div className="mission-icon">{missionDone ? <Check/> : <Target/>}</div><div className="mission-copy"><p className="eyebrow">Missão do dia · {missionDone ? "concluída" : "+20 XP"}</p><h2>{missionDone ? "Intenção em movimento" : plan.theme.verb}</h2><p>{plan.mission}</p></div><button className="gold-button" disabled={missionDone} onClick={completeMission}>{missionDone ? <><Check/> Missão concluída</> : <><Target/> Começar missão</>}</button></section>
     <section className="oracle-card"><div><p className="eyebrow">Oráculo do dia</p><h2>{oracleOpen ? plan.oracle.message : "Uma mensagem para o seu momento"}</h2>{oracleOpen && <p>Transforme em ação: {plan.oracle.action.charAt(0).toLowerCase() + plan.oracle.action.slice(1)}</p>}</div><button className="ghost-button" onClick={() => { setOracleOpen(!oracleOpen); if (!oracleOpen) { haptic(8); track("oracle_revealed"); } }}>{oracleOpen ? "Recolher" : "Revelar mensagem"}</button></section>
-    <section className="goal-snapshot"><div className="section-heading"><div><p className="eyebrow">Meta principal</p><h2>{mainGoal ? mainGoal.title : "Plante sua primeira meta"}</h2></div><button onClick={openGoals}>{mainGoal ? "Ver metas" : <><Plus size={16}/> Criar</>}</button></div>{mainGoal ? <><Progress value={mainGoal.progress}/><div className="goal-foot"><span>{mainGoal.category} · {mainGoal.progress}%</span><button onClick={() => advanceGoal(mainGoal.id)} disabled={mainGoal.progress === 100}>{mainGoal.progress === 100 ? "Fruto conquistado" : "Avançar +25%"}</button></div></> : <p>Metas concluídas se transformam em frutos na sua árvore.</p>}</section>
+    <section className="goal-snapshot"><div className="section-heading"><div><p className="eyebrow">Meu objetivo</p><h2>{mainGoal ? mainGoal.title : "Plante sua primeira meta"}</h2></div><button onClick={openGoals}>{mainGoal ? "Ver objetivo" : <><Plus size={16}/> Criar</>}</button></div>{mainGoal ? <><Progress value={mainGoal.progress}/><div className="goal-foot"><span>{mainGoal.category} · {mainGoal.progress}%</span>{(mainGoal.kind === "financial" || mainGoal.kind === "partial") && mainGoal.targetAmount ? <button onClick={openGoals} disabled={mainGoal.progress === 100}>{mainGoal.progress === 100 ? "Fruto conquistado" : "Adicionar valor"}</button> : <button onClick={() => advanceGoal(mainGoal.id)} disabled={mainGoal.progress === 100}>{mainGoal.progress === 100 ? "Fruto conquistado" : "Avançar +25%"}</button>}</div></> : <p>Metas concluídas se transformam em frutos na sua árvore.</p>}</section>
     <div className="tomorrow"><Sparkles/><div><strong>Amanhã: dia de {tomorrow.theme.name.toLowerCase()}</strong><span>{tomorrow.theme.guidance}</span></div></div>
+    <AiInsightBubble profile={profile} week={week}/>
+  </div>;
+}
+
+/** Floating, dismiss-once-per-week bubble surfacing the AI weekly report. Display only — no chat, no reply box. */
+function AiInsightBubble({ profile, week }: { profile: Profile; week: WeekDay[] }) {
+  const [report, setReport] = useState<{ summary: string; recommendation: string } | null>(null);
+  const [dismissed, setDismissed] = useState(false);
+  const isPremium = profile.plan === "premium";
+
+  useEffect(() => {
+    if (!isPremium) return;
+    let cancelled = false;
+    fetch("/api/journey/weekly-report-ai", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ dayKey: localDayKey(), nextThemeVerb: week[1].theme.verb }),
+    }).then((response) => (response.ok ? response.json() : null))
+      .then((data) => {
+        if (cancelled || !data?.summary) return;
+        const seenKey = `vds-ai-bubble-seen:${data.summary.slice(0, 40)}`;
+        setReport(data);
+        setDismissed(localStorage.getItem(seenKey) === "1");
+      }).catch(() => {});
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPremium]);
+
+  if (!report || dismissed) return null;
+
+  function dismiss() {
+    if (report) localStorage.setItem(`vds-ai-bubble-seen:${report.summary.slice(0, 40)}`, "1");
+    setDismissed(true);
+  }
+
+  return <div className="ai-bubble" role="status">
+    <button className="ai-bubble-close" onClick={dismiss} aria-label="Fechar">×</button>
+    <div className="ai-bubble-icon"><Sparkles/></div>
+    <div><p className="eyebrow">Leitura da semana · por IA</p><p>{report.summary}</p></div>
   </div>;
 }
 
@@ -643,6 +827,25 @@ function JourneyView({ profile, plan, snapshot, week, missionDone, ritualDone, c
   const [openAchievement, setOpenAchievement] = useState<string | null>(null);
   const { resolved, unlockedCount, total, next } = useMemo(() => achievementState(snapshot), [snapshot]);
   const report = useMemo(() => weeklyReport(snapshot, week[1].theme.verb), [snapshot, week]);
+  const [aiReport, setAiReport] = useState<{ summary: string; recommendation: string } | null>(null);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setAiReport(null);
+    if (!isPremium) return;
+    let cancelled = false;
+    fetch("/api/journey/weekly-report-ai", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ dayKey: localDayKey(), nextThemeVerb: week[1].theme.verb }),
+    }).then((response) => (response.ok ? response.json() : null))
+      .then((data) => { if (!cancelled && data?.summary) setAiReport(data); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+    // Depends on report.rangeLabel (not the whole `week` array) so this only re-fires when the 7-day window actually rolls over.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPremium, report.rangeLabel]);
+
   const selected = resolved.find((item) => item.key === openAchievement);
   const trailDay = Math.min(snapshot.streak, 7);
   return <div className="view-stack">
@@ -674,7 +877,7 @@ function JourneyView({ profile, plan, snapshot, week, missionDone, ritualDone, c
         <div className="report-metric"><span>Metas avançando</span><strong>{report.goalsAdvancing}</strong><small>em progresso agora</small></div>
         <div className="report-metric"><span>Frutos</span><strong>{report.fruits}</strong><small>metas concluídas até aqui</small></div>
       </div>
-      {isPremium ? <div className="report-note"><Sparkles/><div>{report.summary} {report.recommendation}</div></div>
+      {isPremium ? <div className="report-note"><Sparkles/><div>{aiReport?.summary ?? report.summary} {aiReport?.recommendation ?? report.recommendation}</div></div>
         : <button className="report-locked" onClick={() => openPaywall("weekly_report")}>
             <span className="report-locked-blur"><Sparkles/><div>{report.summary} {report.recommendation}</div></span>
             <span className="report-locked-cta"><LockKeyhole/> Desbloquear leitura completa da semana</span>
@@ -872,6 +1075,134 @@ function ProfileView({ profile, setProfile, account, guide, goals, advanceGoal, 
       : <section className="premium-card"><div className="premium-icon"><Gem/></div><p className="eyebrow">Central da Prosperidade</p><h2>Você já descobriu seu signo.<br/>Agora destrave a jornada completa.</h2><p>Hoje seu plano grátis tem 1 trilha, {FREE_GOAL_LIMIT} metas e {FREE_JOURNAL_HISTORY} registros de histórico. O Premium remove esses limites.</p><ul><li><Check/> Trilhas de 21 dias e temas por objetivo</li><li><Check/> Metas e histórico do diário sem limite</li><li><Check/> Relatório semanal completo e temas da árvore</li></ul><button className="gold-button" onClick={() => openPaywall("premium_card")}>Desbloquear minha jornada</button><small>Sem promessas financeiras. Uma experiência de autoconhecimento, hábitos e metas.</small></section>}
     <section className="content-list"><div className="section-heading"><div><p className="eyebrow">Conteúdo</p><h2>Sua biblioteca</h2></div></div>{[[BookOpen,"Guia Use Seu Signo para Prosperar","Introdução"],[Rocket,"Estratégias para cada signo","Premium"],[BriefcaseBusiness,"Decisões e carreira","Premium"],[CircleDollarSign,"Organização financeira consciente","Premium"]].map(([Icon,title,badge]) => <button key={String(title)} onClick={() => { if (badge === "Premium") { openPaywall("content_library"); } else { track("ebook_opened"); toast("Conteúdo demonstrativo aberto."); } }}><span className="content-icon"><Icon/></span><span><strong>{String(title)}</strong><small>{String(badge)}</small></span><ChevronRight/></button>)}</section>
     <section className="account-card"><div><Mail/><span><small>Conta conectada</small><strong>{account.email}</strong></span></div><button onClick={logout}><LogOut/> Sair da conta</button></section>
+  </div>;
+}
+
+function GoalDetailView({ goal, advanceGoal, addGoalAmount, navigate, isPremium, openPaywall }: { goal?: Goal; advanceGoal: (id: number) => void; addGoalAmount: (id: number, amount: number) => void; navigate: (v: View) => void; isPremium: boolean; openPaywall: (reason: string) => void }) {
+  const [amountInput, setAmountInput] = useState("");
+  const [steps, setSteps] = useState<string[] | null>(null);
+  const [stepsLoading, setStepsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!isPremium || !goal) return;
+    let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setStepsLoading(true);
+    fetch("/api/journey/goal-steps", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ goalId: goal.id }) })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => { if (!cancelled && data?.steps) setSteps(data.steps); })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setStepsLoading(false); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPremium, goal?.id]);
+
+  if (!goal) return <div className="view-stack"><p className="view-intro">Você ainda não plantou um objetivo principal.</p><button className="gold-button" onClick={() => navigate("profile")}>Criar minha meta</button></div>;
+  const isFinancial = (goal.kind === "financial" || goal.kind === "partial") && Boolean(goal.targetAmount);
+  const done = goal.progress >= 100;
+  return <div className="view-stack">
+    <button type="button" className="auth-back" onClick={() => navigate("home")}><ArrowLeft size={16}/> Voltar</button>
+    <section className="surface-card">
+      <div className="section-heading"><div><p className="eyebrow">Meu objetivo</p><h2>{goal.title}</h2></div><Target/></div>
+      {goal.motivation && <div className="briefing-voice"><em>“{goal.motivation}”</em><span>Lembre por que você começou</span></div>}
+      {isFinancial
+        ? <>
+            <div className="report-range">R${(goal.currentAmount ?? 0).toLocaleString("pt-BR")} de R${(goal.targetAmount ?? 0).toLocaleString("pt-BR")}</div>
+            <Progress value={goal.progress}/>
+            {!done && <div className="form-stack"><label>Guardei mais<input type="number" min={1} value={amountInput} onChange={(e) => setAmountInput(e.target.value)} placeholder="R$" /></label><button className="gold-button" disabled={!amountInput || Number(amountInput) <= 0} onClick={() => { addGoalAmount(goal.id, Number(amountInput)); setAmountInput(""); }}><CircleDollarSign/> Somar à meta</button></div>}
+          </>
+        : <>
+            <Progress value={goal.progress}/>
+            <p className="report-range">{goal.progress}% concluído</p>
+            {!done && <button className="gold-button" onClick={() => advanceGoal(goal.id)}><Sprout/> Avançar +25%</button>}
+          </>}
+      {done && <p className="report-range"><Sparkles size={14}/> Objetivo conquistado — um fruto permanente na sua árvore.</p>}
+    </section>
+    {(goal.stage || goal.blocker || goal.dailyMinutes) && <section className="surface-card">
+      <div className="section-heading"><div><p className="eyebrow">Seu diagnóstico</p><h2>Como você chegou até aqui</h2></div><Compass/></div>
+      <div className="report-grid">
+        {goal.stage && <div className="report-metric"><span>Momento</span><strong>{stageLabelByKey[goal.stage] ?? goal.stage}</strong></div>}
+        {goal.blocker && <div className="report-metric"><span>Maior bloqueio</span><strong>{blockerLabelByKey[goal.blocker] ?? goal.blocker}</strong></div>}
+        {goal.dailyMinutes !== undefined && <div className="report-metric"><span>Tempo por dia</span><strong>{goal.dailyMinutes} min</strong></div>}
+      </div>
+    </section>}
+    <section className="surface-card">
+      <div className="section-heading"><div><p className="eyebrow">Passos sugeridos</p><h2>Próximas ações para este objetivo</h2></div><Sparkles/></div>
+      {!isPremium
+        ? <button className="report-locked" onClick={() => openPaywall("goal_steps")}>
+            <span className="report-locked-blur"><Sparkles/><div>Pesquise o valor médio, defina um prazo realista e separe o primeiro valor esta semana.</div></span>
+            <span className="report-locked-cta"><LockKeyhole/> Desbloquear passos personalizados por IA</span>
+          </button>
+        : stepsLoading && !steps ? <p className="view-intro">Gerando sugestões para o seu objetivo…</p>
+        : steps ? <ul className="step-suggestions">{steps.map((step) => <li key={step}><Check size={14}/> {step}</li>)}</ul>
+        : <p className="view-intro">Não foi possível gerar sugestões agora — tente novamente mais tarde.</p>}
+    </section>
+    <p className="paywall-fine-print">Sinal simbólico, não previsão: o progresso reflete só as ações que você registrou aqui.</p>
+  </div>;
+}
+
+type ChatTurn = { role: "user" | "assistant"; content: string };
+
+function ChatView({ profile, isPremium, navigate, openPaywall, onSessionExpired }: { profile: Profile; isPremium: boolean; navigate: (v: View) => void; openPaywall: (reason: string) => void; onSessionExpired: () => void }) {
+  const [messages, setMessages] = useState<ChatTurn[]>([{ role: "assistant", content: `Oi, ${profile.name.split(" ")[0]}. Esse é um espaço pra você pensar em voz alta, desabafar ou só conversar sobre a sua jornada. Como você está agora?` }]);
+  const [input, setInput] = useState("");
+  const [sending, setSending] = useState(false);
+  const listRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => { listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" }); }, [messages, sending]);
+
+  if (!isPremium) {
+    return <div className="view-stack">
+      <button type="button" className="auth-back" onClick={() => navigate("home")}><ArrowLeft size={16}/> Voltar</button>
+      <section className="surface-card">
+        <div className="section-heading"><div><p className="eyebrow">Conversar</p><h2>Desabafe com a IA sempre que precisar</h2></div><Sparkles/></div>
+        <p>Um espaço de escuta, disponível a qualquer hora, com contexto do seu signo e da sua jornada.</p>
+        <button className="gold-button" onClick={() => openPaywall("chat")}><LockKeyhole/> Desbloquear conversa</button>
+      </section>
+    </div>;
+  }
+
+  async function send() {
+    const text = input.trim();
+    if (!text || sending) return;
+    const history = messages;
+    setMessages((current) => [...current, { role: "user", content: text }]);
+    setInput("");
+    setSending(true);
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ history, message: text }),
+      });
+      if (response.status === 401) { onSessionExpired(); return; }
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error ?? "Não foi possível responder agora.");
+      setMessages((current) => [...current, { role: "assistant", content: data.reply }]);
+    } catch (error) {
+      setMessages((current) => [...current, { role: "assistant", content: error instanceof Error ? error.message : "Não foi possível responder agora." }]);
+    } finally {
+      setSending(false);
+    }
+  }
+
+  return <div className="view-stack chat-view">
+    <button type="button" className="auth-back" onClick={() => navigate("home")}><ArrowLeft size={16}/> Voltar</button>
+    <div className="chat-log" ref={listRef}>
+      {messages.map((turn, index) => <div key={index} className={`chat-turn ${turn.role}`}>{turn.content}</div>)}
+      {sending && <div className="chat-turn assistant typing"><span/><span/><span/></div>}
+    </div>
+    <div className="chat-composer">
+      <textarea
+        rows={1}
+        value={input}
+        onChange={(event) => setInput(event.target.value)}
+        onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); send(); } }}
+        placeholder="Escreva o que você está sentindo…"
+      />
+      <button type="button" className="chat-send" disabled={!input.trim() || sending} onClick={send} aria-label="Enviar"><Send size={18}/></button>
+    </div>
+    <p className="paywall-fine-print">A IA não substitui ajuda profissional. Em emergência, ligue 188 (CVV) ou 192.</p>
   </div>;
 }
 

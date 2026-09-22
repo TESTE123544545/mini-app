@@ -18,7 +18,21 @@ const syncSchema = z.object({
   xp: z.number().int().min(0).max(1_000_000).optional().default(0),
   missionDone: z.boolean().optional().default(false),
   ritualDone: z.boolean().optional().default(false),
-  goals: z.array(z.object({ id: z.number().int().positive().max(Number.MAX_SAFE_INTEGER), title: z.string().trim().min(1).max(160), category: z.string().min(1).max(80), progress: z.number().int().min(0).max(100) }).strict()).max(100).optional().default([]),
+  goals: z.array(z.object({
+    id: z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
+    title: z.string().trim().min(1).max(160),
+    category: z.string().min(1).max(80),
+    progress: z.number().int().min(0).max(100),
+    isPrimary: z.boolean().optional(),
+    kind: z.enum(["financial", "non_financial", "partial"]).optional(),
+    targetAmount: z.number().int().min(0).max(1_000_000_000).optional(),
+    currentAmount: z.number().int().min(0).max(1_000_000_000).optional(),
+    deadline: z.string().max(20).optional(),
+    motivation: z.string().max(500).optional(),
+    stage: z.string().max(30).optional(),
+    blocker: z.string().max(30).optional(),
+    dailyMinutes: z.number().int().min(0).max(1440).optional(),
+  }).strict()).max(100).optional().default([]),
   entries: z.array(z.object({ date: z.string().min(1).max(20), answers: z.array(z.string().max(4000)).max(4) }).strict()).max(365).optional().default([]),
   dayKey: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   trail: z.object({
@@ -74,7 +88,13 @@ export async function GET(request: Request) {
     const today = resolveDay(new URL(request.url).searchParams.get("day"), new Date().toISOString().slice(0, 10));
     const lastActive = lastActiveDay(progress?.lastMissionDate, progress?.lastRitualDate);
     const streakAlive = lastActive === today || lastActive === shiftDay(today, -1);
-    return Response.json({ deviceId, state: { profile: { name: profile.name, birthDate: profile.birthDate, objective: profile.objective, sign: profile.sign, intention: profile.intention, theme: profile.theme, hasAvatar: Boolean(profile.avatarData), plan: profile.plan === "premium" ? "premium" : "free" }, xp: progress?.xp ?? 0, missionDone: progress?.lastMissionDate === today && Boolean(progress?.missionDone), ritualDone: progress?.lastRitualDate === today && Boolean(progress?.ritualDone), streak: streakAlive ? (progress?.streak ?? 0) : 0, goals: savedGoals.map(({ id, title, category, progress: value }) => ({ id, title, category, progress: value })), entries: savedEntries.map((entry) => ({ date: entry.entryDate, answers: JSON.parse(entry.answersJson) })), trail: savedTrail ? { trailId: savedTrail.trailId, startedAt: savedTrail.startedAt, completedDays: JSON.parse(savedTrail.completedDaysJson) } : null } });
+    return Response.json({ deviceId, state: { profile: { name: profile.name, birthDate: profile.birthDate, objective: profile.objective, sign: profile.sign, intention: profile.intention, theme: profile.theme, hasAvatar: Boolean(profile.avatarData), plan: profile.plan === "premium" ? "premium" : "free" }, xp: progress?.xp ?? 0, missionDone: progress?.lastMissionDate === today && Boolean(progress?.missionDone), ritualDone: progress?.lastRitualDate === today && Boolean(progress?.ritualDone), streak: streakAlive ? (progress?.streak ?? 0) : 0, goals: savedGoals.map((goal) => ({
+        id: goal.id, title: goal.title, category: goal.category, progress: goal.progress,
+        isPrimary: goal.isPrimary ?? undefined, kind: (goal.kind ?? undefined) as "financial" | "non_financial" | "partial" | undefined,
+        targetAmount: goal.targetAmount ?? undefined, currentAmount: goal.currentAmount ?? undefined,
+        deadline: goal.deadline ?? undefined, motivation: goal.motivation ?? undefined,
+        stage: goal.stage ?? undefined, blocker: goal.blocker ?? undefined, dailyMinutes: goal.dailyMinutes ?? undefined,
+      })), entries: savedEntries.map((entry) => ({ date: entry.entryDate, answers: JSON.parse(entry.answersJson) })), trail: savedTrail ? { trailId: savedTrail.trailId, startedAt: savedTrail.startedAt, completedDays: JSON.parse(savedTrail.completedDaysJson) } : null } });
   } catch (error) { return errorResponse(error); }
 }
 

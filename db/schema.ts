@@ -71,6 +71,15 @@ export const goals = sqliteTable("goals", {
   category: text("category").notNull(),
   progress: integer("progress").notNull().default(0),
   status: text("status").notNull().default("active"),
+  isPrimary: integer("is_primary", { mode: "boolean" }).notNull().default(false),
+  kind: text("kind"),
+  targetAmount: integer("target_amount"),
+  currentAmount: integer("current_amount"),
+  deadline: text("deadline"),
+  motivation: text("motivation"),
+  stage: text("stage"),
+  blocker: text("blocker"),
+  dailyMinutes: integer("daily_minutes"),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   completedAt: text("completed_at"),
 }, (table) => [index("goals_device_id_idx").on(table.deviceId)]);
@@ -105,6 +114,33 @@ export const achievements = sqliteTable("achievements", {
   achievementKey: text("achievement_key").notNull(),
   unlockedAt: text("unlocked_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 }, (table) => [uniqueIndex("achievements_device_key_idx").on(table.deviceId, table.achievementKey)]);
+
+export const subscriptions = sqliteTable("subscriptions", {
+  purchaseToken: text("purchase_token").primaryKey(),
+  deviceId: text("device_id").notNull().references(() => profiles.deviceId, { onDelete: "cascade" }),
+  productId: text("product_id").notNull(),
+  status: text("status").notNull().default("active"),
+  expiryTimeMillis: text("expiry_time_millis"),
+  autoRenewing: integer("auto_renewing", { mode: "boolean" }).notNull().default(true),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [index("subscriptions_device_id_idx").on(table.deviceId)]);
+
+export const aiWeeklyReports = sqliteTable("ai_weekly_reports", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  deviceId: text("device_id").notNull().references(() => profiles.deviceId, { onDelete: "cascade" }),
+  weekStart: text("week_start").notNull(),
+  summary: text("summary").notNull(),
+  recommendation: text("recommendation").notNull(),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [uniqueIndex("ai_weekly_reports_device_week_idx").on(table.deviceId, table.weekStart)]);
+
+export const goalSuggestions = sqliteTable("goal_suggestions", {
+  goalId: integer("goal_id").primaryKey(),
+  deviceId: text("device_id").notNull().references(() => profiles.deviceId, { onDelete: "cascade" }),
+  stepsJson: text("steps_json").notNull(),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [index("goal_suggestions_device_id_idx").on(table.deviceId)]);
 
 export const analyticsEvents = sqliteTable("analytics_events", {
   id: integer("id").primaryKey({ autoIncrement: true }),
