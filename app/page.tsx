@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Anchor, Apple, ArrowLeft, BookOpen, BriefcaseBusiness, CalendarDays, Camera, CameraOff, Check, ChevronRight, CircleDollarSign, Cloud, Compass, Crown, Eye, EyeOff, Flame, Flower2, Gem, Home, ImagePlus, Leaf, LockKeyhole, LogOut, Mail, MoonStar, Orbit, Pencil, Play, Plus, Rocket, Route, Save, Send, Settings2, ShieldCheck, Sparkles, Sprout, Sun, Sunrise, Sunset, Target, TreeDeciduous, Trophy, UserRound, Wind } from "lucide-react";
+import { Anchor, Apple, ArrowLeft, BookOpen, BriefcaseBusiness, CalendarDays, Camera, CameraOff, Check, ChevronRight, CircleDollarSign, Cloud, Compass, Crown, Eye, EyeOff, Flame, Flower2, Gem, Home, ImagePlus, Leaf, LockKeyhole, LogOut, Mail, MoonStar, Orbit, Pencil, Play, Plus, Rocket, Route, Save, Send, Settings2, ShieldCheck, Sparkles, Sprout, Sun, Sunrise, Sunset, Target, TreeDeciduous, Trophy, UserRound, Wind, X } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { Toaster } from "@/components/ui/sonner";
@@ -1142,14 +1142,26 @@ function GoalDetailView({ goal, advanceGoal, addGoalAmount, navigate, isPremium,
 }
 
 type ChatTurn = { role: "user" | "assistant"; content: string };
+type ChatThreadSummary = { id: number; title: string; updatedAt: string };
+
+const CHAT_ASSISTANT_NAME = "Sintonia";
 
 function ChatView({ profile, isPremium, navigate, openPaywall, onSessionExpired }: { profile: Profile; isPremium: boolean; navigate: (v: View) => void; openPaywall: (reason: string) => void; onSessionExpired: () => void }) {
-  const [messages, setMessages] = useState<ChatTurn[]>([{ role: "assistant", content: `Oi, ${profile.name.split(" ")[0]}. Esse é um espaço pra você pensar em voz alta, desabafar ou só conversar sobre a sua jornada. Como você está agora?` }]);
+  const greeting = useMemo<ChatTurn>(() => ({ role: "assistant", content: `Oi, sou a ${CHAT_ASSISTANT_NAME}. Esse é um espaço pra você pensar em voz alta, desabafar ou só conversar sobre a sua jornada, ${profile.name.split(" ")[0]}. Como você está agora?` }), [profile.name]);
+  const [messages, setMessages] = useState<ChatTurn[]>([greeting]);
+  const [threadId, setThreadId] = useState<number | null>(null);
+  const [threads, setThreads] = useState<ChatThreadSummary[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const listRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => { listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" }); }, [messages, sending]);
+
+  useEffect(() => {
+    if (!isPremium) return;
+    fetch("/api/chat/threads").then((response) => (response.ok ? response.json() : null))
+      .then((data) => { if (Array.isArray(data?.threads)) setThreads(data.threads); }).catch(() => {});
+  }, [isPremium]);
 
   if (!isPremium) {
     return <div className="view-stack">
@@ -1162,10 +1174,41 @@ function ChatView({ profile, isPremium, navigate, openPaywall, onSessionExpired 
     </div>;
   }
 
+  function newChat() {
+    if (sending) return;
+    setThreadId(null);
+    setMessages([greeting]);
+    setInput("");
+  }
+
+  async function openThread(id: number) {
+    if (id === threadId || sending) return;
+    try {
+      const response = await fetch(`/api/chat/threads?id=${id}`);
+      if (response.status === 401) { onSessionExpired(); return; }
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !Array.isArray(data.messages)) throw new Error();
+      setThreadId(id);
+      setMessages(data.messages.length ? data.messages : [greeting]);
+    } catch {
+      toast.error("Não foi possível abrir essa conversa agora.");
+    }
+  }
+
+  async function deleteThread(id: number, event: React.MouseEvent) {
+    event.stopPropagation();
+    setThreads((current) => current.filter((item) => item.id !== id));
+    if (id === threadId) newChat();
+    try {
+      await fetch(`/api/chat/threads?id=${id}`, { method: "DELETE" });
+    } catch {
+      toast.error("Não foi possível remover essa conversa agora.");
+    }
+  }
+
   async function send() {
     const text = input.trim();
     if (!text || sending) return;
-    const history = messages;
     setMessages((current) => [...current, { role: "user", content: text }]);
     setInput("");
     setSending(true);
@@ -1173,12 +1216,23 @@ function ChatView({ profile, isPremium, navigate, openPaywall, onSessionExpired 
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ history, message: text }),
+        body: JSON.stringify({ threadId: threadId ?? undefined, message: text }),
       });
       if (response.status === 401) { onSessionExpired(); return; }
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error ?? "Não foi possível responder agora.");
       setMessages((current) => [...current, { role: "assistant", content: data.reply }]);
+      if (typeof data.threadId === "number") {
+        const now = new Date().toISOString();
+        const isNew = data.threadId !== threadId;
+        setThreadId(data.threadId);
+        setThreads((current) => {
+          const rest = current.filter((item) => item.id !== data.threadId);
+          const existing = current.find((item) => item.id === data.threadId);
+          const title = isNew ? (text.length > 40 ? `${text.slice(0, 40)}…` : text) : (existing?.title ?? text);
+          return [{ id: data.threadId, title, updatedAt: now }, ...rest];
+        });
+      }
     } catch (error) {
       setMessages((current) => [...current, { role: "assistant", content: error instanceof Error ? error.message : "Não foi possível responder agora." }]);
     } finally {
@@ -1188,8 +1242,15 @@ function ChatView({ profile, isPremium, navigate, openPaywall, onSessionExpired 
 
   return <div className="view-stack chat-view">
     <button type="button" className="auth-back" onClick={() => navigate("home")}><ArrowLeft size={16}/> Voltar</button>
+    <div className="chat-tabs" role="tablist" aria-label="Suas conversas">
+      <button type="button" className={`chat-tab new ${threadId === null ? "active" : ""}`} onClick={newChat}><Plus size={14}/> Novo chat</button>
+      {threads.map((item) => <button type="button" key={item.id} className={`chat-tab ${item.id === threadId ? "active" : ""}`} onClick={() => openThread(item.id)}>
+        <span>{item.title || "Conversa"}</span>
+        <i role="button" aria-label="Remover conversa" onClick={(event) => deleteThread(item.id, event)}><X size={12}/></i>
+      </button>)}
+    </div>
     <div className="chat-log" ref={listRef}>
-      {messages.map((turn, index) => <div key={index} className={`chat-turn ${turn.role}`}>{turn.content}</div>)}
+      {messages.map((turn, index) => <div key={index} className={`chat-turn ${turn.role}`}>{turn.role === "assistant" && <span className="chat-turn-name">{CHAT_ASSISTANT_NAME}</span>}{turn.content}</div>)}
       {sending && <div className="chat-turn assistant typing"><span/><span/><span/></div>}
     </div>
     <div className="chat-composer">

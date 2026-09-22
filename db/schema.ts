@@ -142,6 +142,15 @@ export const goalSuggestions = sqliteTable("goal_suggestions", {
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 }, (table) => [index("goal_suggestions_device_id_idx").on(table.deviceId)]);
 
+export const chatThreads = sqliteTable("chat_threads", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  deviceId: text("device_id").notNull().references(() => profiles.deviceId, { onDelete: "cascade" }),
+  title: text("title").notNull().default("Nova conversa"),
+  messagesJson: text("messages_json").notNull().default("[]"),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [index("chat_threads_device_id_idx").on(table.deviceId)]);
+
 export const analyticsEvents = sqliteTable("analytics_events", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   deviceId: text("device_id"),

@@ -111,6 +111,24 @@ export async function enforceRateLimit(request: Request, scope: string, identifi
   await db.update(rateLimits).set({ count: record.count + 1 }).where(eq(rateLimits.key, key));
 }
 
+/**
+ * Locks a scope/identifier out for `durationSeconds` by pre-filling its rate-limit
+ * record as already exhausted — the next `enforceRateLimit` call for the same
+ * scope/identifier rejects with the remaining time until `durationSeconds` elapses.
+ */
+export async function suspendFor(request: Request, scope: string, identifier: string, durationSeconds: number) {
+  const rawKey = `${scope}:${clientIp(request)}:${identifier}`;
+  const key = await hashToken(rawKey);
+  const db = getDb();
+  const now = Date.now();
+  const windowStartedAt = new Date(now).toISOString();
+  const expiresAt = new Date(now + durationSeconds * 1000).toISOString();
+  await db.insert(rateLimits).values({ key, count: Number.MAX_SAFE_INTEGER, windowStartedAt, expiresAt }).onConflictDoUpdate({
+    target: rateLimits.key,
+    set: { count: Number.MAX_SAFE_INTEGER, windowStartedAt, expiresAt },
+  });
+}
+
 export function secureErrorResponse(error: unknown, fallback: string) {
   if (error instanceof RequestError) {
     const headers = error.retryAfter ? { "retry-after": String(error.retryAfter) } : undefined;
