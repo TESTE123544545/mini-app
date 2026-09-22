@@ -83,6 +83,14 @@ export const journalEntries = sqliteTable("journal_entries", {
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 }, (table) => [index("journal_entries_device_id_idx").on(table.deviceId)]);
 
+export const trailProgress = sqliteTable("trail_progress", {
+  deviceId: text("device_id").primaryKey().references(() => profiles.deviceId, { onDelete: "cascade" }),
+  trailId: text("trail_id").notNull(),
+  startedAt: text("started_at").notNull(),
+  completedDaysJson: text("completed_days_json").notNull().default("[]"),
+  updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
 export const missionCompletions = sqliteTable("mission_completions", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   deviceId: text("device_id").notNull().references(() => profiles.deviceId, { onDelete: "cascade" }),

@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { getDb } from "../../../db";
-import { goals, journalEntries, profiles, userProgress, users } from "../../../db/schema";
+import { goals, journalEntries, profiles, trailProgress, userProgress, users } from "../../../db/schema";
 import { getSessionUser } from "@/lib/auth";
 import { enforceRateLimit, readJsonBody, RequestError, secureErrorResponse } from "@/lib/security";
 
@@ -21,6 +21,11 @@ const syncSchema = z.object({
   goals: z.array(z.object({ id: z.number().int().positive().max(Number.MAX_SAFE_INTEGER), title: z.string().trim().min(1).max(160), category: z.string().min(1).max(80), progress: z.number().int().min(0).max(100) }).strict()).max(100).optional().default([]),
   entries: z.array(z.object({ date: z.string().min(1).max(20), answers: z.array(z.string().max(4000)).max(4) }).strict()).max(365).optional().default([]),
   dayKey: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  trail: z.object({
+    trailId: z.string().trim().min(1).max(60),
+    startedAt: z.string().min(1).max(20),
+    completedDays: z.array(z.number().int().min(1).max(30)).max(30),
+  }).strict().nullable().optional().default(null),
 }).strict();
 
 function validDeviceId(value: unknown): value is string {
@@ -65,10 +70,11 @@ export async function GET(request: Request) {
     const [progress] = await db.select().from(userProgress).where(eq(userProgress.deviceId, deviceId)).limit(1);
     const savedGoals = await db.select().from(goals).where(and(eq(goals.deviceId, deviceId), eq(goals.status, "active")));
     const savedEntries = await db.select().from(journalEntries).where(eq(journalEntries.deviceId, deviceId));
+    const [savedTrail] = await db.select().from(trailProgress).where(eq(trailProgress.deviceId, deviceId)).limit(1);
     const today = resolveDay(new URL(request.url).searchParams.get("day"), new Date().toISOString().slice(0, 10));
     const lastActive = lastActiveDay(progress?.lastMissionDate, progress?.lastRitualDate);
     const streakAlive = lastActive === today || lastActive === shiftDay(today, -1);
-    return Response.json({ deviceId, state: { profile: { name: profile.name, birthDate: profile.birthDate, objective: profile.objective, sign: profile.sign, intention: profile.intention, theme: profile.theme, hasAvatar: Boolean(profile.avatarData) }, xp: progress?.xp ?? 0, missionDone: progress?.lastMissionDate === today && Boolean(progress?.missionDone), ritualDone: progress?.lastRitualDate === today && Boolean(progress?.ritualDone), streak: streakAlive ? (progress?.streak ?? 0) : 0, goals: savedGoals.map(({ id, title, category, progress: value }) => ({ id, title, category, progress: value })), entries: savedEntries.map((entry) => ({ date: entry.entryDate, answers: JSON.parse(entry.answersJson) })) } });
+    return Response.json({ deviceId, state: { profile: { name: profile.name, birthDate: profile.birthDate, objective: profile.objective, sign: profile.sign, intention: profile.intention, theme: profile.theme, hasAvatar: Boolean(profile.avatarData) }, xp: progress?.xp ?? 0, missionDone: progress?.lastMissionDate === today && Boolean(progress?.missionDone), ritualDone: progress?.lastRitualDate === today && Boolean(progress?.ritualDone), streak: streakAlive ? (progress?.streak ?? 0) : 0, goals: savedGoals.map(({ id, title, category, progress: value }) => ({ id, title, category, progress: value })), entries: savedEntries.map((entry) => ({ date: entry.entryDate, answers: JSON.parse(entry.answersJson) })), trail: savedTrail ? { trailId: savedTrail.trailId, startedAt: savedTrail.startedAt, completedDays: JSON.parse(savedTrail.completedDaysJson) } : null } });
   } catch (error) { return errorResponse(error); }
 }
 
@@ -123,6 +129,9 @@ export async function POST(request: Request) {
       ...(payload.goals.length ? [db.insert(goals).values(payload.goals.map((goal) => ({ ...goal, deviceId, status: "active" })))] : []),
       db.delete(journalEntries).where(eq(journalEntries.deviceId, deviceId)),
       ...(payload.entries.length ? [db.insert(journalEntries).values(payload.entries.map((entry) => ({ deviceId, entryDate: entry.date, answersJson: JSON.stringify(entry.answers) })))] : []),
+      ...(payload.trail
+        ? [db.insert(trailProgress).values({ deviceId, trailId: payload.trail.trailId, startedAt: payload.trail.startedAt, completedDaysJson: JSON.stringify(payload.trail.completedDays), updatedAt: now }).onConflictDoUpdate({ target: trailProgress.deviceId, set: { trailId: payload.trail.trailId, startedAt: payload.trail.startedAt, completedDaysJson: JSON.stringify(payload.trail.completedDays), updatedAt: now } })]
+        : [db.delete(trailProgress).where(eq(trailProgress.deviceId, deviceId))]),
     ];
     await db.batch(operations as Parameters<typeof db.batch>[0]);
     return Response.json({ saved: true, savedAt: now, deviceId, streak });

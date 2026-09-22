@@ -9,6 +9,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import { dailyPlan, dayPart, dayPartLabel, greetingLabel, journalAnchors, localDayKey, weekPlan, type DailyPlan, type DayPart } from "@/lib/daily";
 import { achievementState, treeParts, weeklyReport, type Achievement, type JourneySnapshot, type TreePart } from "@/lib/journey";
+import { findTrail, trailStatus, trails, type Trail, type TrailProgress } from "@/lib/trails";
 
 type View = "home" | "tree" | "missions" | "journal" | "profile";
 type Goal = { id: number; title: string; category: string; progress: number };
@@ -85,6 +86,7 @@ export default function HomePage() {
   const [part, setPart] = useState<DayPart>(() => dayPart(new Date().getHours()));
   const [xpBurst, setXpBurst] = useState<{ id: number; amount: number } | null>(null);
   const [levelUp, setLevelUp] = useState<number | null>(null);
+  const [activeTrail, setActiveTrail] = useState<TrailProgress | null>(null);
   const levelBaseline = useRef<number | null>(null);
   const lastDay = useRef(dayKey);
   const [goals, setGoals] = useState<Goal[]>([]);
@@ -128,10 +130,10 @@ export default function HomePage() {
       if (state) {
         const nextProfile = { ...emptyProfile, ...state.profile };
         setProfile(nextProfile); setXp(state.xp ?? 0); setMissionDone(state.missionDone ?? false); setRitualDone(state.ritualDone ?? false); setStreak(state.streak ?? 0);
-        setGoals(state.goals ?? []); setEntries(state.entries ?? []); setOnboarding(3);
+        setGoals(state.goals ?? []); setEntries(state.entries ?? []); setActiveTrail(state.trail ?? null); setOnboarding(3);
         if (nextProfile.hasAvatar) setAvatarVersion(Date.now());
       } else {
-        setProfile(emptyProfile); setXp(0); setMissionDone(false); setRitualDone(false); setStreak(0); setGoals([]); setEntries([]); setOnboarding(0);
+        setProfile(emptyProfile); setXp(0); setMissionDone(false); setRitualDone(false); setStreak(0); setGoals([]); setEntries([]); setActiveTrail(null); setOnboarding(0);
       }
       setSyncStatus("saved");
       setSyncReady(true);
@@ -151,7 +153,7 @@ export default function HomePage() {
     await fetch("/api/auth", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "logout" }) });
     localStorage.removeItem("vds-state");
     localStorage.setItem("vds-device-id", crypto.randomUUID());
-    setAccount(null); setProfile(emptyProfile); setXp(0); setMissionDone(false); setRitualDone(false); setStreak(0); setGoals([]); setEntries([]); setOnboarding(0); setView("home"); setSyncReady(false);
+    setAccount(null); setProfile(emptyProfile); setXp(0); setMissionDone(false); setRitualDone(false); setStreak(0); setGoals([]); setEntries([]); setActiveTrail(null); setOnboarding(0); setView("home"); setSyncReady(false);
     levelBaseline.current = null;
     toast.success("Você saiu da sua conta.");
   }
@@ -164,7 +166,7 @@ export default function HomePage() {
       fetch("/api/sync", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ deviceId, dayKey, profile: { name: profile.name, birthDate: profile.birthDate, objective: profile.objective, sign: profile.sign, intention: profile.intention, theme: profile.theme }, xp, missionDone, ritualDone, goals, entries }),
+        body: JSON.stringify({ deviceId, dayKey, profile: { name: profile.name, birthDate: profile.birthDate, objective: profile.objective, sign: profile.sign, intention: profile.intention, theme: profile.theme }, xp, missionDone, ritualDone, goals, entries, trail: activeTrail }),
       }).then(async (response) => {
         if (!response.ok) throw new Error("sync failed");
         const result = await response.json().catch(() => null);
@@ -176,7 +178,7 @@ export default function HomePage() {
   // dayKey is read but deliberately left out: a rollover must first clear the daily
   // flags below, otherwise this would persist yesterday's mission as today's.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [syncReady, account, deviceId, onboarding, profile, xp, missionDone, ritualDone, goals, entries]);
+  }, [syncReady, account, deviceId, onboarding, profile, xp, missionDone, ritualDone, goals, entries, activeTrail]);
 
   // The app can stay open across a sunset or a midnight: keep the ambience and the day's content honest.
   useEffect(() => {
@@ -284,6 +286,33 @@ export default function HomePage() {
     }
   }
 
+  function startTrail(trailId: string) {
+    const trail = findTrail(trailId);
+    if (!trail) return;
+    if (trail.premium) { track("paywall_viewed", { from: "trail_start", trail: trailId }); toast("Essa trilha é Premium — em breve com checkout seguro."); return; }
+    setActiveTrail({ trailId, startedAt: dayKey, completedDays: [] });
+    track("trail_started", { trail: trailId });
+    toast.success(`${trail.title} · dia 1 começou`);
+  }
+
+  function completeTrailDay(day: number) {
+    setActiveTrail((current) => {
+      if (!current || current.completedDays.includes(day)) return current;
+      return { ...current, completedDays: [...current.completedDays, day] };
+    });
+    const trail = findTrail(activeTrail?.trailId);
+    awardXp(15);
+    celebrateTree();
+    track("trail_day_completed", { trail: activeTrail?.trailId, day });
+    const isLast = trail && day >= trail.length;
+    toast.success(isLast ? "Trilha concluída · sua árvore guarda essa conquista" : `Dia ${day} concluído · +15 XP`);
+  }
+
+  function abandonTrail() {
+    setActiveTrail(null);
+    track("trail_abandoned");
+  }
+
   function saveJournal() {
     if (!answers.some((a) => a.trim())) return toast.error("Escreva ao menos uma reflexão.");
     setEntries((e) => [{ date: new Date().toLocaleDateString("pt-BR"), answers }, ...e]);
@@ -323,7 +352,7 @@ export default function HomePage() {
         <div className="view-swap" key={view}>
           {view === "home" && <HomeView profile={profile} plan={plan} week={week} part={part} xp={xp} level={level} stage={stage} streak={streak} fruits={goals.filter((goal) => goal.progress === 100).length} missionDone={missionDone} ritualDone={ritualDone} treeCelebrating={treeCelebrating} completeMission={completeMission} openRitual={() => { haptic(8); setRitualOpen(true); }} oracleOpen={oracleOpen} setOracleOpen={setOracleOpen} mainGoal={mainGoal} advanceGoal={advanceGoal} openGoals={() => navigate("profile")} navigate={navigate} />}
           {view === "tree" && <TreeView xp={xp} level={level} stage={stage} streak={streak} mapScores={mapScores} goals={goals} />}
-          {view === "missions" && <JourneyView profile={profile} plan={plan} snapshot={snapshot} week={week} missionDone={missionDone} ritualDone={ritualDone} completeMission={completeMission} openRitual={() => { haptic(8); setRitualOpen(true); }} />}
+          {view === "missions" && <JourneyView profile={profile} plan={plan} snapshot={snapshot} week={week} missionDone={missionDone} ritualDone={ritualDone} completeMission={completeMission} openRitual={() => { haptic(8); setRitualOpen(true); }} activeTrail={activeTrail} startTrail={startTrail} completeTrailDay={completeTrailDay} abandonTrail={abandonTrail} />}
           {view === "journal" && <JournalView plan={plan} answers={answers} setAnswers={setAnswers} save={saveJournal} entries={entries} />}
           {view === "profile" && <ProfileView profile={profile} setProfile={setProfile} account={account} guide={guide} goals={goals} advanceGoal={advanceGoal} goalDialog={goalDialog} setGoalDialog={setGoalDialog} goalTitle={goalTitle} setGoalTitle={setGoalTitle} goalCategory={goalCategory} setGoalCategory={setGoalCategory} addGoal={() => addGoal()} syncStatus={syncStatus} avatarVersion={avatarVersion} setAvatarVersion={setAvatarVersion} logout={logout} />}
         </div>
@@ -553,7 +582,7 @@ function DailyRitual({ open, onOpenChange, profile, plan, done, onComplete }: { 
   </DialogContent></Dialog>;
 }
 
-function JourneyView({ profile, plan, snapshot, week, missionDone, ritualDone, completeMission, openRitual }: { profile: Profile; plan: DailyPlan; snapshot: JourneySnapshot; week: WeekDay[]; missionDone: boolean; ritualDone: boolean; completeMission: () => void; openRitual: () => void }) {
+function JourneyView({ profile, plan, snapshot, week, missionDone, ritualDone, completeMission, openRitual, activeTrail, startTrail, completeTrailDay, abandonTrail }: { profile: Profile; plan: DailyPlan; snapshot: JourneySnapshot; week: WeekDay[]; missionDone: boolean; ritualDone: boolean; completeMission: () => void; openRitual: () => void; activeTrail: TrailProgress | null; startTrail: (id: string) => void; completeTrailDay: (day: number) => void; abandonTrail: () => void }) {
   const [openAchievement, setOpenAchievement] = useState<string | null>(null);
   const { resolved, unlockedCount, total, next } = useMemo(() => achievementState(snapshot), [snapshot]);
   const report = useMemo(() => weeklyReport(snapshot, week[1].theme.verb), [snapshot, week]);
@@ -577,12 +606,7 @@ function JourneyView({ profile, plan, snapshot, week, missionDone, ritualDone, c
 
     {!ritualDone && <section className="achievement-row"><Wind/><div><strong>Ritual de 3 minutos</strong><span>Check-in, respiração e um gesto pequeno.</span></div><button className="ghost-button" onClick={openRitual}>Fazer</button></section>}
 
-    <section className="trail-card">
-      <div className="section-heading"><div><p className="eyebrow">Trilha ativa</p><h2>7 dias de raízes fortes</h2></div><Route/></div>
-      <div className="trail-steps">{Array.from({ length: 7 }, (_, index) => <div key={index} className={index < trailDay ? "done" : index === trailDay ? "current" : ""}>{index + 1}</div>)}</div>
-      <p>{trailDay >= 7 ? "Trilha concluída. Sua árvore recebeu um anel de constelação." : `Dia ${trailDay + 1} de 7 · cada dia com ritual ou missão avança a trilha.`}</p>
-      <button className="gold-button" onClick={() => { track("paywall_viewed", { from: "journey_trails" }); toast("Trilhas de 21 dias, carreira e autoconhecimento chegam no Premium."); }}><Gem/> Ver outras trilhas</button>
-    </section>
+    <TrailHub activeTrail={activeTrail} startTrail={startTrail} completeTrailDay={completeTrailDay} abandonTrail={abandonTrail}/>
 
     <section className="weekly-report">
       <div className="section-heading"><div><p className="eyebrow">Relatório da semana</p><h2>Como foram seus últimos 7 dias</h2></div><Compass/></div>
@@ -614,6 +638,44 @@ function JourneyView({ profile, plan, snapshot, week, missionDone, ritualDone, c
       </DialogContent>
     </Dialog>
   </div>;
+}
+
+function TrailHub({ activeTrail, startTrail, completeTrailDay, abandonTrail }: { activeTrail: TrailProgress | null; startTrail: (id: string) => void; completeTrailDay: (day: number) => void; abandonTrail: () => void }) {
+  const trail = findTrail(activeTrail?.trailId);
+  if (!activeTrail || !trail) {
+    return <section className="trail-card">
+      <div className="section-heading"><div><p className="eyebrow">Trilhas guiadas</p><h2>Escolha um caminho</h2></div><Route/></div>
+      <p className="trail-hub-intro">Cada trilha libera um capítulo pequeno por dia: mensagem, prática e reflexão.</p>
+      <div className="trail-list">{trails.map((item) => <button key={item.id} className={item.premium ? "locked" : ""} onClick={() => startTrail(item.id)}>
+        <span className="trail-list-icon">{item.premium ? <LockKeyhole/> : <Sprout/>}</span>
+        <span className="trail-list-copy"><strong>{item.title}</strong><small>{item.subtitle} · {item.length} dias</small></span>
+        <ChevronRight/>
+      </button>)}</div>
+    </section>;
+  }
+
+  const status = trailStatus(trail, activeTrail);
+  const dayToShow = Math.min(status.currentDay, status.unlocked);
+  const content = trail.days[dayToShow - 1];
+  const dayDone = activeTrail.completedDays.includes(dayToShow);
+  const caughtUp = dayDone && status.unlocked <= status.currentDay;
+
+  return <section className="trail-card">
+    <div className="section-heading"><div><p className="eyebrow">{trail.title}</p><h2>{status.finished ? "Trilha concluída" : `Dia ${dayToShow} de ${trail.length}`}</h2></div><Route/></div>
+    <div className="trail-steps">{trail.days.map((day) => <div key={day.day} className={activeTrail.completedDays.includes(day.day) ? "done" : day.day === dayToShow ? "current" : ""}>{day.day}</div>)}</div>
+
+    {status.finished ? <div className="trail-finished"><Sparkles/><p>Você completou os {trail.length} dias. Sua árvore guarda essa conquista — escolha outra trilha quando quiser continuar.</p></div>
+      : caughtUp ? <div className="trail-finished"><Check/><p>Dia {dayToShow} concluído. Uma nova etapa libera amanhã.</p></div>
+      : content ? <div className="trail-day">
+          <p className="eyebrow">{content.title}</p>
+          <p className="trail-day-message">{content.message}</p>
+          <div className="trail-day-block"><span>Prática</span><p>{content.practice}</p></div>
+          <div className="trail-day-block"><span>Reflexão</span><p>{content.reflection}</p></div>
+          <button className="gold-button" onClick={() => completeTrailDay(dayToShow)}><Check/> Concluir dia {dayToShow} · +15 XP</button>
+        </div> : null}
+
+    <button className="ghost-button trail-switch" onClick={abandonTrail}>Trocar de trilha</button>
+  </section>;
 }
 
 function JournalView({ plan, answers, setAnswers, save, entries }: { plan: DailyPlan; answers: string[]; setAnswers: (a: string[]) => void; save: () => void; entries: JournalEntry[] }) {
