@@ -23,6 +23,16 @@ function refererOrigin(request: Request) {
   }
 }
 
+// Every Vercel deploy of the frontend gets a fresh, unique preview URL
+// (`miniapp-<hash>-awvp9531-*.vercel.app`) — there is no fixed list to maintain.
+// Only Vercel can mint a hostname under this project's own slug, so trusting the
+// pattern is as safe as trusting the one alias we hardcode above.
+const TRUSTED_VERCEL_PREVIEW = /^https:\/\/miniapp-[a-z0-9-]+\.vercel\.app$/i;
+
+function isTrustedOrigin(origin: string, expectedOrigins: Set<string>) {
+  return expectedOrigins.has(origin) || TRUSTED_VERCEL_PREVIEW.test(origin);
+}
+
 export function assertTrustedMutation(request: Request, contentType: "json" | "multipart" | "none") {
   const url = new URL(request.url);
   const forwardedProtocol = request.headers.get("x-forwarded-proto");
@@ -43,7 +53,7 @@ export function assertTrustedMutation(request: Request, contentType: "json" | "m
   // tracking-protection settings). Referer is governed by a separate policy, so it's a
   // legitimate fallback — reject only when neither header identifies a trusted origin.
   const origin = request.headers.get("origin") ?? refererOrigin(request);
-  if (!origin || !expectedOrigins.has(origin)) throw new RequestError("Origem da requisição não autorizada.", 403);
+  if (!origin || !isTrustedOrigin(origin, expectedOrigins)) throw new RequestError("Origem da requisição não autorizada.", 403);
 
   const fetchSite = request.headers.get("sec-fetch-site");
   if (fetchSite === "cross-site") throw new RequestError("Requisição entre sites bloqueada.", 403);
