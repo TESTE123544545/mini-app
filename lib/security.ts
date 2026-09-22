@@ -13,6 +13,16 @@ function configuredFrontendOrigin() {
   return process.env.FRONTEND_ORIGIN?.replace(/\/$/, "");
 }
 
+function refererOrigin(request: Request) {
+  const referer = request.headers.get("referer");
+  if (!referer) return null;
+  try {
+    return new URL(referer).origin;
+  } catch {
+    return null;
+  }
+}
+
 export function assertTrustedMutation(request: Request, contentType: "json" | "multipart" | "none") {
   const url = new URL(request.url);
   const forwardedProtocol = request.headers.get("x-forwarded-proto");
@@ -21,7 +31,6 @@ export function assertTrustedMutation(request: Request, contentType: "json" | "m
     throw new RequestError("Use uma conexão HTTPS segura.", 426);
   }
 
-  const origin = request.headers.get("origin");
   const expectedOrigins = new Set([
     url.origin,
     "https://veiasdasintonia.com.br",
@@ -30,6 +39,10 @@ export function assertTrustedMutation(request: Request, contentType: "json" | "m
   ]);
   const frontendOrigin = configuredFrontendOrigin();
   if (frontendOrigin) expectedOrigins.add(frontendOrigin);
+  // Some browsers omit Origin on an otherwise same-site request (privacy modes, certain
+  // tracking-protection settings). Referer is governed by a separate policy, so it's a
+  // legitimate fallback — reject only when neither header identifies a trusted origin.
+  const origin = request.headers.get("origin") ?? refererOrigin(request);
   if (!origin || !expectedOrigins.has(origin)) throw new RequestError("Origem da requisição não autorizada.", 403);
 
   const fetchSite = request.headers.get("sec-fetch-site");
