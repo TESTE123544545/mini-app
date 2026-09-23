@@ -12,7 +12,9 @@ import { rangeProgress, treeStageFor } from "@/lib/treeStages";
 export function ProsperityTree({ xp, celebrating = false, goalProgress }: { xp: number; celebrating?: boolean; goalProgress?: number }) {
   const { stageIndex } = treeStageFor(xp);
 
-  const seedOpacity = 1 - rangeProgress(xp, "roots", "sprout");
+  // Seed fades out gradually as roots take over, instead of vanishing before the trunk has
+  // anything to show — the earlier cutoff left a dead gap with nothing visible in it.
+  const seedOpacity = 1 - rangeProgress(xp, "roots", "trunk");
   const rootsReveal = rangeProgress(xp, "roots", "young_tree");
   const trunkReveal = rangeProgress(xp, "sprout", "trunk");
   const branchesA = rangeProgress(xp, "branches", "more_branches");
@@ -21,8 +23,14 @@ export function ProsperityTree({ xp, celebrating = false, goalProgress }: { xp: 
   const flowerPool = rangeProgress(xp, "flowers", "full_flowers");
   const fruitPool = rangeProgress(xp, "fruits", "complete");
   const goldenHalo = rangeProgress(xp, "complete", "golden");
-  const overallGrowth = rangeProgress(xp, "seed", "golden");
-  const trunkWidth = 3.5 + overallGrowth * 8;
+  // Two paces on purpose: the tree reaches its full on-screen SIZE early (by "full_leaves",
+  // 750xp) so it never reads as a near-empty box for most of the journey, while `maturity`
+  // keeps thickening the trunk and warming the glow slowly all the way to "complete" (3000xp)
+  // as a subtler, longer-running flourish.
+  const sizeGrowth = rangeProgress(xp, "seed", "full_leaves");
+  const maturity = rangeProgress(xp, "seed", "complete");
+  const sparkleGrowth = rangeProgress(xp, "seed", "golden");
+  const trunkWidth = 3.5 + maturity * 8;
 
   const dash = (reveal: number) => ({ strokeDasharray: 100, strokeDashoffset: 100 * (1 - reveal) });
 
@@ -30,7 +38,9 @@ export function ProsperityTree({ xp, celebrating = false, goalProgress }: { xp: 
   const flowers = FLOWER_POOL.map((flower, index) => ({ ...flower, on: flowerPool >= (index + 1) / FLOWER_POOL.length }));
   const fruits = FRUIT_POOL.map((fruit, index) => ({ ...fruit, on: fruitPool >= (index + 1) / FRUIT_POOL.length }));
 
-  const growthScale = 0.3 + overallGrowth * 0.7;
+  // Floor raised well above "barely there": a brand-new seed should read as small and
+  // deliberate, not as an empty rectangle.
+  const growthScale = 0.58 + sizeGrowth * 0.42;
 
   return (
     <svg
@@ -38,11 +48,11 @@ export function ProsperityTree({ xp, celebrating = false, goalProgress }: { xp: 
       viewBox="0 0 300 420"
       role="img"
       aria-label={`Sua árvore da prosperidade, estágio ${stageIndex + 1}`}
-      style={{ transform: `scale(${growthScale})`, transformOrigin: "center bottom", transition: "transform 0.8s cubic-bezier(.34,1.56,.64,1)" }}
+      style={{ transform: `scale(${growthScale})`, transformOrigin: "center bottom", transition: "transform 0.8s cubic-bezier(.16,1,.3,1)" }}
     >
       <defs>
         <radialGradient id="pt-glow" cx="50%" cy="62%" r="55%">
-          <stop offset="0%" stopColor="#f2dc8a" stopOpacity={0.28 + overallGrowth * 0.22} />
+          <stop offset="0%" stopColor="#f2dc8a" stopOpacity={0.34 + maturity * 0.26} />
           <stop offset="100%" stopColor="#f2dc8a" stopOpacity="0" />
         </radialGradient>
         <linearGradient id="pt-wood" x1="0" y1="1" x2="0" y2="0">
@@ -100,14 +110,14 @@ export function ProsperityTree({ xp, celebrating = false, goalProgress }: { xp: 
             fill="#8fd3a3"
             opacity={leaf.on ? 0.92 : 0}
             transform={`rotate(${leaf.rot} ${leaf.x} ${leaf.y}) scale(${leaf.on ? 1 : 0.4})`}
-            style={{ transformOrigin: `${leaf.x}px ${leaf.y}px`, transition: "opacity .7s ease, transform .7s cubic-bezier(.34,1.56,.64,1)" }}
+            style={{ transformOrigin: `${leaf.x}px ${leaf.y}px`, transition: "opacity .7s ease, transform .7s cubic-bezier(.16,1,.3,1)" }}
           />
         ))}
       </g>
 
       <g>
         {flowers.map((flower, index) => (
-          <g key={index} opacity={flower.on ? 1 : 0} transform={`scale(${flower.on ? 1 : 0.3})`} style={{ transformOrigin: `${flower.x}px ${flower.y}px`, transition: "opacity .8s ease, transform .8s cubic-bezier(.34,1.56,.64,1)" }}>
+          <g key={index} opacity={flower.on ? 1 : 0} transform={`scale(${flower.on ? 1 : 0.3})`} style={{ transformOrigin: `${flower.x}px ${flower.y}px`, transition: "opacity .8s ease, transform .8s cubic-bezier(.16,1,.3,1)" }}>
             {[0, 72, 144, 216, 288].map((angle) => (
               <ellipse key={angle} cx={flower.x} cy={flower.y} rx="3.4" ry="2" fill="#f7e7ff" opacity="0.9" transform={`rotate(${angle} ${flower.x} ${flower.y}) translate(3 0)`} />
             ))}
@@ -126,12 +136,12 @@ export function ProsperityTree({ xp, celebrating = false, goalProgress }: { xp: 
             fill="url(#pt-fruit)"
             opacity={fruit.on ? 1 : 0}
             transform={`scale(${fruit.on ? 1 : 0.3})`}
-            style={{ transformOrigin: `${fruit.x}px ${fruit.y}px`, transition: "opacity .8s ease, transform .8s cubic-bezier(.34,1.56,.64,1)" }}
+            style={{ transformOrigin: `${fruit.x}px ${fruit.y}px`, transition: "opacity .8s ease, transform .8s cubic-bezier(.16,1,.3,1)" }}
           />
         ))}
       </g>
 
-      <g className="prosperity-tree-sparkles" aria-hidden="true" opacity={0.3 + overallGrowth * 0.7}>
+      <g className="prosperity-tree-sparkles" aria-hidden="true" opacity={0.3 + sparkleGrowth * 0.7}>
         {SPARKLE_POOL.map((point, index) => (
           <circle key={index} cx={point.x} cy={point.y} r={point.r} fill="#fff6dc" style={{ animationDelay: `${index * 0.5}s` }} />
         ))}

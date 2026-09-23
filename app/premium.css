@@ -111,7 +111,7 @@ body .gold-button:not(:disabled):active::after{animation:gold-sheen .5s var(--ea
 
 /* --- Home: 7-day cycle with a focus word per day ------------------------- */
 body .week-days>div{min-height:78px;gap:2px;transition:transform var(--dur-tap) var(--ease),border-color var(--dur-tap) var(--ease)}
-body .week-days>div b{display:block;max-width:100%;overflow:hidden;color:#93a2c6;font-size:.55rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;text-overflow:ellipsis;white-space:nowrap}
+body .week-days>div b{display:block;max-width:100%;color:#93a2c6;font-size:.55rem;line-height:1.25;font-weight:700;letter-spacing:.02em;text-transform:uppercase;white-space:normal;text-align:center;word-break:break-word}
 body .week-days .today b{color:#fff8e4}
 
 /* --- Streak ring --------------------------------------------------------- */
@@ -193,8 +193,8 @@ body .week-days .today b{color:#fff8e4}
 
 /* --- Tree: touchable parts ---------------------------------------------- */
 .tree-parts{position:absolute;inset:0;z-index:4}
-.tree-parts>button{position:absolute;width:32px;height:32px;margin:-16px 0 0 -16px;display:grid;place-items:center;border:1px solid #f0d47b66;border-radius:50%;background:#0a1c4faa;color:var(--gold-soft);backdrop-filter:blur(3px)}
-.tree-parts>button svg{width:14px}
+.tree-parts>button{position:absolute;width:40px;height:40px;margin:-20px 0 0 -20px;display:grid;place-items:center;border:1px solid #f0d47b66;border-radius:50%;background:#0a1c4faa;color:var(--gold-soft);backdrop-filter:blur(3px)}
+.tree-parts>button svg{width:16px}
 .tree-parts>button::after{content:"";position:absolute;inset:-7px;border-radius:50%;border:1px solid #f0d47b2e;animation:hotspot-ping 3.4s ease-out infinite}
 .tree-parts>button.locked{border-color:#ffffff24;background:#04102faa;color:#6c7a9e}
 .tree-parts>button.locked::after{animation:none}
