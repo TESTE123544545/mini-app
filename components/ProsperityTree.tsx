@@ -30,12 +30,15 @@ export function ProsperityTree({ xp, celebrating = false, goalProgress }: { xp: 
   const flowers = FLOWER_POOL.map((flower, index) => ({ ...flower, on: flowerPool >= (index + 1) / FLOWER_POOL.length }));
   const fruits = FRUIT_POOL.map((fruit, index) => ({ ...fruit, on: fruitPool >= (index + 1) / FRUIT_POOL.length }));
 
+  const growthScale = 0.3 + overallGrowth * 0.7;
+
   return (
     <svg
       className={`prosperity-tree-svg${celebrating ? " is-celebrating" : ""}`}
       viewBox="0 0 300 420"
       role="img"
       aria-label={`Sua árvore da prosperidade, estágio ${stageIndex + 1}`}
+      style={{ transform: `scale(${growthScale})`, transformOrigin: "center bottom", transition: "transform 0.8s cubic-bezier(.34,1.56,.64,1)" }}
     >
       <defs>
         <radialGradient id="pt-glow" cx="50%" cy="62%" r="55%">
