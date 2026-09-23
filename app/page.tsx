@@ -606,6 +606,7 @@ function RotatingWord({ words, intervalMs = 1900 }: { words: string[]; intervalM
 
 function WelcomeHero({ onStart, onLogin }: { onStart: () => void; onLogin: () => void }) {
   return <main className="welcome-hero">
+    <video className="welcome-video" autoPlay muted loop playsInline aria-hidden="true" src="/video/welcome-bg.mp4" />
     <div className="cosmos" aria-hidden="true" />
     <div className="welcome-tree-wrap" aria-hidden="true"><Image className="welcome-tree" src="/prosperity-tree.png" alt="" width={420} height={630} priority /></div>
     <div className="welcome-veil" aria-hidden="true" />
