@@ -628,21 +628,15 @@ function RotatingWord({ words, intervalMs = 1900 }: { words: string[]; intervalM
 
 function WelcomeHero({ onStart, onLogin }: { onStart: () => void; onLogin: () => void }) {
   return <main className="welcome-hero">
-    <div className="cosmos" aria-hidden="true" />
     <video className="welcome-portal-video" autoPlay muted loop playsInline aria-hidden="true">
       <source src="/portal.mp4" type="video/mp4" />
     </video>
-    <div className="welcome-tree-wrap" aria-hidden="true"><Image className="welcome-tree" src="/prosperity-tree.png" alt="" width={420} height={630} priority /></div>
-    <div className="welcome-veil" aria-hidden="true" />
+    <div className="welcome-portal-overlay" />
     <header className="welcome-nav">
       <div className="welcome-brand"><Leaf size={20} strokeWidth={1.6} /><span>Veias da Sintonia</span></div>
       <button type="button" className="liquid-glass welcome-login-pill" onClick={onLogin}>Entrar</button>
     </header>
-    <div className="welcome-content">
-      <p className="eyebrow">Sua jornada, sempre com você</p>
-      <h1>Seu signo é o ponto de partida.<br/>Sua árvore é a jornada.</h1>
-      <p>Descubra um objetivo real, plante sua semente e veja sua árvore crescer a cada pequena ação — sem promessas, só constância.</p>
-      <p className="welcome-rotating">Comece por <RotatingWord words={ROTATING_OBJECTIVES}/></p>
+    <div className="welcome-portal-content">
       <div className="welcome-actions">
         <button type="button" className="gold-button fx-pulse" onClick={onStart}>Começar minha jornada <ChevronRight/></button>
         <button type="button" className="liquid-glass welcome-secondary" onClick={onLogin}>Já tenho conta</button>
