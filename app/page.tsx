@@ -599,7 +599,7 @@ function RotatingWord({ words, intervalMs = 1900 }: { words: string[]; intervalM
     const id = window.setInterval(() => setIndex((current) => (current + 1) % words.length), intervalMs);
     return () => window.clearInterval(id);
   }, [words, intervalMs]);
-  return <span className="rotating-word"><span className="rotating-word-strip" style={{ transform: `translateY(-${index * 100}%)` }}>
+  return <span className="rotating-word"><span className="rotating-word-strip" style={{ transform: `translateY(-${(index * 100) / words.length}%)` }}>
     {words.map((word) => <span key={word}>{word}</span>)}
   </span></span>;
 }
