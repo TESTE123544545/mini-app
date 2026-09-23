@@ -1,4 +1,4 @@
-const CACHE_NAME = "veias-da-sintonia-v2";
+const CACHE_NAME = "veias-da-sintonia-v3";
 const APP_SHELL = [
   "/",
   "/manifest.webmanifest",
@@ -32,6 +32,13 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
+/**
+ * Network-first for everything same-origin: a person with a connection always gets
+ * the latest deploy, and the cache only kicks in once the network request fails
+ * (offline, or a flaky mobile connection) — the opposite of the old cache-first
+ * behavior, which could keep serving a stale build indefinitely once a URL was
+ * cached, with no way for the app to know it had gone stale.
+ */
 self.addEventListener("fetch", (event) => {
   const request = event.request;
   if (request.method !== "GET") return;
@@ -41,30 +48,17 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  if (request.mode === "navigate") {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put("/", copy));
-          return response;
-        })
-        .catch(() => caches.match("/")),
-    );
-    return;
-  }
+  const cacheKey = request.mode === "navigate" ? "/" : request;
 
   event.respondWith(
-    caches.match(request).then(
-      (cached) =>
-        cached ||
-        fetch(request).then((response) => {
-          if (response.ok) {
-            const copy = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
-          }
-          return response;
-        }),
-    ),
+    fetch(request)
+      .then((response) => {
+        if (response.ok) {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(cacheKey, copy));
+        }
+        return response;
+      })
+      .catch(() => caches.match(cacheKey).then((cached) => cached || caches.match("/"))),
   );
 });
