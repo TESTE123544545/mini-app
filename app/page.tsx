@@ -155,7 +155,7 @@ export default function HomePage() {
 
   function handleSessionExpired() {
     localStorage.removeItem("vds-state");
-    setAccount(null); setProfile(emptyProfile); setXp(0); setMissionDone(false); setRitualDone(false); setStreak(0); setGoals([]); setEntries([]); setActiveTrail(null); setOnboarding(0); setView("home"); setSyncReady(false); setUnlockedAchievements([]);
+    setAccount(null); setProfile(emptyProfile); setXp(0); setMissionDone(false); setRitualDone(false); setStreak(0); setGoals([]); setEntries([]); setActiveTrail(null); setOnboarding(0); setView("home"); setSyncReady(false); setUnlockedAchievements([]); setWelcomeAuthMode("login");
     levelBaseline.current = null;
     notifiedAchievements.current = null;
     toast.error("Sua sessão expirou. Entre novamente para continuar sua jornada.");
@@ -200,7 +200,7 @@ export default function HomePage() {
     await fetch("/api/auth", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "logout" }) });
     localStorage.removeItem("vds-state");
     localStorage.setItem("vds-device-id", crypto.randomUUID());
-    setAccount(null); setProfile(emptyProfile); setXp(0); setMissionDone(false); setRitualDone(false); setStreak(0); setGoals([]); setEntries([]); setActiveTrail(null); setOnboarding(0); setView("home"); setSyncReady(false); setUnlockedAchievements([]);
+    setAccount(null); setProfile(emptyProfile); setXp(0); setMissionDone(false); setRitualDone(false); setStreak(0); setGoals([]); setEntries([]); setActiveTrail(null); setOnboarding(0); setView("home"); setSyncReady(false); setUnlockedAchievements([]); setWelcomeAuthMode(null);
     levelBaseline.current = null;
     notifiedAchievements.current = null;
     toast.success("Você saiu da sua conta.");
