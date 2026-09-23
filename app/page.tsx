@@ -135,6 +135,7 @@ export default function HomePage() {
   const [syncStatus, setSyncStatus] = useState<"loading" | "saved" | "offline">("loading");
   const [avatarVersion, setAvatarVersion] = useState(0);
   const [unlockedAchievements, setUnlockedAchievements] = useState<string[]>([]);
+  const [showUniverseEntry, setShowUniverseEntry] = useState(false);
   const notifiedAchievements = useRef<Set<string> | null>(null);
 
   useEffect(() => {
@@ -193,6 +194,7 @@ export default function HomePage() {
   }
 
   async function handleAuthenticated(user: Account) {
+    setShowUniverseEntry(true);
     setAccount(user);
     const currentId = localStorage.getItem("vds-device-id") || crypto.randomUUID();
     await loadCloudState(user, currentId);
@@ -202,7 +204,7 @@ export default function HomePage() {
     await fetch("/api/auth", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "logout" }) });
     localStorage.removeItem("vds-state");
     localStorage.setItem("vds-device-id", crypto.randomUUID());
-    setAccount(null); setProfile(emptyProfile); setXp(0); setMissionDone(false); setRitualDone(false); setStreak(0); setGoals([]); setEntries([]); setActiveTrail(null); setOnboarding(0); setView("home"); setSyncReady(false); setUnlockedAchievements([]); setWelcomeAuthMode(null);
+    setAccount(null); setProfile(emptyProfile); setXp(0); setMissionDone(false); setRitualDone(false); setStreak(0); setGoals([]); setEntries([]); setActiveTrail(null); setOnboarding(0); setView("home"); setSyncReady(false); setUnlockedAchievements([]); setWelcomeAuthMode(null); setShowUniverseEntry(false);
     treeStageBaseline.current = null;
     notifiedAchievements.current = null;
     toast.success("Você saiu da sua conta.");
@@ -492,6 +494,7 @@ export default function HomePage() {
       }} />
       {xpBurst && <div className="xp-float" key={xpBurst.id} aria-hidden="true">+{xpBurst.amount} XP</div>}
       {stageUnlocked && <TreeStageUnlockedOverlay name={stageUnlocked.name} note={stageUnlocked.note} />}
+      {showUniverseEntry && <UniverseEntryOverlay onComplete={() => setShowUniverseEntry(false)} />}
       <Toaster richColors position="top-center" />
     </main>
   );
@@ -595,6 +598,19 @@ function TreeStageUnlockedOverlay({ name, note }: { name: string; note: string }
   </div>;
 }
 
+function UniverseEntryOverlay({ onComplete }: { onComplete: () => void }) {
+  useEffect(() => {
+    const timer = window.setTimeout(onComplete, 4000);
+    return () => window.clearTimeout(timer);
+  }, [onComplete]);
+
+  return <div className="universe-entry-overlay" aria-hidden="true">
+    <video className="universe-entry-video" autoPlay muted playsInline>
+      <source src="/universe-entry.mp4" type="video/mp4" />
+    </video>
+  </div>;
+}
+
 const ROTATING_OBJECTIVES = ["dinheiro", "carreira", "hábitos", "relacionamentos", "autoconhecimento"];
 
 /** Cycles through `words` inside a one-line window; stays on the first word if the OS asks for reduced motion. */
@@ -613,6 +629,9 @@ function RotatingWord({ words, intervalMs = 1900 }: { words: string[]; intervalM
 function WelcomeHero({ onStart, onLogin }: { onStart: () => void; onLogin: () => void }) {
   return <main className="welcome-hero">
     <div className="cosmos" aria-hidden="true" />
+    <video className="welcome-portal-video" autoPlay muted loop playsInline aria-hidden="true">
+      <source src="/portal.mp4" type="video/mp4" />
+    </video>
     <div className="welcome-tree-wrap" aria-hidden="true"><Image className="welcome-tree" src="/prosperity-tree.png" alt="" width={420} height={630} priority /></div>
     <div className="welcome-veil" aria-hidden="true" />
     <header className="welcome-nav">
