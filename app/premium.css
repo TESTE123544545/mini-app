@@ -336,10 +336,30 @@ body .ritual-progress{grid-template-columns:repeat(4,1fr)}
 .chat-send{width:40px;height:40px;flex:0 0 auto;border:0;border-radius:50%;display:grid;place-items:center;color:#07143e;background:linear-gradient(120deg,#c7922e,#f2dc8a)}
 .chat-send:disabled{opacity:.4}
 
+.liquid-glass{background:rgba(255,255,255,.05);background-blend-mode:luminosity;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:none;box-shadow:inset 0 1px 1px rgba(255,255,255,.14);position:relative;overflow:hidden}
+.liquid-glass::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1.4px;background:linear-gradient(180deg,rgba(255,255,255,.45) 0%,rgba(255,255,255,.15) 20%,rgba(255,255,255,0) 40%,rgba(255,255,255,0) 60%,rgba(255,255,255,.15) 80%,rgba(255,255,255,.45) 100%);-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+
+.welcome-hero{min-height:100svh;position:relative;overflow:hidden;background:radial-gradient(circle at 50% -10%,#173d8c 0,#08184d 40%,#050d2c 78%);display:flex;flex-direction:column}
+.welcome-tree-wrap{position:absolute;top:8%;left:50%;transform:translateX(-50%);width:min(78%,420px);z-index:1}
+.welcome-tree{display:block;width:100%;height:auto;filter:drop-shadow(0 0 40px #e2bd5040);mix-blend-mode:screen;animation:breathe 5s ease-in-out infinite}
+.welcome-veil{position:absolute;inset:0;z-index:2;background:linear-gradient(to bottom,rgba(5,13,44,0) 0%,rgba(5,13,44,.35) 52%,rgba(5,13,44,.94) 78%,#050d2c 100%)}
+.welcome-nav{position:relative;z-index:4;display:flex;align-items:center;justify-content:space-between;padding:20px min(6vw,28px)}
+.welcome-brand{display:flex;align-items:center;gap:8px;color:#f8f5ea;font-family:Georgia,serif;font-size:1rem;letter-spacing:.01em}
+.welcome-brand svg{color:#e7c776}
+.welcome-login-pill{color:#f8f5ea;font-size:.85rem;font-weight:600;padding:9px 18px;border-radius:999px}
+.welcome-content{position:relative;z-index:4;margin-top:auto;padding:0 min(7vw,32px) max(5vh,28px);text-align:center;max-width:460px;align-self:center}
+.welcome-content .eyebrow{color:#dcc16f;font-size:.72rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase;margin:0 0 10px}
+.welcome-content h1{font-family:Georgia,serif;font-weight:500;font-size:clamp(1.7rem,7vw,2.3rem);line-height:1.22;letter-spacing:-.02em;color:#fff;margin:0 0 14px}
+.welcome-content>p:not(.eyebrow){color:#aebad8;line-height:1.55;font-size:.94rem;margin:0 auto 26px;max-width:380px}
+.welcome-actions{display:flex;flex-direction:column;gap:10px}
+.welcome-actions .gold-button{width:100%}
+.welcome-secondary{width:100%;color:#f8f5ea;font-size:.92rem;font-weight:600;padding:13px;border-radius:14px;min-height:50px}
+
 @media(prefers-reduced-motion:reduce){
   .app-shell .cosmos,.app-shell::after,.tree-parts>button::after,.levelup-ring::before,.levelup-ring::after,.splash-bar i,.app-splash .brand-mark{animation:none!important}
   .view-swap,.xp-float,.levelup{animation:none!important}
   .xp-float{display:none}
   .ai-bubble{animation:none!important}
   .chat-turn.typing span{animation:none!important;opacity:.6}
+  .welcome-tree{animation:none!important}
 }

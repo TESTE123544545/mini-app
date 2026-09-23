@@ -98,6 +98,7 @@ export default function HomePage() {
   const [view, setView] = useState<View>("home");
   const [ready, setReady] = useState(false);
   const [account, setAccount] = useState<Account | null>(null);
+  const [welcomeAuthMode, setWelcomeAuthMode] = useState<"register" | "login" | null>(null);
   const [onboarding, setOnboarding] = useState(0);
   const [profile, setProfile] = useState<Profile>(emptyProfile);
   const [xp, setXp] = useState(0);
@@ -436,7 +437,10 @@ export default function HomePage() {
   }, [onboarding, missionDone]);
 
   if (!ready) return <AppSplash />;
-  if (!account) return <AuthScreen onAuthenticated={handleAuthenticated} />;
+  if (!account) {
+    if (!welcomeAuthMode) return <WelcomeHero onStart={() => setWelcomeAuthMode("register")} onLogin={() => setWelcomeAuthMode("login")} />;
+    return <AuthScreen onAuthenticated={handleAuthenticated} initialMode={welcomeAuthMode} onBack={() => setWelcomeAuthMode(null)} />;
+  }
   if (onboarding < TOTAL_ONBOARDING_STEPS) return <Onboarding step={onboarding} setStep={setOnboarding} profile={profile} setProfile={setProfile} finish={finishOnboarding}
     goalTitle={goalTitle} setGoalTitle={setGoalTitle} goalKind={obGoalKind} setGoalKind={setObGoalKind} goalAmount={obGoalAmount} setGoalAmount={setObGoalAmount}
     goalStage={obGoalStage} setGoalStage={setObGoalStage} goalBlocker={obGoalBlocker} setGoalBlocker={setObGoalBlocker}
@@ -585,10 +589,31 @@ function LevelUpOverlay({ level, stage }: { level: number; stage: string }) {
   </div>;
 }
 
+function WelcomeHero({ onStart, onLogin }: { onStart: () => void; onLogin: () => void }) {
+  return <main className="welcome-hero">
+    <div className="cosmos" aria-hidden="true" />
+    <div className="welcome-tree-wrap" aria-hidden="true"><Image className="welcome-tree" src="/prosperity-tree.png" alt="" width={420} height={630} priority /></div>
+    <div className="welcome-veil" aria-hidden="true" />
+    <header className="welcome-nav">
+      <div className="welcome-brand"><Leaf size={20} strokeWidth={1.6} /><span>Veias da Sintonia</span></div>
+      <button type="button" className="liquid-glass welcome-login-pill" onClick={onLogin}>Entrar</button>
+    </header>
+    <div className="welcome-content">
+      <p className="eyebrow">Sua jornada, sempre com você</p>
+      <h1>Seu signo é o ponto de partida.<br/>Sua árvore é a jornada.</h1>
+      <p>Descubra um objetivo real, plante sua semente e veja sua árvore crescer a cada pequena ação — sem promessas, só constância.</p>
+      <div className="welcome-actions">
+        <button type="button" className="gold-button" onClick={onStart}>Começar minha jornada <ChevronRight/></button>
+        <button type="button" className="liquid-glass welcome-secondary" onClick={onLogin}>Já tenho conta</button>
+      </div>
+    </div>
+  </main>;
+}
+
 type AuthMode = "register" | "login" | "recover" | "reset";
 
-function AuthScreen({ onAuthenticated }: { onAuthenticated: (user: Account, mode: "register" | "login") => Promise<void> }) {
-  const [mode, setMode] = useState<AuthMode>("register");
+function AuthScreen({ onAuthenticated, initialMode, onBack }: { onAuthenticated: (user: Account, mode: "register" | "login") => Promise<void>; initialMode?: "register" | "login"; onBack?: () => void }) {
+  const [mode, setMode] = useState<AuthMode>(initialMode ?? "register");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
@@ -648,6 +673,7 @@ function AuthScreen({ onAuthenticated }: { onAuthenticated: (user: Account, mode
   return <main className="auth-screen"><div className="stars" aria-hidden="true"/><section className="auth-card">
     <div className="auth-brand"><div className="brand-mark"><Leaf/></div><p className="brand-name">Veias da Sintonia</p></div>
     {(mode === "recover" || mode === "reset") && <button className="auth-back" type="button" onClick={() => switchMode("login")}><ArrowLeft/> Voltar para entrar</button>}
+    {(mode === "register" || mode === "login") && onBack && <button className="auth-back" type="button" onClick={onBack}><ArrowLeft/> Voltar</button>}
     <p className="eyebrow">Sua jornada, sempre com você</p>
     <h1>{titles[mode]}</h1>
     <p className="auth-copy">{descriptions[mode]}</p>
