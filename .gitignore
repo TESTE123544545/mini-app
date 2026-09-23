@@ -57,5 +57,7 @@ next-env.d.ts
 /android/local.properties
 /.gradle-cache/
 /.cache-trash/
+/.claude/
+/.impeccable/
 
 .vercel
