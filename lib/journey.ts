@@ -98,25 +98,6 @@ export function achievementState(snapshot: JourneySnapshot) {
   return { resolved, unlockedCount: unlocked.length, total: resolved.length, next };
 }
 
-export type TreePart = {
-  key: string;
-  name: string;
-  meaning: string;
-  unlockedAt: number;
-  x: number;
-  y: number;
-};
-
-/** Hotspot coordinates are percentages inside the tree stage, matched to prosperity-tree.png. */
-export const treeParts: readonly TreePart[] = [
-  { key: "raizes", name: "Raízes", meaning: "Seus hábitos e aquilo que você cuida mesmo sem plateia. Crescem a cada ritual concluído.", unlockedAt: 0, x: 50, y: 86 },
-  { key: "tronco", name: "Tronco", meaning: "Sua constância. É o que segura o peso das metas quando a motivação não aparece.", unlockedAt: 40, x: 50, y: 66 },
-  { key: "galho-esquerdo", name: "Galho da Ação", meaning: "As missões que você concluiu. Cada uma abriu uma folha nova neste lado da árvore.", unlockedAt: 100, x: 34, y: 45 },
-  { key: "galho-direito", name: "Galho da Reflexão", meaning: "Seu diário. Observar padrões é o que evita repetir o mesmo ciclo.", unlockedAt: 100, x: 66, y: 45 },
-  { key: "flores", name: "Flores", meaning: "Suas sequências. Aparecem quando você volta em dias seguidos, mesmo fazendo pouco.", unlockedAt: 180, x: 40, y: 28 },
-  { key: "frutos", name: "Frutos", meaning: "Metas concluídas. Ficam na árvore para sempre, como registro do que você terminou.", unlockedAt: 240, x: 60, y: 31 },
-  { key: "copa", name: "Copa Dourada", meaning: "O estágio em que a jornada já não depende de empolgação. É o topo da sua evolução visível.", unlockedAt: 300, x: 50, y: 16 },
-];
 
 export type WeeklyReport = {
   rangeLabel: string;

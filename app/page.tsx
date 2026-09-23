@@ -8,9 +8,11 @@ import { Progress } from "@/components/ui/progress";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import { dailyPlan, dayPart, dayPartLabel, greetingLabel, journalAnchors, localDayKey, weekPlan, type DailyPlan, type DayPart } from "@/lib/daily";
-import { achievementState, treeParts, weeklyReport, type Achievement, type JourneySnapshot, type TreePart } from "@/lib/journey";
+import { achievementState, weeklyReport, type Achievement, type JourneySnapshot } from "@/lib/journey";
 import { findTrail, trailStatus, trails, type Trail, type TrailProgress } from "@/lib/trails";
 import { fetchPremiumPrice, isPlayBillingAvailable, purchasePremium, verifyPurchaseWithServer } from "@/lib/billing";
+import { TREE_PART_HOTSPOTS, TREE_STAGES, treeStageFor, type TreePartHotspot } from "@/lib/treeStages";
+import { ProsperityTree } from "@/components/ProsperityTree";
 
 type View = "home" | "tree" | "missions" | "journal" | "profile" | "goal" | "chat";
 type GoalKind = "financial" | "non_financial" | "partial";
@@ -70,7 +72,7 @@ const blockerLabelByKey = Object.fromEntries(blockerOptions) as Record<string, s
 
 const dayPartIcon: Record<DayPart, React.ReactNode> = { dawn: <Sunrise />, day: <Sun />, dusk: <Sunset />, night: <MoonStar /> };
 const achievementIcon: Record<Achievement["icon"], React.ReactNode> = { sprout: <Sprout />, anchor: <Anchor />, flame: <Flame />, apple: <Apple />, shield: <ShieldCheck />, orbit: <Orbit />, crown: <Crown /> };
-const treePartIcon: Record<string, React.ReactNode> = { raizes: <Anchor />, tronco: <TreeDeciduous />, "galho-esquerdo": <Target />, "galho-direito": <BookOpen />, flores: <Flower2 />, frutos: <Apple />, copa: <Crown /> };
+const treePartIcon: Record<string, React.ReactNode> = { raizes: <Anchor />, tronco: <TreeDeciduous />, galhos: <Target />, folhas: <Leaf />, flores: <Flower2 />, frutos: <Apple />, copa: <Crown /> };
 
 /** Short, non-intrusive haptic confirmation. Silently ignored where unsupported. */
 function haptic(pattern: number | number[] = 12) {
@@ -111,10 +113,10 @@ export default function HomePage() {
   const [dayKey, setDayKey] = useState(() => localDayKey());
   const [part, setPart] = useState<DayPart>(() => dayPart(new Date().getHours()));
   const [xpBurst, setXpBurst] = useState<{ id: number; amount: number } | null>(null);
-  const [levelUp, setLevelUp] = useState<number | null>(null);
+  const [stageUnlocked, setStageUnlocked] = useState<{ name: string; note: string } | null>(null);
   const [activeTrail, setActiveTrail] = useState<TrailProgress | null>(null);
   const [paywall, setPaywall] = useState<string | null>(null);
-  const levelBaseline = useRef<number | null>(null);
+  const treeStageBaseline = useRef<number | null>(null);
   const lastDay = useRef(dayKey);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [goalTitle, setGoalTitle] = useState("");
@@ -156,7 +158,7 @@ export default function HomePage() {
   function handleSessionExpired() {
     localStorage.removeItem("vds-state");
     setAccount(null); setProfile(emptyProfile); setXp(0); setMissionDone(false); setRitualDone(false); setStreak(0); setGoals([]); setEntries([]); setActiveTrail(null); setOnboarding(0); setView("home"); setSyncReady(false); setUnlockedAchievements([]); setWelcomeAuthMode("login");
-    levelBaseline.current = null;
+    treeStageBaseline.current = null;
     notifiedAchievements.current = null;
     toast.error("Sua sessão expirou. Entre novamente para continuar sua jornada.");
   }
@@ -201,7 +203,7 @@ export default function HomePage() {
     localStorage.removeItem("vds-state");
     localStorage.setItem("vds-device-id", crypto.randomUUID());
     setAccount(null); setProfile(emptyProfile); setXp(0); setMissionDone(false); setRitualDone(false); setStreak(0); setGoals([]); setEntries([]); setActiveTrail(null); setOnboarding(0); setView("home"); setSyncReady(false); setUnlockedAchievements([]); setWelcomeAuthMode(null);
-    levelBaseline.current = null;
+    treeStageBaseline.current = null;
     notifiedAchievements.current = null;
     toast.success("Você saiu da sua conta.");
   }
@@ -249,7 +251,8 @@ export default function HomePage() {
 
   const isPremium = profile.plan === "premium";
   const level = Math.floor(xp / 100) + 1;
-  const stage = xp < 40 ? "Semente" : xp < 100 ? "Raiz" : xp < 180 ? "Crescimento" : xp < 300 ? "Árvore" : "Árvore Dourada";
+  const treeStage = useMemo(() => treeStageFor(xp), [xp]);
+  const stage = treeStage.stage.name;
   const guide = signGuides[profile.sign] ?? signGuides["Capricórnio"];
   const mainGoal = goals[0];
   const plan = useMemo(() => dailyPlan({ dayKey, sign: profile.sign, objective: profile.objective }), [dayKey, profile.sign, profile.objective]);
@@ -271,16 +274,19 @@ export default function HomePage() {
 
   useEffect(() => {
     if (!syncReady) return;
-    if (levelBaseline.current === null) { levelBaseline.current = level; return; }
-    if (level > levelBaseline.current) { setLevelUp(level); haptic([18, 60, 26]); }
-    levelBaseline.current = level;
-  }, [syncReady, level]);
+    if (treeStageBaseline.current === null) { treeStageBaseline.current = treeStage.stageIndex; return; }
+    if (treeStage.stageIndex > treeStageBaseline.current) {
+      setStageUnlocked({ name: treeStage.stage.name, note: treeStage.stage.note });
+      haptic([18, 60, 26]);
+    }
+    treeStageBaseline.current = treeStage.stageIndex;
+  }, [syncReady, treeStage.stageIndex, treeStage.stage.name, treeStage.stage.note]);
 
   useEffect(() => {
-    if (levelUp === null) return;
-    const timer = window.setTimeout(() => setLevelUp(null), 2900);
+    if (!stageUnlocked) return;
+    const timer = window.setTimeout(() => setStageUnlocked(null), 3400);
     return () => window.clearTimeout(timer);
-  }, [levelUp]);
+  }, [stageUnlocked]);
 
   useEffect(() => {
     if (!xpBurst) return;
@@ -485,7 +491,7 @@ export default function HomePage() {
         if (account && deviceId) await loadCloudState(account, deviceId);
       }} />
       {xpBurst && <div className="xp-float" key={xpBurst.id} aria-hidden="true">+{xpBurst.amount} XP</div>}
-      {levelUp !== null && <LevelUpOverlay level={levelUp} stage={stage} />}
+      {stageUnlocked && <TreeStageUnlockedOverlay name={stageUnlocked.name} note={stageUnlocked.note} />}
       <Toaster richColors position="top-center" />
     </main>
   );
@@ -578,13 +584,13 @@ function PaywallDialog({ reason, onOpenChange, onPurchased }: { reason: string |
   </Dialog>;
 }
 
-function LevelUpOverlay({ level, stage }: { level: number; stage: string }) {
+function TreeStageUnlockedOverlay({ name, note }: { name: string; note: string }) {
   return <div className="levelup" role="status" aria-live="polite">
     <div>
-      <div className="levelup-ring"><strong>{level}</strong></div>
-      <p className="eyebrow">Novo nível alcançado</p>
-      <h2>{stage}</h2>
-      <p>Sua árvore mudou de estágio porque você voltou — não porque teve um dia perfeito.</p>
+      <div className="levelup-ring"><Leaf/></div>
+      <p className="eyebrow">Nova etapa desbloqueada</p>
+      <h2>{name}</h2>
+      <p>{note}</p>
     </div>
   </div>;
 }
@@ -726,7 +732,7 @@ function Onboarding({ step, setStep, profile, setProfile, finish, goalTitle, set
     <section className="onboarding-card">
       <div className="brand-mark"><Leaf/></div><p className="brand-name">Veias da Sintonia</p>
       {step >= 2 && <div className="onboarding-chrome">{step >= 3 && <button type="button" className="auth-back" onClick={() => setStep(step - 1)}><ArrowLeft size={16}/> Voltar</button>}<div className="onboarding-progress-bar" aria-hidden="true"><i style={{ width: `${((step - 1) / 8) * 100}%` }}/></div></div>}
-      {step === 0 && <><div className="onboarding-tree"><Image src="/prosperity-tree.png" alt="Árvore da Prosperidade" width={500} height={750} priority /></div><p className="step-count">01 · 10</p><h1>E se o seu signo pudesse ser um guia para você entender melhor a sua forma de prosperar?</h1><p>Uma jornada simbólica para transformar autoconhecimento em pequenas ações.</p><button className="gold-button" onClick={() => setStep(1)}>Começar minha jornada <ChevronRight/></button></>}
+      {step === 0 && <><div className="onboarding-tree"><ProsperityTree xp={0}/></div><p className="step-count">01 · 10</p><h1>E se o seu signo pudesse ser um guia para você entender melhor a sua forma de prosperar?</h1><p>Uma jornada simbólica para transformar autoconhecimento em pequenas ações.</p><button className="gold-button" onClick={() => setStep(1)}>Começar minha jornada <ChevronRight/></button></>}
       {step === 1 && <><div className="symbol-ring"><Sparkles/><span>✦</span></div><p className="step-count">02 · 10</p><h1>Conheça seus padrões. Cultive seus hábitos.</h1><p>Descubra forças, organize objetivos e transforme intenção em ação — no seu ritmo.</p><div className="mini-pill-row"><span>Reflexão</span><span>Constância</span><span>Metas</span></div><button className="gold-button" onClick={() => setStep(2)}>Descobrir meu signo <ChevronRight/></button></>}
       {step === 2 && <><p className="step-count">03 · 10</p><h1>Vamos começar por você.</h1><p>Esses dados personalizam sua experiência e ficam protegidos na sua conta.</p><div className="form-stack"><label>Como podemos chamar você?<input value={profile.name} onChange={(e) => setProfile({ ...profile, name: e.target.value })} placeholder="Seu nome" /></label><label>Data de nascimento<input type="date" value={profile.birthDate} onChange={(e) => setProfile({ ...profile, birthDate: e.target.value })} /></label><fieldset><legend>O que mais te chama agora?</legend><div className="choice-grid">{objectives.map((o) => <button type="button" className={profile.objective === o ? "selected" : ""} onClick={() => setProfile({ ...profile, objective: o })} key={o}>{o}</button>)}</div></fieldset></div><button className="gold-button" disabled={!profile.name.trim() || !profile.birthDate || !profile.objective} onClick={() => setStep(3)}>Continuar <ChevronRight/></button></>}
       {step === 3 && <><p className="step-count">04 · 10</p><h1>Se você pudesse conquistar UMA coisa importante nos próximos meses, o que seria?</h1><p>Pode ser específico — isso vai moldar sua árvore e seus desafios.</p><div className="form-stack"><label>Meu objetivo<input value={goalTitle} onChange={(e) => setGoalTitle(e.target.value)} placeholder="Ex: comprar meu primeiro carro" /></label></div><button className="gold-button" disabled={!goalTitle.trim()} onClick={() => setStep(4)}>Continuar <ChevronRight/></button></>}
@@ -761,7 +767,7 @@ function HomeView({ profile, plan, week, part, xp, level, stage, streak, fruits,
       <div className="briefing-voice"><em>“{plan.voice}”</em><span>Leitura simbólica de hoje para {profile.sign}</span></div>
       <button className={`ritual-button ${ritualDone ? "done" : ""}`} onClick={openRitual}>{ritualDone ? <Check/> : <Play/>}<span><strong>{ritualDone ? "Ritual concluído" : "Começar ritual de 3 minutos"}</strong><small>{ritualDone ? "Sua árvore foi nutrida hoje" : "Check-in · respiração · ação"}</small></span><ChevronRight/></button>
     </section>
-    <TreeCard xp={xp} level={level} stage={stage} streak={streak} fruits={fruits} celebrating={treeCelebrating}/>
+    <TreeCard xp={xp} level={level} stage={stage} streak={streak} fruits={fruits} celebrating={treeCelebrating} goalProgress={mainGoal?.progress}/>
     <section className="week-orbit" aria-label="Próximos sete dias">
       <div className="section-heading"><div><p className="eyebrow">Seu ciclo</p><h2>Próximos 7 dias</h2></div><CalendarDays/></div>
       <div className="week-days">{week.map((day) => <div className={day.offset === 0 ? "today" : day.offset === 1 ? "next" : ""} key={day.dayKey}><span>{day.weekday}</span><strong>{day.day}</strong><b>{day.theme.name}</b></div>)}</div>
@@ -831,40 +837,32 @@ function Odometer({ value }: { value: number }) {
   </span>;
 }
 
-function TreeCard({ xp, level, stage, streak, fruits = 0, celebrating = false, onSelectPart }: { xp: number; level: number; stage: string; streak: number; fruits?: number; celebrating?: boolean; onSelectPart?: (part: TreePart) => void }) {
-  const milestones = [0, 40, 100, 180, 300];
-  const currentIndex = Math.max(0, milestones.findLastIndex((value) => xp >= value));
-  const start = milestones[currentIndex];
-  const end = milestones[currentIndex + 1] ?? start;
-  const progress = end === start ? 100 : Math.round(((xp - start) / (end - start)) * 100);
-  return <section className={`tree-card ${celebrating ? "is-growing" : ""}`}><div className="tree-card__heading"><div><p className="eyebrow">Sua árvore viva</p><h2>{stage}</h2></div><div className="level-medal"><span>{level}</span><small>NÍVEL</small></div></div><div className="tree-stage"><div className="orbit-line"/><div className="orb orb-one"/><div className="orb orb-two"/><div className="orb orb-three"/><div className="growth-particles" aria-hidden="true">{Array.from({ length: 9 }, (_, index) => <i key={index}/>)}</div><Image className="prosperity-tree" src="/prosperity-tree.png" alt="Árvore dourada com raízes, folhas e frutos simbolizando a evolução pessoal" width={768} height={1152} priority/><div className="tree-glow"/>{onSelectPart && <div className="tree-parts">{treeParts.map((treePart) => { const locked = xp < treePart.unlockedAt; return <button key={treePart.key} className={locked ? "locked" : ""} style={{ left: `${treePart.x}%`, top: `${treePart.y}%` }} onClick={() => { haptic(8); onSelectPart(treePart); }} aria-label={`${treePart.name}${locked ? " (bloqueado)" : ""}`}>{locked ? <LockKeyhole/> : treePartIcon[treePart.key] ?? <Sparkles/>}</button>; })}</div>}</div><div className="xp-row"><div><span><Odometer value={xp}/> XP</span><small>{progress === 100 ? "sua árvore alcançou o estágio dourado" : "avance até o próximo estágio"}</small></div><strong>{progress}%</strong></div><Progress value={progress}/><div className="stats-row"><div><Flame/><strong><Odometer value={streak}/></strong><span>{streak === 1 ? "dia" : "dias"}</span></div><div><Apple/><strong><Odometer value={fruits}/></strong><span>{fruits === 1 ? "fruto" : "frutos"}</span></div><div><Sparkles/><strong><Odometer value={xp}/></strong><span>pontos</span></div></div></section>;
+function TreeCard({ xp, level, stage, streak, fruits = 0, celebrating = false, goalProgress, onSelectPart }: { xp: number; level: number; stage: string; streak: number; fruits?: number; celebrating?: boolean; goalProgress?: number; onSelectPart?: (part: TreePartHotspot) => void }) {
+  const { next, stageProgress } = treeStageFor(xp);
+  const progressPct = Math.round(stageProgress * 100);
+  return <section className={`tree-card ${celebrating ? "is-growing" : ""}`}><div className="tree-card__heading"><div><p className="eyebrow">Sua árvore viva</p><h2>{stage}</h2></div><div className="level-medal"><span>{level}</span><small>NÍVEL</small></div></div><div className="tree-stage"><ProsperityTree xp={xp} celebrating={celebrating} goalProgress={goalProgress}/>{onSelectPart && <div className="tree-parts">{TREE_PART_HOTSPOTS.map((part) => { const locked = xp < part.unlockedAt; return <button key={part.key} className={locked ? "locked" : ""} style={{ left: `${part.x}%`, top: `${part.y}%` }} onClick={() => { haptic(8); onSelectPart(part); }} aria-label={`${part.name}${locked ? " (bloqueado)" : ""}`}>{locked ? <LockKeyhole/> : treePartIcon[part.key] ?? <Sparkles/>}</button>; })}</div>}</div><div className="xp-row"><div><span><Odometer value={xp}/> XP</span><small>{next ? `Próxima evolução: ${next.name} · faltam ${next.minXP - xp} XP` : "sua árvore alcançou o estágio máximo"}</small></div><strong>{progressPct}%</strong></div><Progress value={progressPct}/><div className="stats-row"><div><Flame/><strong><Odometer value={streak}/></strong><span>{streak === 1 ? "dia" : "dias"}</span></div><div><Apple/><strong><Odometer value={fruits}/></strong><span>{fruits === 1 ? "fruto" : "frutos"}</span></div><div><Sparkles/><strong><Odometer value={xp}/></strong><span>pontos</span></div></div></section>;
 }
 
 function TreeView({ xp, level, stage, streak, mapScores, goals }: { xp: number; level: number; stage: string; streak: number; mapScores: [string, number][]; goals: Goal[] }) {
-  const [selected, setSelected] = useState<TreePart | null>(null);
+  const [selected, setSelected] = useState<TreePartHotspot | null>(null);
   const fruits = goals.filter((goal) => goal.progress === 100).length;
-  const stages = [
-    { name: "Semente", at: 0, note: "A intenção foi plantada." },
-    { name: "Raiz", at: 40, note: "Os primeiros hábitos ganharam sustentação." },
-    { name: "Crescimento", at: 100, note: "Galhos de ação e de reflexão se abriram." },
-    { name: "Árvore", at: 180, note: "Flores aparecem quando você volta em dias seguidos." },
-    { name: "Árvore Dourada", at: 300, note: "A jornada já não depende de empolgação." },
-  ];
+  const goalProgress = goals[0]?.progress;
+  const finalStage = TREE_STAGES[TREE_STAGES.length - 1];
   return <div className="view-stack">
     <p className="view-intro">Toque nas partes da árvore para entender o que cada uma representa na sua jornada.</p>
-    <TreeCard xp={xp} level={level} stage={stage} streak={streak} fruits={fruits} onSelectPart={setSelected}/>
+    <TreeCard xp={xp} level={level} stage={stage} streak={streak} fruits={fruits} goalProgress={goalProgress} onSelectPart={setSelected}/>
     <Dialog open={selected !== null} onOpenChange={(open) => { if (!open) setSelected(null); }}>
       <DialogContent className="goal-dialog permission-dialog">
         <DialogHeader><DialogTitle>{selected?.name ?? "Parte da árvore"}</DialogTitle><DialogDescription>O que esta parte representa e como ela cresce.</DialogDescription></DialogHeader>
         {selected && <div className="part-sheet">
           <div><span className={xp < selected.unlockedAt ? "locked" : ""}>{treePartIcon[selected.key] ?? <Sparkles/>}</span><div><strong>{xp < selected.unlockedAt ? "Ainda em formação" : "Desbloqueada"}</strong><small>{xp < selected.unlockedAt ? `Faltam ${selected.unlockedAt - xp} XP para esta parte aparecer.` : `Liberada a partir de ${selected.unlockedAt} XP.`}</small></div></div>
-          <p>{selected.meaning}</p>
+          <p>{selected.note}</p>
         </div>}
       </DialogContent>
     </Dialog>
-    <section className="surface-card"><div className="section-heading"><div><p className="eyebrow">Linha do tempo</p><h2>A evolução da sua árvore</h2></div><TreeDeciduous/></div><div className="evolution-timeline">{stages.map((item) => <div key={item.name} className={xp >= item.at ? "reached" : ""}><i/><div><strong>{item.name}</strong><small>{xp >= item.at ? item.note : `${item.at} XP · ${item.note}`}</small></div></div>)}</div></section>
+    <section className="surface-card"><div className="section-heading"><div><p className="eyebrow">Linha do tempo</p><h2>A evolução da sua árvore</h2></div><TreeDeciduous/></div><div className="evolution-timeline">{TREE_STAGES.map((item) => <div key={item.id} className={xp >= item.minXP ? "reached" : ""}><i/><div><strong>{item.name}</strong><small>{xp >= item.minXP ? item.note : `${item.minXP} XP · ${item.note}`}</small></div></div>)}</div></section>
     <section className="surface-card"><div className="section-heading"><div><p className="eyebrow">Meu mapa da prosperidade</p><h2>Índice de evolução pessoal</h2></div></div><div className="pillar-list">{mapScores.map(([name, score]) => <div key={name}><div><span>{name}</span><strong>{Math.round(score)}</strong></div><Progress value={score}/></div>)}</div><p className="disclaimer">Este índice reflete suas ações dentro do app. Não é uma previsão financeira.</p></section>
-    <section className="milestone-grid"><div><span>Raízes</span><strong>{xp >= 40 ? "Desbloqueadas" : "Em formação"}</strong></div><div><span>Flores</span><strong>{xp >= 180 ? "Desbloqueadas" : `${180 - xp} XP`}</strong></div><div><span>Frutos</span><strong>{fruits} {fruits === 1 ? "conquistado" : "conquistados"}</strong></div><div><span>Próximo estágio</span><strong>{xp >= 300 ? "Árvore Dourada" : `${300 - xp} XP`}</strong></div></section>
+    <section className="milestone-grid"><div><span>Raízes</span><strong>{xp >= TREE_STAGES[1].minXP ? "Desbloqueadas" : "Em formação"}</strong></div><div><span>Flores</span><strong>{xp >= TREE_STAGES[9].minXP ? "Desbloqueadas" : `${TREE_STAGES[9].minXP - xp} XP`}</strong></div><div><span>Frutos</span><strong>{fruits} {fruits === 1 ? "conquistado" : "conquistados"}</strong></div><div><span>Próximo estágio</span><strong>{xp >= finalStage.minXP ? finalStage.name : `${finalStage.minXP - xp} XP`}</strong></div></section>
   </div>;
 }
 
