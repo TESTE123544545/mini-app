@@ -52,5 +52,5 @@ export const TREE_PART_HOTSPOTS: readonly TreePartHotspot[] = [
   { key: "folhas", name: "Folhas", unlockedAt: stageMinXP("leaves"), x: 32, y: 34, note: "Sua presença diária. Aparecem quando você volta, mesmo fazendo pouco." },
   { key: "flores", name: "Flores", unlockedAt: stageMinXP("flowers"), x: 66, y: 26, note: "Suas sequências de dias seguidos. Um sinal raro de constância." },
   { key: "frutos", name: "Frutos", unlockedAt: stageMinXP("fruits"), x: 50, y: 20, note: "Metas concluídas. Ficam na árvore para sempre, como registro do que você terminou." },
-  { key: "copa", name: "Copa Dourada", unlockedAt: stageMinXP("golden"), x: 50, y: 10, note: "O estágio em que a jornada já não depende de empolgação. É o topo da sua evolução visível." },
+  { key: "copa", name: "Copa Dourada", unlockedAt: stageMinXP("golden"), x: 50, y: 5, note: "O estágio em que a jornada já não depende de empolgação. É o topo da sua evolução visível." },
 ];
