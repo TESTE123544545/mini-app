@@ -462,6 +462,9 @@ export default function HomePage() {
 
   return (
     <main className="app-shell" data-theme={profile.theme} data-daypart={part}>
+      <video className="galaxy-bg-video" autoPlay muted loop playsInline aria-hidden="true">
+        <source src="/galaxy-bg.mp4" type="video/mp4" />
+      </video>
       <div className="cosmos" aria-hidden="true" />
       <section className="app-frame">
         <header className="topbar">
