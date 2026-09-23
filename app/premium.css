@@ -354,6 +354,35 @@ body .ritual-progress{grid-template-columns:repeat(4,1fr)}
 .welcome-actions{display:flex;flex-direction:column;gap:10px}
 .welcome-actions .gold-button{width:100%}
 .welcome-secondary{width:100%;color:#f8f5ea;font-size:.92rem;font-weight:600;padding:13px;border-radius:14px;min-height:50px}
+.welcome-rotating{display:flex;align-items:baseline;justify-content:center;gap:6px;margin:-14px 0 22px!important;color:#dcc16f!important;font-size:.86rem!important;font-weight:600}
+
+/* 18 · odometer — rolling digit strip driven by a CSS transition on transform */
+.odometer{display:inline-flex;font-variant-numeric:tabular-nums}
+.odometer-digit{display:inline-block;height:1em;overflow:hidden;line-height:1;vertical-align:bottom}
+.odometer-strip{display:flex;flex-direction:column;transition:transform .8s cubic-bezier(.16,1,.3,1)}
+.odometer-strip span{height:1em;line-height:1}
+.odometer-sep{display:inline-block}
+
+/* 15 · skeleton — loading shimmer while the AI report is generating */
+.skeleton{display:block;border-radius:8px;background:linear-gradient(90deg,rgba(255,255,255,.05) 25%,rgba(255,255,255,.16) 37%,rgba(255,255,255,.05) 63%);background-size:400% 100%;animation:skel 1.4s ease-in-out infinite}
+.skeleton-line{height:13px;margin-top:8px}
+.skeleton-line:first-child{margin-top:0}
+@keyframes skel{0%{background-position:100% 50%}100%{background-position:0 50%}}
+.report-note-loading{align-items:flex-start}
+
+/* 07 · pulse — calls attention to the day's primary CTA without moving it */
+.fx-pulse{animation:fxPulse 2.4s ease-in-out infinite}
+@keyframes fxPulse{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(230,195,108,.35)}50%{transform:scale(1.02);box-shadow:0 0 0 10px rgba(230,195,108,0)}}
+
+/* 09 · link-grow — underline expands from the left on hover/focus */
+.link-grow{position:relative}
+.link-grow::after{content:"";position:absolute;left:0;bottom:-2px;width:100%;height:1px;background:currentColor;transform:scaleX(0);transform-origin:left center;transition:transform .35s cubic-bezier(.16,1,.3,1)}
+.link-grow:hover::after,.link-grow:focus-visible::after{transform:scaleX(1)}
+
+/* 17 · rotating-word — one-line window cycling through a word list */
+.rotating-word{position:relative;height:1.3em;overflow:hidden;display:inline-block;vertical-align:bottom;min-width:6.5em;text-align:left}
+.rotating-word-strip{display:block;transition:transform .5s cubic-bezier(.16,1,.3,1)}
+.rotating-word-strip span{display:block;line-height:1.3em}
 
 @media(prefers-reduced-motion:reduce){
   .app-shell .cosmos,.app-shell::after,.tree-parts>button::after,.levelup-ring::before,.levelup-ring::after,.splash-bar i,.app-splash .brand-mark{animation:none!important}
@@ -362,4 +391,7 @@ body .ritual-progress{grid-template-columns:repeat(4,1fr)}
   .ai-bubble{animation:none!important}
   .chat-turn.typing span{animation:none!important;opacity:.6}
   .welcome-tree{animation:none!important}
+  .fx-pulse{animation:none!important}
+  .skeleton{animation:none!important;opacity:.5}
+  .odometer-strip,.rotating-word-strip{transition:none!important}
 }

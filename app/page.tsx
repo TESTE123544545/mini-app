@@ -589,6 +589,21 @@ function LevelUpOverlay({ level, stage }: { level: number; stage: string }) {
   </div>;
 }
 
+const ROTATING_OBJECTIVES = ["dinheiro", "carreira", "hábitos", "relacionamentos", "autoconhecimento"];
+
+/** Cycles through `words` inside a one-line window; stays on the first word if the OS asks for reduced motion. */
+function RotatingWord({ words, intervalMs = 1900 }: { words: string[]; intervalMs?: number }) {
+  const [index, setIndex] = useState(0);
+  useEffect(() => {
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    const id = window.setInterval(() => setIndex((current) => (current + 1) % words.length), intervalMs);
+    return () => window.clearInterval(id);
+  }, [words, intervalMs]);
+  return <span className="rotating-word"><span className="rotating-word-strip" style={{ transform: `translateY(-${index * 100}%)` }}>
+    {words.map((word) => <span key={word}>{word}</span>)}
+  </span></span>;
+}
+
 function WelcomeHero({ onStart, onLogin }: { onStart: () => void; onLogin: () => void }) {
   return <main className="welcome-hero">
     <div className="cosmos" aria-hidden="true" />
@@ -602,8 +617,9 @@ function WelcomeHero({ onStart, onLogin }: { onStart: () => void; onLogin: () =>
       <p className="eyebrow">Sua jornada, sempre com você</p>
       <h1>Seu signo é o ponto de partida.<br/>Sua árvore é a jornada.</h1>
       <p>Descubra um objetivo real, plante sua semente e veja sua árvore crescer a cada pequena ação — sem promessas, só constância.</p>
+      <p className="welcome-rotating">Comece por <RotatingWord words={ROTATING_OBJECTIVES}/></p>
       <div className="welcome-actions">
-        <button type="button" className="gold-button" onClick={onStart}>Começar minha jornada <ChevronRight/></button>
+        <button type="button" className="gold-button fx-pulse" onClick={onStart}>Começar minha jornada <ChevronRight/></button>
         <button type="button" className="liquid-glass welcome-secondary" onClick={onLogin}>Já tenho conta</button>
       </div>
     </div>
@@ -682,7 +698,7 @@ function AuthScreen({ onAuthenticated, initialMode, onBack }: { onAuthenticated:
       {mode !== "reset" && <label>E-mail<div className="input-with-icon"><Mail/><input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="voce@email.com" required/></div></label>}
       {mode !== "recover" && <label>{mode === "reset" ? "Nova senha" : "Senha"}<div className="input-with-icon"><LockKeyhole/><input type={visible ? "text" : "password"} autoComplete={mode === "login" ? "current-password" : "new-password"} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Mínimo de 8 caracteres" minLength={8} required/><button type="button" onClick={() => setVisible(!visible)} aria-label={visible ? "Ocultar senha" : "Mostrar senha"}>{visible ? <EyeOff/> : <Eye/>}</button></div></label>}
       {(mode === "register" || mode === "reset") && <label>Confirme sua senha<div className="input-with-icon"><LockKeyhole/><input type={visible ? "text" : "password"} autoComplete="new-password" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} placeholder="Digite novamente" minLength={8} required/></div></label>}
-      {mode === "login" && <button className="forgot-button" type="button" onClick={() => switchMode("recover")}>Esqueci minha senha</button>}
+      {mode === "login" && <button className="forgot-button link-grow" type="button" onClick={() => switchMode("recover")}>Esqueci minha senha</button>}
       {error && <p className="form-error" role="alert">{error}</p>}
       {notice && <p className="form-success" role="status"><Check/> {notice}</p>}
       {!(mode === "recover" && notice) && <button className="gold-button" disabled={loading}>{loading ? "Aguarde…" : mode === "register" ? "Criar minha conta" : mode === "login" ? "Entrar" : mode === "recover" ? "Enviar link de recuperação" : "Salvar nova senha"}<ChevronRight/></button>}
@@ -798,13 +814,30 @@ function AiInsightBubble({ profile, week }: { profile: Profile; week: WeekDay[] 
   </div>;
 }
 
+/** A digit that rolls a 0-9 strip into place via CSS transition — driven purely by the `digit` prop changing. */
+function OdometerDigit({ digit }: { digit: number }) {
+  return <span className="odometer-digit"><span className="odometer-strip" style={{ transform: `translateY(${-digit * 10}%)` }}>
+    {Array.from({ length: 10 }, (_, n) => <span key={n}>{n}</span>)}
+  </span></span>;
+}
+
+/** Renders an integer as rolling digits; non-digit characters (thousands separators) render as plain text. */
+function Odometer({ value }: { value: number }) {
+  const text = Math.round(value).toLocaleString("pt-BR");
+  return <span className="odometer" aria-label={text}>
+    {text.split("").map((char, index) => (/\d/.test(char)
+      ? <OdometerDigit key={index} digit={Number(char)} />
+      : <span key={index} className="odometer-sep">{char}</span>))}
+  </span>;
+}
+
 function TreeCard({ xp, level, stage, streak, fruits = 0, celebrating = false, onSelectPart }: { xp: number; level: number; stage: string; streak: number; fruits?: number; celebrating?: boolean; onSelectPart?: (part: TreePart) => void }) {
   const milestones = [0, 40, 100, 180, 300];
   const currentIndex = Math.max(0, milestones.findLastIndex((value) => xp >= value));
   const start = milestones[currentIndex];
   const end = milestones[currentIndex + 1] ?? start;
   const progress = end === start ? 100 : Math.round(((xp - start) / (end - start)) * 100);
-  return <section className={`tree-card ${celebrating ? "is-growing" : ""}`}><div className="tree-card__heading"><div><p className="eyebrow">Sua árvore viva</p><h2>{stage}</h2></div><div className="level-medal"><span>{level}</span><small>NÍVEL</small></div></div><div className="tree-stage"><div className="orbit-line"/><div className="orb orb-one"/><div className="orb orb-two"/><div className="orb orb-three"/><div className="growth-particles" aria-hidden="true">{Array.from({ length: 9 }, (_, index) => <i key={index}/>)}</div><Image className="prosperity-tree" src="/prosperity-tree.png" alt="Árvore dourada com raízes, folhas e frutos simbolizando a evolução pessoal" width={768} height={1152} priority/><div className="tree-glow"/>{onSelectPart && <div className="tree-parts">{treeParts.map((treePart) => { const locked = xp < treePart.unlockedAt; return <button key={treePart.key} className={locked ? "locked" : ""} style={{ left: `${treePart.x}%`, top: `${treePart.y}%` }} onClick={() => { haptic(8); onSelectPart(treePart); }} aria-label={`${treePart.name}${locked ? " (bloqueado)" : ""}`}>{locked ? <LockKeyhole/> : treePartIcon[treePart.key] ?? <Sparkles/>}</button>; })}</div>}</div><div className="xp-row"><div><span>{xp} XP</span><small>{progress === 100 ? "sua árvore alcançou o estágio dourado" : "avance até o próximo estágio"}</small></div><strong>{progress}%</strong></div><Progress value={progress}/><div className="stats-row"><div><Flame/><strong>{streak}</strong><span>{streak === 1 ? "dia" : "dias"}</span></div><div><Apple/><strong>{fruits}</strong><span>{fruits === 1 ? "fruto" : "frutos"}</span></div><div><Sparkles/><strong>{xp}</strong><span>pontos</span></div></div></section>;
+  return <section className={`tree-card ${celebrating ? "is-growing" : ""}`}><div className="tree-card__heading"><div><p className="eyebrow">Sua árvore viva</p><h2>{stage}</h2></div><div className="level-medal"><span>{level}</span><small>NÍVEL</small></div></div><div className="tree-stage"><div className="orbit-line"/><div className="orb orb-one"/><div className="orb orb-two"/><div className="orb orb-three"/><div className="growth-particles" aria-hidden="true">{Array.from({ length: 9 }, (_, index) => <i key={index}/>)}</div><Image className="prosperity-tree" src="/prosperity-tree.png" alt="Árvore dourada com raízes, folhas e frutos simbolizando a evolução pessoal" width={768} height={1152} priority/><div className="tree-glow"/>{onSelectPart && <div className="tree-parts">{treeParts.map((treePart) => { const locked = xp < treePart.unlockedAt; return <button key={treePart.key} className={locked ? "locked" : ""} style={{ left: `${treePart.x}%`, top: `${treePart.y}%` }} onClick={() => { haptic(8); onSelectPart(treePart); }} aria-label={`${treePart.name}${locked ? " (bloqueado)" : ""}`}>{locked ? <LockKeyhole/> : treePartIcon[treePart.key] ?? <Sparkles/>}</button>; })}</div>}</div><div className="xp-row"><div><span><Odometer value={xp}/> XP</span><small>{progress === 100 ? "sua árvore alcançou o estágio dourado" : "avance até o próximo estágio"}</small></div><strong>{progress}%</strong></div><Progress value={progress}/><div className="stats-row"><div><Flame/><strong><Odometer value={streak}/></strong><span>{streak === 1 ? "dia" : "dias"}</span></div><div><Apple/><strong><Odometer value={fruits}/></strong><span>{fruits === 1 ? "fruto" : "frutos"}</span></div><div><Sparkles/><strong><Odometer value={xp}/></strong><span>pontos</span></div></div></section>;
 }
 
 function TreeView({ xp, level, stage, streak, mapScores, goals }: { xp: number; level: number; stage: string; streak: number; mapScores: [string, number][]; goals: Goal[] }) {
@@ -874,19 +907,22 @@ function JourneyView({ profile, plan, snapshot, week, missionDone, ritualDone, c
   const { resolved, unlockedCount, total, next } = useMemo(() => achievementState(snapshot), [snapshot]);
   const report = useMemo(() => weeklyReport(snapshot, week[1].theme.verb), [snapshot, week]);
   const [aiReport, setAiReport] = useState<{ summary: string; recommendation: string } | null>(null);
+  const [aiReportLoading, setAiReportLoading] = useState(false);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setAiReport(null);
     if (!isPremium) return;
     let cancelled = false;
+    setAiReportLoading(true);
     fetch("/api/journey/weekly-report-ai", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ dayKey: localDayKey(), nextThemeVerb: week[1].theme.verb }),
     }).then((response) => (response.ok ? response.json() : null))
       .then((data) => { if (!cancelled && data?.summary) setAiReport(data); })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setAiReportLoading(false); });
     return () => { cancelled = true; };
     // Depends on report.rangeLabel (not the whole `week` array) so this only re-fires when the 7-day window actually rolls over.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -907,7 +943,7 @@ function JourneyView({ profile, plan, snapshot, week, missionDone, ritualDone, c
       <p className="eyebrow">Missão diária · +20 XP</p>
       <h2>{plan.mission}</h2>
       <p>Leva cerca de 15 minutos e foi escolhida para {profile.objective.toLowerCase()}. O valor está na ação realizada, não em uma promessa de resultado.</p>
-      <button className="gold-button" onClick={completeMission} disabled={missionDone}>{missionDone ? <><Check/> Concluída hoje</> : "Concluir missão"}</button>
+      <button className={`gold-button ${missionDone ? "" : "fx-pulse"}`} onClick={completeMission} disabled={missionDone}>{missionDone ? <><Check/> Concluída hoje</> : "Concluir missão"}</button>
     </section>
 
     {!ritualDone && <section className="achievement-row"><Wind/><div><strong>Ritual de 3 minutos</strong><span>Check-in, respiração e um gesto pequeno.</span></div><button className="ghost-button" onClick={openRitual}>Fazer</button></section>}
@@ -918,12 +954,16 @@ function JourneyView({ profile, plan, snapshot, week, missionDone, ritualDone, c
       <div className="section-heading"><div><p className="eyebrow">Relatório da semana</p><h2>Como foram seus últimos 7 dias</h2></div><Compass/></div>
       <p className="report-range">{report.rangeLabel}</p>
       <div className="report-grid">
-        <div className="report-metric"><span>Reflexões</span><strong>{report.reflections}</strong><small>{report.moodNote}</small></div>
-        <div className="report-metric"><span>Sequência</span><strong>{report.streak}</strong><small>dias seguidos de presença</small></div>
-        <div className="report-metric"><span>Metas avançando</span><strong>{report.goalsAdvancing}</strong><small>em progresso agora</small></div>
-        <div className="report-metric"><span>Frutos</span><strong>{report.fruits}</strong><small>metas concluídas até aqui</small></div>
+        <div className="report-metric"><span>Reflexões</span><strong><Odometer value={report.reflections}/></strong><small>{report.moodNote}</small></div>
+        <div className="report-metric"><span>Sequência</span><strong><Odometer value={report.streak}/></strong><small>dias seguidos de presença</small></div>
+        <div className="report-metric"><span>Metas avançando</span><strong><Odometer value={report.goalsAdvancing}/></strong><small>em progresso agora</small></div>
+        <div className="report-metric"><span>Frutos</span><strong><Odometer value={report.fruits}/></strong><small>metas concluídas até aqui</small></div>
       </div>
-      {isPremium ? <div className="report-note"><Sparkles/><div>{aiReport?.summary ?? report.summary} {aiReport?.recommendation ?? report.recommendation}</div></div>
+      {isPremium ? (aiReportLoading && !aiReport
+        ? <div className="report-note report-note-loading" aria-busy="true" aria-label="Gerando leitura da semana">
+            <Sparkles/><div><span className="skeleton skeleton-line" style={{ width: "100%" }}/><span className="skeleton skeleton-line" style={{ width: "82%" }}/><span className="skeleton skeleton-line" style={{ width: "58%" }}/></div>
+          </div>
+        : <div className="report-note"><Sparkles/><div>{aiReport?.summary ?? report.summary} {aiReport?.recommendation ?? report.recommendation}</div></div>)
         : <button className="report-locked" onClick={() => openPaywall("weekly_report")}>
             <span className="report-locked-blur"><Sparkles/><div>{report.summary} {report.recommendation}</div></span>
             <span className="report-locked-cta"><LockKeyhole/> Desbloquear leitura completa da semana</span>
