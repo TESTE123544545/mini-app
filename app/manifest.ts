@@ -2,10 +2,10 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Use Seu Signo Para Prosperar",
+    name: "Use Seu Signo Para Prosperar | Signos & Astrologia",
     short_name: "Seu Signo",
     description:
-      "Conheça seus padrões, cultive seus hábitos e construa sua árvore da prosperidade.",
+      "Descubra seus padrões astrológicos, consulte previsões dos 12 signos, acompanhe fases da lua em tempo real e cultive sua Árvore da Prosperidade.",
     start_url: "/",
     scope: "/",
     display: "standalone",
@@ -13,7 +13,7 @@ export default function manifest(): MetadataRoute.Manifest {
     background_color: "#071326",
     theme_color: "#071326",
     lang: "pt-BR",
-    categories: ["lifestyle", "productivity"],
+    categories: ["lifestyle", "productivity", "utilities"],
     icons: [
       {
         src: "/app-icon-192.png",
