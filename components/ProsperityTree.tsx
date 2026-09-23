@@ -23,11 +23,10 @@ export function ProsperityTree({ xp, celebrating = false, goalProgress }: { xp: 
   const flowerPool = rangeProgress(xp, "flowers", "full_flowers");
   const fruitPool = rangeProgress(xp, "fruits", "complete");
   const goldenHalo = rangeProgress(xp, "complete", "golden");
-  // Two paces on purpose: the tree reaches its full on-screen SIZE early (by "full_leaves",
-  // 750xp) so it never reads as a near-empty box for most of the journey, while `maturity`
-  // keeps thickening the trunk and warming the glow slowly all the way to "complete" (3000xp)
-  // as a subtler, longer-running flourish.
-  const sizeGrowth = rangeProgress(xp, "seed", "full_leaves");
+  // No global scale transform on the whole tree: shrinking the entire canvas also shrank
+  // already-small primitives (the seed dot, glow) into invisibility. Growth reads instead
+  // through how much of each part is actually drawn (roots/trunk dash-reveal, leaf/flower/
+  // fruit pool counts), while `maturity` slowly thickens the trunk and warms the glow.
   const maturity = rangeProgress(xp, "seed", "complete");
   const sparkleGrowth = rangeProgress(xp, "seed", "golden");
   const trunkWidth = 3.5 + maturity * 8;
@@ -38,17 +37,12 @@ export function ProsperityTree({ xp, celebrating = false, goalProgress }: { xp: 
   const flowers = FLOWER_POOL.map((flower, index) => ({ ...flower, on: flowerPool >= (index + 1) / FLOWER_POOL.length }));
   const fruits = FRUIT_POOL.map((fruit, index) => ({ ...fruit, on: fruitPool >= (index + 1) / FRUIT_POOL.length }));
 
-  // Floor raised well above "barely there": a brand-new seed should read as small and
-  // deliberate, not as an empty rectangle.
-  const growthScale = 0.58 + sizeGrowth * 0.42;
-
   return (
     <svg
       className={`prosperity-tree-svg${celebrating ? " is-celebrating" : ""}`}
       viewBox="0 0 300 420"
       role="img"
       aria-label={`Sua árvore da prosperidade, estágio ${stageIndex + 1}`}
-      style={{ transform: `scale(${growthScale})`, transformOrigin: "center bottom", transition: "transform 0.8s cubic-bezier(.16,1,.3,1)" }}
     >
       <defs>
         <radialGradient id="pt-glow" cx="50%" cy="62%" r="55%">
@@ -73,15 +67,15 @@ export function ProsperityTree({ xp, celebrating = false, goalProgress }: { xp: 
         )}
       </defs>
 
-      <ellipse cx="150" cy="392" rx="60" ry="47" fill="url(#pt-glow)" />
+      <ellipse cx="150" cy="388" rx="85" ry="70" fill="url(#pt-glow)" />
       {goldenHalo > 0 && <circle cx="150" cy="180" r="170" fill="url(#pt-golden-halo)" />}
 
       <ellipse cx="150" cy="396" rx="52" ry="9" fill="#04102f" opacity="0.65" />
       <ellipse cx="150" cy="393" rx="40" ry="6.5" fill="#0a1949" opacity="0.5" />
 
       <g style={{ opacity: seedOpacity, transition: "opacity 1.1s ease" }}>
-        <circle cx="150" cy="385" r="4.2" fill="url(#pt-fruit)" />
-        <circle cx="150" cy="385" r="7" fill="#f2dc8a" opacity="0.35" />
+        <circle cx="150" cy="382" r="9.5" fill="url(#pt-fruit)" />
+        <circle cx="150" cy="382" r="18" fill="#f2dc8a" opacity="0.4" />
       </g>
 
       <g fill="none" stroke="url(#pt-wood)" strokeLinecap="round">
