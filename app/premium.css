@@ -41,9 +41,10 @@ body .zodiac-medallion strong{font-size:1.32rem}
 body .tree-card,body .mission-card,body .surface-card,body .oracle-card,body .goal-snapshot,body .featured-mission,body .sign-profile,body .premium-card,body .content-list,body .history,body .weekly-report,body .trail-card{
   position:relative;
   border:1px solid rgba(231,199,118,.2);
-  background:linear-gradient(158deg,rgba(25,60,130,.74),rgba(7,20,62,.95) 64%);
+  /* Translucent on purpose: the zodiac video behind the app should read through every card. */
+  background:linear-gradient(158deg,rgba(25,60,130,.44),rgba(7,20,62,.6) 64%);
   box-shadow:inset 0 1px 0 #ffffff1f,0 30px 70px -28px #01050fd9;
-  backdrop-filter:blur(16px) saturate(1.12)
+  backdrop-filter:blur(5px) saturate(1.15)
 }
 
 /* --- Ambience: the shell reacts to the hour of the day ------------------- */
@@ -436,3 +437,14 @@ body .ritual-progress{grid-template-columns:repeat(4,1fr)}
 }
 
 @keyframes fade-out{to{opacity:0}}@keyframes fade-in{from{opacity:0}}
+
+/* --- Glass: the zodiac background shows through the remaining solid blocks --- */
+.galaxy-bg-video{opacity:.8}
+body .daily-briefing{background:radial-gradient(circle at 88% 10%,#d9b34f24,transparent 30%),linear-gradient(145deg,rgba(22,55,119,.52),rgba(8,22,66,.66) 72%);backdrop-filter:blur(5px)}
+body .week-orbit{background:linear-gradient(150deg,rgba(14,37,92,.5),rgba(7,20,61,.6));backdrop-filter:blur(5px)}
+body .ritual-button{background:rgba(7,20,62,.55)}
+body .signs-top-tablist{background:rgba(7,21,62,.55);backdrop-filter:blur(5px)}
+body .strength-item,body .achievement-row,body .insight-grid>div,body .account-card,body .sync-card{background:rgba(6,18,55,.5)}
+body .journal-form textarea{background:rgba(6,19,61,.62)}
+/* Text that sits straight on the video (no card behind it) gets a soft dark halo for contrast. */
+body .topbar h1,body .topbar .eyebrow,body .view-intro{text-shadow:0 1px 3px #02071fcc,0 0 18px #02071f}
