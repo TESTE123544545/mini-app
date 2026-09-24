@@ -1,4 +1,5 @@
 import { daysSince, parseBrDate } from "./daily";
+import { treeStageFor } from "./treeStages";
 
 export type JourneySnapshot = {
   xp: number;
@@ -82,9 +83,11 @@ export const achievements: readonly Achievement[] = [
     progress: (s) => ({ current: Math.min(s.level, 3), target: 3 }),
   },
   {
-    key: "arvore-dourada", name: "Árvore Dourada", icon: "crown",
+    // Key stays "arvore-dourada" so accounts that already unlocked this keep it unlocked —
+    // only the display name changed, to stop colliding with the tree's own final golden stage.
+    key: "arvore-dourada", name: "Toque Dourado", icon: "crown",
     hint: "Alcance 300 XP",
-    story: "A árvore dourada não é um prêmio: é o registro de que você sustentou algo por tempo suficiente para virar parte de quem você é.",
+    story: "O toque dourado não é um prêmio: é o registro de que você sustentou algo por tempo suficiente para virar parte de quem você é.",
     reward: "Tema dourado completo",
     reached: (s) => s.xp >= 300,
     progress: (s) => ({ current: Math.min(s.xp, 300), target: 300 }),
@@ -112,8 +115,6 @@ export type WeeklyReport = {
   recommendation: string;
 };
 
-const stageLabel = (xp: number) => (xp < 40 ? "Semente" : xp < 100 ? "Raiz" : xp < 180 ? "Crescimento" : xp < 300 ? "Árvore" : "Árvore Dourada");
-
 export function weeklyReport(snapshot: JourneySnapshot, nextThemeVerb: string): WeeklyReport {
   const now = new Date();
   const weekEntries = snapshot.entries.filter((entry) => {
@@ -123,7 +124,7 @@ export function weeklyReport(snapshot: JourneySnapshot, nextThemeVerb: string): 
   const categories = new Map<string, number>();
   for (const goal of snapshot.goals) categories.set(goal.category, (categories.get(goal.category) ?? 0) + goal.progress);
   const topArea = [...categories.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
-  const stage = stageLabel(snapshot.xp);
+  const stage = treeStageFor(snapshot.xp).stage.name;
   const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6);
   const format = (date: Date) => new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short" }).format(date);
   return {
