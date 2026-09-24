@@ -91,6 +91,18 @@ function haptic(pattern: number | number[] = 12) {
   try { navigator.vibrate(pattern); } catch { /* no haptics available */ }
 }
 
+/** Stripe's customer portal: update the card, see invoices or cancel — no hoops. */
+async function openBillingPortal() {
+  try {
+    const response = await fetch("/api/billing/stripe/portal", { method: "POST", headers: { "content-type": "application/json" }, body: "{}" });
+    const result = await response.json().catch(() => ({})) as { url?: string; error?: string };
+    if (!response.ok || !result.url) throw new Error(result.error ?? "Não foi possível abrir o gerenciamento da assinatura agora.");
+    window.location.assign(result.url);
+  } catch (error) {
+    toast.error(error instanceof Error ? error.message : "Não foi possível abrir o gerenciamento da assinatura agora.");
+  }
+}
+
 /** Signs back in with the credential the browser's password manager kept for this site, if any. */
 async function signInWithSavedLogin(): Promise<Account | null> {
   const saved = await recallLogin();
@@ -276,6 +288,29 @@ export default function HomePage() {
     setOracleOpen(false);
     setAnswers(["", "", "", ""]);
   }, [dayKey]);
+
+  // Back from Stripe Checkout: confirm right away so Premium does not wait on the webhook.
+  useEffect(() => {
+    if (!account || !syncReady) return;
+    const params = new URLSearchParams(window.location.search);
+    const outcome = params.get("checkout");
+    if (!outcome) return;
+    const sessionId = params.get("session_id");
+    window.history.replaceState({}, "", window.location.pathname);
+    if (outcome === "cancel") { toast("Pagamento não concluído. Você pode assinar quando quiser."); return; }
+    if (outcome !== "success" || !sessionId) return;
+    fetch("/api/billing/stripe/confirm", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ sessionId }) })
+      .then((response) => response.json() as Promise<{ plan?: string; error?: string }>)
+      .then((result) => {
+        if (result.plan === "premium") {
+          setProfile((current) => ({ ...current, plan: "premium" }));
+          track("checkout_completed", { provider: "stripe" });
+          toast.success("Premium ativado. Obrigado por apoiar sua jornada!");
+        } else if (result.error) toast.error(result.error);
+        else toast("Pagamento recebido. O Premium é liberado em instantes.");
+      })
+      .catch(() => toast("Pagamento recebido. O Premium é liberado em instantes."));
+  }, [account, syncReady]);
 
   // The diagnostic lives on this device, per account (see lib/diagnostic.ts).
   useEffect(() => {
@@ -515,6 +550,8 @@ export default function HomePage() {
       root.style.removeProperty("--nav-scroll-offset");
     };
     transition.finished.then(cleanup, cleanup);
+    // A skipped transition (hidden page, a second quick tap) rejects `ready`; the DOM update still happens.
+    transition.ready.catch(() => {});
   }
 
   return (
@@ -592,12 +629,54 @@ const comparisonRows: [string, string, string][] = [
   ["Temas da árvore", "Sol dourado", "Sol dourado, Lua azul e Aurora"],
 ];
 
-/**
- * Premium offer. No payment provider is wired in (Google Play and InfinitePay were removed in favour
- * of the owner's own checkout), so the subscribe button stays inactive until that checkout exists.
- */
+type PremiumPrice = { id: string; amount: number; currency: string; nickname: string | null; interval: "day" | "week" | "month" | "year" | null; intervalCount: number };
+
+const intervalLabel = (price: PremiumPrice) => {
+  if (!price.interval) return { title: "Acesso vitalício", period: "pagamento único" };
+  if (price.interval === "year") return { title: "Anual", period: "/ano" };
+  if (price.interval === "month" && price.intervalCount === 3) return { title: "Trimestral", period: "/trimestre" };
+  if (price.interval === "month" && price.intervalCount === 6) return { title: "Semestral", period: "/semestre" };
+  if (price.interval === "month") return { title: "Mensal", period: "/mês" };
+  if (price.interval === "week") return { title: "Semanal", period: "/semana" };
+  return { title: "Diário", period: "/dia" };
+};
+const formatMoney = (amount: number, currency: string) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: currency.toUpperCase() }).format(amount / 100);
+
+/** Premium offer. Prices come live from the Stripe product; paying happens on Stripe's hosted Checkout. */
 function PaywallDialog({ reason, onOpenChange }: { reason: string | null; onOpenChange: (open: boolean) => void }) {
   const previewDay = findTrail("constancia-21")?.days[0];
+  const [prices, setPrices] = useState<PremiumPrice[] | null>(null);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [opening, setOpening] = useState(false);
+
+  useEffect(() => {
+    if (reason === null || prices !== null) return;
+    fetch("/api/billing/stripe/plans")
+      .then((response): Promise<{ prices: PremiumPrice[] }> => response.ok ? response.json() : Promise.resolve({ prices: [] }))
+      .then(({ prices: loaded }) => {
+        setPrices(loaded);
+        setSelected((loaded.find((price) => price.interval === "month" && price.intervalCount === 1) ?? loaded[0])?.id ?? null);
+      })
+      .catch(() => setPrices([]));
+  }, [reason, prices]);
+
+  async function subscribe() {
+    if (!selected) return;
+    setOpening(true);
+    track("checkout_started", { provider: "stripe", from: reason, price: selected });
+    try {
+      const response = await fetch("/api/billing/stripe/checkout", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ priceId: selected }) });
+      const result = await response.json().catch(() => ({})) as { url?: string; error?: string };
+      if (!response.ok || !result.url) throw new Error(result.error ?? "Não foi possível abrir o pagamento agora.");
+      window.location.assign(result.url);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível abrir o pagamento agora.");
+      setOpening(false);
+    }
+  }
+
+  const chosen = prices?.find((price) => price.id === selected);
+  const monthly = prices?.find((price) => price.interval === "month" && price.intervalCount === 1);
 
   return <Dialog open={reason !== null} onOpenChange={onOpenChange}>
     <DialogContent className="goal-dialog paywall-dialog">
@@ -617,8 +696,29 @@ function PaywallDialog({ reason, onOpenChange }: { reason: string | null; onOpen
         {comparisonRows.map(([label, free, premium]) => <div className="paywall-compare-row" key={label}><span>{label}</span><span>{free}</span><span className="is-premium"><Check size={13}/>{premium}</span></div>)}
       </div>
 
-      <button className="gold-button" disabled>Assinar Premium</button>
-      <p className="paywall-fine-print">A assinatura do Premium estará disponível em breve.</p>
+      {prices === null && <p className="paywall-fine-print">Carregando planos…</p>}
+      {prices && prices.length > 1 && <div className="paywall-plans" role="radiogroup" aria-label="Escolha seu plano">
+        {prices.map((price) => {
+          const label = intervalLabel(price);
+          // A longer plan shows what it costs per month next to the monthly one, never a fake discount.
+          const perMonth = monthly && price.interval === "year" ? price.amount / (12 * price.intervalCount)
+            : monthly && price.interval === "month" && price.intervalCount > 1 ? price.amount / price.intervalCount : null;
+          return <button type="button" role="radio" aria-checked={selected === price.id} key={price.id} className={`paywall-plan ${selected === price.id ? "is-selected" : ""}`} onClick={() => setSelected(price.id)}>
+            <span><strong>{price.nickname || label.title}</strong>{perMonth !== null && <small>{formatMoney(perMonth, price.currency)}/mês</small>}</span>
+            <b>{formatMoney(price.amount, price.currency)}<small>{label.period}</small></b>
+          </button>;
+        })}
+      </div>}
+
+      {prices && prices.length > 0 && chosen
+        ? <>
+            <button className="gold-button" disabled={opening} onClick={subscribe}>{opening ? "Abrindo pagamento seguro…" : `Assinar Premium · ${formatMoney(chosen.amount, chosen.currency)}${intervalLabel(chosen).period === "pagamento único" ? "" : intervalLabel(chosen).period}`}</button>
+            <p className="paywall-fine-print">Pagamento processado com segurança pelo Stripe.{chosen.interval ? " Sem fidelidade: cancele quando quiser em Perfil → Gerenciar assinatura." : ""}</p>
+          </>
+        : prices && <>
+            <button className="gold-button" disabled>Assinar Premium</button>
+            <p className="paywall-fine-print">A assinatura do Premium estará disponível em breve.</p>
+          </>}
     </DialogContent>
   </Dialog>;
 }
@@ -1205,7 +1305,7 @@ function ProfileView({ profile, setProfile, account, guide, goals, advanceGoal, 
     <section className="sign-profile"><div className="zodiac-medallion"><Sparkles/><strong>{profile.sign.slice(0,2).toUpperCase()}</strong></div><p className="eyebrow">Meu signo para prosperar</p><h2>{profile.sign}</h2><p>{guide.style}</p><div className="insight-grid"><div><span>Forças</span>{guide.strengths.map((x) => <b key={x}>{x}</b>)}</div><div><span>Pontos de atenção</span>{guide.care.map((x) => <b key={x}>{x}</b>)}</div></div>{navigate && <button type="button" className="gold-button mt-4 w-full" onClick={() => navigate("signs")}><Sparkles size={16}/> Ver Mapa Cósmico de {profile.sign}</button>}</section>
     <section className="surface-card goals-card"><div className="section-heading"><div><p className="eyebrow">Minhas metas {!isPremium && `· ${goals.length}/${FREE_GOAL_LIMIT}`}</p><h2>Frutos em construção</h2></div>{!isPremium && goals.length >= FREE_GOAL_LIMIT ? <button className="round-button" aria-label="Limite de metas atingido" onClick={() => openPaywall("goal_limit")}><LockKeyhole/></button> : <Dialog open={goalDialog} onOpenChange={setGoalDialog}><DialogTrigger asChild><button className="round-button" aria-label="Adicionar meta"><Plus/></button></DialogTrigger><DialogContent className="goal-dialog"><DialogHeader><DialogTitle>Plante uma nova meta</DialogTitle><DialogDescription>Defina algo que possa ser acompanhado por pequenas ações.</DialogDescription></DialogHeader><label>Nome da meta<input value={goalTitle} onChange={(e) => setGoalTitle(e.target.value)} placeholder="Ex.: criar minha reserva"/></label><label>Categoria<select value={goalCategory} onChange={(e) => setGoalCategory(e.target.value)}>{["Financeiro","Carreira","Negócios","Conhecimento","Relacionamentos","Desenvolvimento pessoal"].map((x) => <option key={x}>{x}</option>)}</select></label><button className="gold-button" onClick={addGoal}>Criar meta · +15 XP</button></DialogContent></Dialog>}</div>{goals.length ? goals.map((g) => <article className="goal-item" key={g.id}><div><strong>{g.title}</strong><span>{g.category} · {g.progress}%</span></div><Progress value={g.progress}/><button onClick={() => advanceGoal(g.id)} disabled={g.progress === 100}>{g.progress === 100 ? "Fruto conquistado" : "Avançar +25%"}</button></article>) : <div className="empty-state"><Target/><p>Crie uma meta para começar a cultivar seu primeiro fruto.</p></div>}{!isPremium && goals.length >= FREE_GOAL_LIMIT && <p className="disclaimer">Limite do plano grátis: {FREE_GOAL_LIMIT} metas ativas.</p>}</section>
     <section className={`sync-card ${syncStatus}`}><span><Cloud/></span><div><strong>{syncStatus === "saved" ? "Jornada salva na sua conta" : syncStatus === "loading" ? "Salvando sua evolução…" : "Modo offline ativo"}</strong><small>{syncStatus === "saved" ? "Entre em outro celular com o mesmo e-mail para continuar." : syncStatus === "offline" ? "Suas mudanças continuam salvas neste dispositivo e serão sincronizadas depois." : "Aguarde um instante."}</small></div><i aria-hidden="true"/></section>
-    {isPremium ? <section className="premium-card is-active"><div className="premium-icon"><Gem/></div><p className="eyebrow">Central da Prosperidade</p><h2>Sua jornada está completa.</h2><p>Trilhas ilimitadas, histórico completo, metas sem limite e todos os temas já estão liberados na sua conta.</p></section>
+    {isPremium ? <section className="premium-card is-active"><div className="premium-icon"><Gem/></div><p className="eyebrow">Central da Prosperidade</p><h2>Sua jornada está completa.</h2><p>Trilhas ilimitadas, histórico completo, metas sem limite e todos os temas já estão liberados na sua conta.</p><button type="button" className="ghost-button" onClick={openBillingPortal}>Gerenciar assinatura</button></section>
       : <section className="premium-card"><div className="premium-icon"><Gem/></div><p className="eyebrow">Central da Prosperidade</p><h2>Você já descobriu seu signo.<br/>Agora destrave a jornada completa.</h2><p>Hoje seu plano grátis tem 1 trilha, {FREE_GOAL_LIMIT} metas e {FREE_JOURNAL_HISTORY} registros de histórico. O Premium remove esses limites.</p><ul><li><Check/> Trilhas de 21 dias e temas por objetivo</li><li><Check/> Metas e histórico do diário sem limite</li><li><Check/> Relatório semanal completo e temas da árvore</li></ul><button className="gold-button" onClick={() => openPaywall("premium_card")}>Desbloquear minha jornada</button><small>Sem promessas financeiras. Uma experiência de autoconhecimento, hábitos e metas.</small></section>}
     <section className="content-list"><div className="section-heading"><div><p className="eyebrow">Conteúdo</p><h2>Sua biblioteca</h2></div></div>{[[BookOpen,"Guia Use Seu Signo para Prosperar","Introdução"],[Rocket,"Estratégias para cada signo","Premium"],[BriefcaseBusiness,"Decisões e carreira","Premium"],[CircleDollarSign,"Organização financeira consciente","Premium"]].map(([Icon,title,badge]) => <button key={String(title)} onClick={() => { if (badge === "Premium") { openPaywall("content_library"); } else { track("ebook_opened"); toast("Conteúdo demonstrativo aberto."); } }}><span className="content-icon"><Icon/></span><span><strong>{String(title)}</strong><small>{String(badge)}</small></span><ChevronRight/></button>)}</section>
     <section className="account-card"><div><Mail/><span><small>Conta conectada</small><strong>{account.email}</strong></span></div><button onClick={logout}><LogOut/> Sair da conta</button></section>

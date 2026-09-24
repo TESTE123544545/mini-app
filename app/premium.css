@@ -445,3 +445,14 @@ body .strength-item,body .achievement-row,body .insight-grid>div,body .account-c
 body .journal-form textarea{background:rgba(6,19,61,.62)}
 /* Text that sits straight on the video (no card behind it) gets a soft dark halo for contrast. */
 body .topbar h1,body .topbar .eyebrow,body .view-intro{text-shadow:0 1px 3px #02071fcc,0 0 18px #02071f}
+
+/* --- Paywall plan picker (prices come live from Stripe) ------------------ */
+.paywall-plans{display:grid;gap:8px;margin-top:16px}
+.paywall-plan{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:58px;padding:12px 14px;border:1px solid #ffffff1c;border-radius:16px;background:#07143d99;color:#e4e9f6;text-align:left}
+.paywall-plan>span{display:grid;gap:2px}
+.paywall-plan strong{font-size:.92rem}
+.paywall-plan small{color:#8e9cc0;font-size:.72rem;font-weight:600}
+.paywall-plan b{display:grid;justify-items:end;color:var(--gold-soft);font-size:1rem;font-variant-numeric:tabular-nums}
+.paywall-plan.is-selected{border-color:#e9cd7bb3;background:linear-gradient(150deg,#3a4c7fcc,#0d1f52e6);box-shadow:0 0 0 1px #e9cd7b44}
+.paywall-plan:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+body .premium-card.is-active .ghost-button{margin-top:14px}
