@@ -712,8 +712,8 @@ function PaywallDialog({ reason, onOpenChange }: { reason: string | null; onOpen
 
       {prices && prices.length > 0 && chosen
         ? <>
-            <button className="gold-button" disabled={opening} onClick={subscribe}>{opening ? "Abrindo pagamento seguro…" : `Assinar Premium · ${formatMoney(chosen.amount, chosen.currency)}${intervalLabel(chosen).period === "pagamento único" ? "" : intervalLabel(chosen).period}`}</button>
-            <p className="paywall-fine-print">Pagamento processado com segurança pelo Stripe.{chosen.interval ? " Sem fidelidade: cancele quando quiser em Perfil → Gerenciar assinatura." : ""}</p>
+            <button className="gold-button" disabled={opening} onClick={subscribe}>{opening ? "Abrindo pagamento seguro…" : chosen.interval ? `Assinar Premium · ${formatMoney(chosen.amount, chosen.currency)}${intervalLabel(chosen).period}` : `Desbloquear Premium · ${formatMoney(chosen.amount, chosen.currency)}`}</button>
+            <p className="paywall-fine-print">{chosen.interval ? "Pagamento processado com segurança pelo Stripe. Sem fidelidade: cancele quando quiser em Perfil → Gerenciar assinatura." : "Pagamento único, sem mensalidade. Processado com segurança pelo Stripe."}</p>
           </>
         : prices && <>
             <button className="gold-button" disabled>Assinar Premium</button>
