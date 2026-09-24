@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Sparkles,
   Flame,
@@ -15,6 +15,8 @@ import {
   Check,
   BookOpen,
   ArrowRight,
+  ChevronLeft,
+  ChevronRight,
   Compass,
   Star,
   LockKeyhole,
@@ -110,6 +112,45 @@ export function SignsView({ profile, isPremium, openPaywall, navigate }: SignsVi
   const elementInfo = elementConfig[selectedSign.element];
   const ElementIcon = elementInfo.icon;
 
+  // The sign strip scrolls sideways. Touch users swipe; mouse users need the arrows, which hide at each end.
+  const carouselRef = useRef<HTMLDivElement>(null);
+  const [carouselEdges, setCarouselEdges] = useState({ start: true, end: false });
+  const updateCarouselEdges = useCallback(() => {
+    const strip = carouselRef.current;
+    if (!strip) return;
+    setCarouselEdges({ start: strip.scrollLeft <= 2, end: strip.scrollLeft + strip.clientWidth >= strip.scrollWidth - 2 });
+  }, []);
+
+  useEffect(() => {
+    const strip = carouselRef.current;
+    if (!strip) return;
+    updateCarouselEdges();
+    const observer = new ResizeObserver(updateCarouselEdges);
+    observer.observe(strip);
+    return () => observer.disconnect();
+  }, [mainTab, updateCarouselEdges]);
+
+  // Keep the chosen sign centred in the strip — including the native sign on first render.
+  const centredOnce = useRef(false);
+  useEffect(() => {
+    const strip = carouselRef.current;
+    const chip = strip?.querySelector<HTMLElement>(".sign-chip.selected");
+    if (!strip || !chip) return;
+    const stripBox = strip.getBoundingClientRect();
+    const chipBox = chip.getBoundingClientRect();
+    const left = strip.scrollLeft + (chipBox.left - stripBox.left) - (strip.clientWidth - chipBox.width) / 2;
+    const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    strip.scrollTo({ left, behavior: centredOnce.current && !reduceMotion ? "smooth" : "auto" });
+    centredOnce.current = true;
+  }, [selectedSignName, mainTab]);
+
+  function scrollSigns(direction: 1 | -1) {
+    const strip = carouselRef.current;
+    if (!strip) return;
+    const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    strip.scrollBy({ left: direction * strip.clientWidth * 0.7, behavior: reduceMotion ? "auto" : "smooth" });
+  }
+
   function handleSelectSign(name: string) {
     if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
       try { navigator.vibrate(10); } catch { /* ignore */ }
@@ -171,7 +212,9 @@ export function SignsView({ profile, isPremium, openPaywall, navigate }: SignsVi
           </section>
 
           {/* 12 Signs Selector Carousel */}
-          <div className="signs-carousel-wrapper" role="region" aria-label="Seletor de Signos">
+          <div className={`signs-carousel ${carouselEdges.start ? "at-start" : ""} ${carouselEdges.end ? "at-end" : ""}`}>
+          <button type="button" className="signs-carousel-arrow is-prev" onClick={() => scrollSigns(-1)} disabled={carouselEdges.start} aria-label="Ver signos anteriores"><ChevronLeft aria-hidden="true" /></button>
+          <div ref={carouselRef} className="signs-carousel-wrapper" role="region" aria-label="Seletor de Signos" onScroll={updateCarouselEdges}>
             <div className="signs-carousel-track">
               {SIGNS.map((s) => {
                 const isCurrent = s.name === selectedSign.name;
@@ -192,6 +235,8 @@ export function SignsView({ profile, isPremium, openPaywall, navigate }: SignsVi
                 );
               })}
             </div>
+          </div>
+          <button type="button" className="signs-carousel-arrow is-next" onClick={() => scrollSigns(1)} disabled={carouselEdges.end} aria-label="Ver próximos signos"><ChevronRight aria-hidden="true" /></button>
           </div>
 
           {/* Main Sign Showcase Card */}

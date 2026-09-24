@@ -31,6 +31,12 @@
 .signs-carousel-wrapper{overflow-x:auto;-webkit-overflow-scrolling:touch;padding:4px 2px 8px;margin:0 -4px;scrollbar-width:none}
 .signs-carousel-wrapper::-webkit-scrollbar{display:none}
 .signs-carousel-track{display:flex;gap:8px;min-width:max-content}
+.signs-carousel{position:relative;min-width:0;--fade-start:44px;--fade-end:44px}.signs-carousel.at-start{--fade-start:0px}.signs-carousel.at-end{--fade-end:0px}
+.signs-carousel .signs-carousel-wrapper{-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 var(--fade-start),#000 calc(100% - var(--fade-end)),transparent 100%);mask-image:linear-gradient(90deg,transparent 0,#000 var(--fade-start),#000 calc(100% - var(--fade-end)),transparent 100%);scroll-behavior:auto}
+.signs-carousel-arrow{position:absolute;z-index:2;top:calc(50% - 2px);transform:translateY(-50%);width:34px;height:34px;display:grid;place-items:center;padding:0;border:1px solid #efd57d66;border-radius:50%;background:#0b1a45f2;color:#f3dc8c;box-shadow:0 6px 18px #02071f99;cursor:pointer;transition:opacity .2s ease,border-color .2s ease,background .2s ease}
+.signs-carousel-arrow svg{width:18px;height:18px}.signs-carousel-arrow.is-prev{left:-2px}.signs-carousel-arrow.is-next{right:-2px}
+.signs-carousel-arrow:hover{border-color:#efd57d;background:#16306d}.signs-carousel-arrow:focus-visible{outline:2px solid #efd57d;outline-offset:2px}
+.signs-carousel-arrow:disabled{opacity:0;pointer-events:none}
 .sign-chip{display:flex;align-items:center;gap:7px;padding:7px 14px;border-radius:999px;border:1px solid #ffffff18;background:#081744aa;color:#b7c3e0;font-size:0.8rem;font-weight:600;cursor:pointer;transition:all 0.2s ease;position:relative}
 .sign-chip:hover{border-color:#efd57d66;color:#fdfefe}
 .sign-chip.selected{border-color:#efd57d;background:linear-gradient(135deg,#1b3a7a,#0b1a45);color:#f3dc8c;box-shadow:0 0 16px #edca6333}
