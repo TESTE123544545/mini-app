@@ -13,6 +13,11 @@ import { profiles, subscriptions, users } from "@/db/schema";
  */
 const API = "https://api.stripe.com/v1";
 const DEFAULT_PRODUCT_ID = "prod_UWpOZdImpB8hHp";
+/**
+ * Pinned so our calls do not follow the account's default (2019-02-19 at setup time). Webhook
+ * payloads still arrive in the endpoint's version; the handlers read fields present in both.
+ */
+const STRIPE_API_VERSION = "2024-06-20";
 export const SITE_ORIGIN = "https://veiasdasintonia.com.br";
 
 /** Subscription states that keep Premium on. past_due stays on while Stripe retries the card. */
@@ -37,7 +42,7 @@ export async function stripe<T>(path: string, params?: Params, method: "GET" | "
   const url = method === "GET" && body ? `${API}${path}?${body}` : `${API}${path}`;
   const response = await fetch(url, {
     method,
-    headers: { authorization: `Bearer ${key}`, ...(method === "POST" ? { "content-type": "application/x-www-form-urlencoded" } : {}) },
+    headers: { authorization: `Bearer ${key}`, "stripe-version": STRIPE_API_VERSION, ...(method === "POST" ? { "content-type": "application/x-www-form-urlencoded" } : {}) },
     body: method === "POST" ? body : undefined,
   });
   const data = await response.json() as T & { error?: { message?: string } };
