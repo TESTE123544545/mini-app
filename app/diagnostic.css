@@ -5,7 +5,7 @@
 
 /* --- Shared hero surface ---------------------------------------------------- */
 .diag-intro,.diag-question,.diag-processing,.diag-stack{margin-top:18px}
-.diag-hero{position:relative;overflow:hidden;isolation:isolate;padding:26px 22px;border:1px solid #e7c77640;border-radius:28px;background:radial-gradient(circle at 50% -20%,#2f5fc455,transparent 60%),linear-gradient(160deg,rgba(22,56,122,.52),rgba(7,22,64,.66) 75%);box-shadow:0 26px 70px #02071f99,inset 0 1px #ffffff1c;backdrop-filter:blur(5px)}
+.diag-hero{position:relative;overflow:hidden;isolation:isolate;padding:26px 22px;border:1px solid #e7c77640;border-radius:28px;background:radial-gradient(circle at 50% -20%,#2f5fc455,transparent 60%),linear-gradient(160deg,rgba(22,56,122,.6),rgba(7,22,64,.72) 75%);box-shadow:0 26px 70px #02071f99,inset 0 1px #ffffff1c}
 .diag-hero__halo{position:absolute;z-index:-1;width:260px;height:260px;right:-90px;top:-110px;border-radius:50%;background:radial-gradient(circle,#e9cd7b2e,transparent 65%);pointer-events:none}
 .diag-hero h2{font-size:clamp(1.65rem,7vw,2.05rem);line-height:1.14;margin:6px 0 12px;color:#fbf4df}
 
@@ -109,7 +109,7 @@
 
 .diag-reading__lead{margin:6px 0 0;color:#e7ecf8;font-family:var(--font-display);font-size:1.3rem;line-height:1.35}
 
-.diag-bridge{position:relative;overflow:hidden;display:grid;justify-items:center;text-align:center;padding:26px 20px 22px;border:1px solid #e9cd7b55;border-radius:28px;background:radial-gradient(circle at 50% 42%,#e9cd7b1f,transparent 55%),linear-gradient(165deg,rgba(19,47,110,.55),rgba(5,15,52,.7) 80%);box-shadow:0 26px 70px #02071faa,inset 0 1px #ffffff1f;backdrop-filter:blur(5px)}
+.diag-bridge{position:relative;overflow:hidden;display:grid;justify-items:center;text-align:center;padding:26px 20px 22px;border:1px solid #e9cd7b55;border-radius:28px;background:radial-gradient(circle at 50% 42%,#e9cd7b1f,transparent 55%),linear-gradient(165deg,rgba(19,47,110,.62),rgba(5,15,52,.74) 80%);box-shadow:0 26px 70px #02071faa,inset 0 1px #ffffff1f}
 .diag-bridge h2{max-width:370px;margin:6px 0 4px;font-size:clamp(1.4rem,6vw,1.7rem);line-height:1.2;color:#fbf4df}
 .diag-bridge__tree{position:relative;width:100%;height:230px;display:grid;grid-template-rows:100%;place-items:center}
 .diag-bridge__tree .prosperity-tree-svg{width:auto;height:100%;filter:drop-shadow(0 0 18px #e9cd7b66)}

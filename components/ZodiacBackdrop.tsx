@@ -8,7 +8,7 @@ import { SIGNS, getSignByName } from "@/lib/signs";
  * ~5s each) that never plays on its own. It moves forward only when the person scrolls down
  * or changes tab, so the universe reacts to them instead of looping behind the content.
  */
-const SRC = "/zodiac-bg.mp4";
+const SRC = "/zodiac-bg-v2.mp4";
 const SEGMENT_S = 5;
 /** Scrolling this many pixels down advances the video by one second. */
 const PX_PER_SECOND = 320;
@@ -39,8 +39,10 @@ export function ZodiacBackdrop({ step, sign }: { step: string; sign?: string }) 
     const video = videoRef.current;
     if (!video || !video.duration) return;
     const remaining = target.current - absoluteTime(video);
-    if (remaining <= 0.04) { video.pause(); return; }
-    video.playbackRate = Math.min(2.5, Math.max(0.6, remaining * 0.9));
+    if (remaining <= 0.04) { if (!video.paused) video.pause(); return; }
+    // Touch the rate only in coarse steps: re-setting it every frame makes decoders hiccup on phones.
+    const rate = Math.round(Math.min(2.5, Math.max(0.75, remaining * 0.9)) * 4) / 4;
+    if (Math.abs(video.playbackRate - rate) >= 0.25) video.playbackRate = rate;
     if (video.paused) video.play().catch(() => { /* background autoplay refused: stay on the current frame */ });
     frame.current = requestAnimationFrame(tick);
   }
@@ -108,5 +110,5 @@ export function ZodiacBackdrop({ step, sign }: { step: string; sign?: string }) 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
 
-  return <video ref={videoRef} className="galaxy-bg-video" src={SRC} muted loop playsInline preload="auto" aria-hidden="true" />;
+  return <video ref={videoRef} className="galaxy-bg-video" src={SRC} muted loop playsInline preload="auto" disablePictureInPicture disableRemotePlayback aria-hidden="true" />;
 }

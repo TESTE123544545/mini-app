@@ -23,7 +23,7 @@ import { track } from "@/lib/analytics";
 import { recallLogin, rememberLogin, stopSilentLogin } from "@/lib/savedLogin";
 import { loadDiagnostics, saveDiagnostic, type DiagnosticResult } from "@/lib/diagnostic";
 
-type View = "home" | "diagnostic" | "signs" | "tree" | "missions" | "journal" | "profile" | "goal" | "chat";
+type View = "home" | "premium" | "diagnostic" | "signs" | "tree" | "missions" | "journal" | "profile" | "goal" | "chat";
 type GoalKind = "financial" | "non_financial" | "partial";
 type Goal = {
   id: number; title: string; category: string; progress: number; isPrimary?: boolean;
@@ -560,12 +560,16 @@ export default function HomePage() {
       <div className="cosmos" aria-hidden="true" />
       <section className="app-frame" data-navigated={navigated || undefined}>
         <header className="topbar">
-          <div><p className="eyebrow">Veias da Sintonia</p><h1>{view === "home" ? `Olá, ${profile.name.split(" ")[0]}` : viewLabels[view]} <span aria-hidden="true">✦</span></h1></div>
-          <button className={`avatar ${profile.hasAvatar ? "has-photo" : ""}`} onClick={() => navigate("profile")} aria-label="Abrir perfil">{profile.hasAvatar ? <Image unoptimized src={`/api/profile/avatar?v=${avatarVersion}`} alt="" width={44} height={44} /> : profile.name.slice(0, 2).toUpperCase()}</button>
+          <div><p className="eyebrow">Veias da Sintonia</p><h1>{view === "home" ? `Olá, ${profile.name.split(" ")[0]}` : viewLabels[view]}{" "}<span aria-hidden="true">✦</span></h1></div>
+          <div className="topbar-actions">
+            <button type="button" className={`premium-pill ${isPremium ? "is-active" : ""} ${view === "premium" ? "is-current" : ""}`} onClick={() => navigate("premium")} aria-current={view === "premium" ? "page" : undefined}><Gem aria-hidden="true"/><span>Premium</span></button>
+            <button className={`avatar ${profile.hasAvatar ? "has-photo" : ""}`} onClick={() => navigate("profile")} aria-label="Abrir perfil">{profile.hasAvatar ? <Image unoptimized src={`/api/profile/avatar?v=${avatarVersion}`} alt="" width={44} height={44} /> : profile.name.slice(0, 2).toUpperCase()}</button>
+          </div>
         </header>
 
         <div className="view-swap" key={view}>
           {view === "home" && <HomeView profile={profile} plan={plan} week={week} part={part} xp={xp} level={level} stage={stage} streak={streak} fruits={goals.filter((goal) => goal.progress === 100).length} missionDone={missionDone} ritualDone={ritualDone} treeCelebrating={treeCelebrating} completeMission={completeMission} openRitual={() => { haptic(8); setRitualOpen(true); }} oracleOpen={oracleOpen} setOracleOpen={setOracleOpen} mainGoal={mainGoal} advanceGoal={advanceGoal} openGoals={() => navigate(mainGoal ? "goal" : "profile")} navigate={navigate} isPremium={isPremium} openPaywall={openPaywall} diagnostic={diagnostics[0]} openTree={(source) => openTree(source)} />}
+          {view === "premium" && <PremiumView isPremium={isPremium} />}
           {view === "diagnostic" && <DiagnosticView results={diagnostics} profileSign={profile.sign || undefined} xp={xp} onComplete={(result) => setDiagnostics((current) => saveDiagnostic(account?.email, result, current))} onOpenTree={() => openTree("diagnostic_result")} />}
           {view === "signs" && <SignsView profile={profile} isPremium={isPremium} openPaywall={openPaywall} navigate={navigate} />}
           {view === "tree" && <TreeView xp={xp} level={level} stage={stage} streak={streak} mapScores={mapScores} goals={goals} diagnostic={diagnostics[0]} openDiagnostic={() => navigate("diagnostic")} />}
@@ -603,7 +607,7 @@ const navTabs: { view: View; label: string; icon: React.ReactNode }[] = [
 ];
 const tabOrder = navTabs.map((tab) => tab.view);
 let activeNavTransition: ViewTransition | null = null;
-const viewLabels: Record<View, string> = { home: "Início", diagnostic: "Meu Diagnóstico", signs: "Signos & Astrologia", tree: "Sua Árvore", missions: "Sua Jornada", journal: "Seu Diário", profile: "Seu Caminho", goal: "Meu Objetivo", chat: "Conversar" };
+const viewLabels: Record<View, string> = { home: "Início", premium: "Premium", diagnostic: "Meu Diagnóstico", signs: "Signos & Astrologia", tree: "Sua Árvore", missions: "Sua Jornada", journal: "Seu Diário", profile: "Seu Caminho", goal: "Meu Objetivo", chat: "Conversar" };
 
 function AppSplash() {
   return <main className="app-splash"><div className="stars" aria-hidden="true"/><div><div className="brand-mark"><Leaf/></div><p>Veias da Sintonia</p><div className="splash-bar" aria-hidden="true"><i/></div></div></main>;
@@ -642,15 +646,15 @@ const intervalLabel = (price: PremiumPrice) => {
 };
 const formatMoney = (amount: number, currency: string) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: currency.toUpperCase() }).format(amount / 100);
 
-/** Premium offer. Prices come live from the Stripe product; paying happens on Stripe's hosted Checkout. */
-function PaywallDialog({ reason, onOpenChange }: { reason: string | null; onOpenChange: (open: boolean) => void }) {
+/** Premium offer body — shared by the paywall dialog and the Premium tab. Prices come live from Stripe. */
+function PremiumOffer({ reason }: { reason: string }) {
   const previewDay = findTrail("constancia-21")?.days[0];
   const [prices, setPrices] = useState<PremiumPrice[] | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [opening, setOpening] = useState(false);
 
   useEffect(() => {
-    if (reason === null || prices !== null) return;
+    if (prices !== null) return;
     fetch("/api/billing/stripe/plans")
       .then((response): Promise<{ prices: PremiumPrice[] }> => response.ok ? response.json() : Promise.resolve({ prices: [] }))
       .then(({ prices: loaded }) => {
@@ -658,7 +662,7 @@ function PaywallDialog({ reason, onOpenChange }: { reason: string | null; onOpen
         setSelected((loaded.find((price) => price.interval === "month" && price.intervalCount === 1) ?? loaded[0])?.id ?? null);
       })
       .catch(() => setPrices([]));
-  }, [reason, prices]);
+  }, [prices]);
 
   async function subscribe() {
     if (!selected) return;
@@ -678,14 +682,7 @@ function PaywallDialog({ reason, onOpenChange }: { reason: string | null; onOpen
   const chosen = prices?.find((price) => price.id === selected);
   const monthly = prices?.find((price) => price.interval === "month" && price.intervalCount === 1);
 
-  return <Dialog open={reason !== null} onOpenChange={onOpenChange}>
-    <DialogContent className="goal-dialog paywall-dialog">
-      <DialogHeader>
-        <div className="paywall-icon"><Gem/></div>
-        <DialogTitle>{reason ? paywallHeadline[reason] ?? "Destrave a jornada completa" : ""}</DialogTitle>
-        <DialogDescription>Sem promessas financeiras — uma experiência mais completa de autoconhecimento, hábitos e metas.</DialogDescription>
-      </DialogHeader>
-
+  return <>
       {previewDay && <div className="paywall-preview">
         <span className="paywall-preview-tag"><LockKeyhole size={12}/> 21 dias de constância · Dia 1</span>
         <div className="paywall-preview-blur" aria-hidden="true"><strong>{previewDay.title}</strong><p>{previewDay.message}</p></div>
@@ -719,8 +716,41 @@ function PaywallDialog({ reason, onOpenChange }: { reason: string | null; onOpen
             <button className="gold-button" disabled>Assinar Premium</button>
             <p className="paywall-fine-print">A assinatura do Premium estará disponível em breve.</p>
           </>}
+  </>;
+}
+
+function PaywallDialog({ reason, onOpenChange }: { reason: string | null; onOpenChange: (open: boolean) => void }) {
+  return <Dialog open={reason !== null} onOpenChange={onOpenChange}>
+    <DialogContent className="goal-dialog paywall-dialog">
+      <DialogHeader>
+        <div className="paywall-icon"><Gem/></div>
+        <DialogTitle>{reason ? paywallHeadline[reason] ?? "Destrave a jornada completa" : ""}</DialogTitle>
+        <DialogDescription>Sem promessas financeiras — uma experiência mais completa de autoconhecimento, hábitos e metas.</DialogDescription>
+      </DialogHeader>
+      {reason && <PremiumOffer reason={reason}/>}
     </DialogContent>
   </Dialog>;
+}
+
+/** The Premium tab, one tap away from every screen through the header button. */
+function PremiumView({ isPremium }: { isPremium: boolean }) {
+  useEffect(() => { track("premium_tab_viewed", { isPremium }); }, [isPremium]);
+  if (isPremium) {
+    return <div className="view-stack premium-view">
+      <section className="premium-card is-active"><div className="premium-icon"><Gem/></div><p className="eyebrow">Seu plano</p><h2>Premium ativo</h2><p>Trilhas ilimitadas, histórico completo, metas sem limite e todos os temas já estão liberados na sua conta.</p><button type="button" className="ghost-button" onClick={openBillingPortal}>Gerenciar assinatura</button></section>
+    </div>;
+  }
+  return <div className="view-stack premium-view">
+    <section className="surface-card premium-view__hero">
+      <div className="paywall-icon"><Gem/></div>
+      <p className="eyebrow">Veias da Sintonia Premium</p>
+      <h2>Destrave a jornada completa</h2>
+      <p>Sem promessas financeiras — uma experiência mais completa de autoconhecimento, hábitos e metas.</p>
+    </section>
+    <section className="surface-card premium-view__offer paywall-dialog">
+      <PremiumOffer reason="premium_tab"/>
+    </section>
+  </div>;
 }
 
 function TreeStageUnlockedOverlay({ name, note }: { name: string; note: string }) {
@@ -752,7 +782,7 @@ function RotatingWord({ words, intervalMs = 1900 }: { words: string[]; intervalM
 function WelcomeHero({ onStart, onLogin }: { onStart: () => void; onLogin: () => void }) {
   return <main className="welcome-hero">
     <video className="welcome-portal-video" autoPlay muted loop playsInline aria-hidden="true">
-      <source src="/portal.mp4" type="video/mp4" />
+      <source src="/portal-v2.mp4" type="video/mp4" />
     </video>
     <div className="welcome-portal-overlay" />
     <header className="welcome-nav">
