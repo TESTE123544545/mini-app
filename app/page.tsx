@@ -17,6 +17,7 @@ import { TREE_PART_HOTSPOTS, TREE_STAGES, treeStageFor, type TreePartHotspot } f
 import { ProsperityTree } from "@/components/ProsperityTree";
 import { SignsView } from "@/components/views/SignsView";
 import { IntroExperience, introModeFor, type IntroMode } from "@/components/IntroExperience";
+import { ZodiacBackdrop } from "@/components/ZodiacBackdrop";
 import { DiagnosticView } from "@/components/diagnostic/DiagnosticView";
 import { DiagnosticHomeCards, DiagnosticTreeFocus } from "@/components/diagnostic/DiagnosticEntryPoints";
 import { track } from "@/lib/analytics";
@@ -501,9 +502,7 @@ export default function HomePage() {
 
   return (
     <main className="app-shell" data-theme={profile.theme} data-daypart={part}>
-      <video className="galaxy-bg-video" autoPlay muted loop playsInline aria-hidden="true">
-        <source src="/galaxy-bg.mp4" type="video/mp4" />
-      </video>
+      <ZodiacBackdrop step={view} sign={profile.sign} />
       <div className="cosmos" aria-hidden="true" />
       <section className="app-frame" data-navigated={navigated || undefined}>
         <header className="topbar">
