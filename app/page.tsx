@@ -16,6 +16,7 @@ import { fetchPremiumPrice, isPlayBillingAvailable, purchasePremium, verifyPurch
 import { TREE_PART_HOTSPOTS, TREE_STAGES, treeStageFor, type TreePartHotspot } from "@/lib/treeStages";
 import { ProsperityTree } from "@/components/ProsperityTree";
 import { SignsView } from "@/components/views/SignsView";
+import { IntroExperience, introModeFor, type IntroMode } from "@/components/IntroExperience";
 import { DiagnosticView } from "@/components/diagnostic/DiagnosticView";
 import { DiagnosticHomeCards, DiagnosticTreeFocus } from "@/components/diagnostic/DiagnosticEntryPoints";
 import { track } from "@/lib/analytics";
@@ -139,7 +140,7 @@ export default function HomePage() {
   const [syncStatus, setSyncStatus] = useState<"loading" | "saved" | "offline">("loading");
   const [avatarVersion, setAvatarVersion] = useState(0);
   const [unlockedAchievements, setUnlockedAchievements] = useState<string[]>([]);
-  const [showUniverseEntry, setShowUniverseEntry] = useState(false);
+  const [intro, setIntro] = useState<IntroMode | null>(null);
   const notifiedAchievements = useRef<Set<string> | null>(null);
 
   useEffect(() => {
@@ -154,6 +155,7 @@ export default function HomePage() {
       .then(({ user }) => {
         setAccount(user);
         if (!user) return null;
+        setIntro(introModeFor(user.email));
         return loadCloudState(user, id);
       })
       .catch(() => toast.error("Não foi possível verificar sua conta."))
@@ -198,7 +200,7 @@ export default function HomePage() {
   }
 
   async function handleAuthenticated(user: Account) {
-    setShowUniverseEntry(true);
+    setIntro(introModeFor(user.email));
     setAccount(user);
     const currentId = localStorage.getItem("vds-device-id") || crypto.randomUUID();
     await loadCloudState(user, currentId);
@@ -208,7 +210,7 @@ export default function HomePage() {
     await fetch("/api/auth", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "logout" }) });
     localStorage.removeItem("vds-state");
     localStorage.setItem("vds-device-id", crypto.randomUUID());
-    setAccount(null); setProfile(emptyProfile); setXp(0); setMissionDone(false); setRitualDone(false); setStreak(0); setGoals([]); setEntries([]); setActiveTrail(null); setOnboarding(0); setView("home"); setSyncReady(false); setUnlockedAchievements([]); setWelcomeAuthMode(null); setShowUniverseEntry(false);
+    setAccount(null); setProfile(emptyProfile); setXp(0); setMissionDone(false); setRitualDone(false); setStreak(0); setGoals([]); setEntries([]); setActiveTrail(null); setOnboarding(0); setView("home"); setSyncReady(false); setUnlockedAchievements([]); setWelcomeAuthMode(null); setIntro(null);
     treeStageBaseline.current = null;
     notifiedAchievements.current = null;
     toast.success("Você saiu da sua conta.");
@@ -531,7 +533,7 @@ export default function HomePage() {
       }} />
       {xpBurst && <div className="xp-float" key={xpBurst.id} aria-hidden="true">+{xpBurst.amount} XP</div>}
       {stageUnlocked && <TreeStageUnlockedOverlay name={stageUnlocked.name} note={stageUnlocked.note} />}
-      {showUniverseEntry && <UniverseEntryOverlay onComplete={() => setShowUniverseEntry(false)} />}
+      {intro && <IntroExperience mode={intro} accountKey={account?.email} onComplete={() => setIntro(null)} />}
       <Toaster richColors position="top-center" />
     </main>
   );
@@ -660,19 +662,6 @@ function TreeStageUnlockedOverlay({ name, note }: { name: string; note: string }
       <h2>{name}</h2>
       <p>{note}</p>
     </div>
-  </div>;
-}
-
-function UniverseEntryOverlay({ onComplete }: { onComplete: () => void }) {
-  useEffect(() => {
-    const timer = window.setTimeout(onComplete, 4000);
-    return () => window.clearTimeout(timer);
-  }, [onComplete]);
-
-  return <div className="universe-entry-overlay" aria-hidden="true">
-    <video className="universe-entry-video" autoPlay muted playsInline>
-      <source src="/universe-entry.mp4" type="video/mp4" />
-    </video>
   </div>;
 }
 
