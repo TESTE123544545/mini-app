@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { Anchor, Apple, ArrowLeft, BookOpen, BriefcaseBusiness, CalendarDays, Camera, CameraOff, Check, ChevronRight, CircleDollarSign, Cloud, Compass, Crown, Eye, EyeOff, Flame, Flower2, Gem, Home, ImagePlus, Leaf, LockKeyhole, LogOut, Mail, MoonStar, Orbit, Pencil, Play, Plus, Rocket, Route, Save, Send, Settings2, ShieldCheck, Sparkles, Sprout, Sun, Sunrise, Sunset, Target, TreeDeciduous, Trophy, UserRound, Wind, X } from "lucide-react";
+import { Anchor, Apple, ArrowLeft, BookOpen, BriefcaseBusiness, CalendarDays, Camera, CameraOff, Check, ChevronRight, CircleDollarSign, Cloud, Compass, Crown, Eye, EyeOff, Flame, Flower2, Gem, Home, ImagePlus, Leaf, LockKeyhole, LogOut, Mail, MoonStar, Orbit, Pencil, Play, Plus, Rocket, Route, Save, Send, Settings2, ShieldCheck, Sparkles, Sprout, Sun, Sunrise, Sunset, Target, Telescope, TreeDeciduous, Trophy, UserRound, Wind, X } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { Toaster } from "@/components/ui/sonner";
@@ -16,8 +16,12 @@ import { fetchPremiumPrice, isPlayBillingAvailable, purchasePremium, verifyPurch
 import { TREE_PART_HOTSPOTS, TREE_STAGES, treeStageFor, type TreePartHotspot } from "@/lib/treeStages";
 import { ProsperityTree } from "@/components/ProsperityTree";
 import { SignsView } from "@/components/views/SignsView";
+import { DiagnosticView } from "@/components/diagnostic/DiagnosticView";
+import { DiagnosticHomeCards, DiagnosticTreeFocus } from "@/components/diagnostic/DiagnosticEntryPoints";
+import { track } from "@/lib/analytics";
+import { loadDiagnostics, saveDiagnostic, type DiagnosticResult } from "@/lib/diagnostic";
 
-type View = "home" | "signs" | "tree" | "missions" | "journal" | "profile" | "goal" | "chat";
+type View = "home" | "diagnostic" | "signs" | "tree" | "missions" | "journal" | "profile" | "goal" | "chat";
 type GoalKind = "financial" | "non_financial" | "partial";
 type Goal = {
   id: number; title: string; category: string; progress: number; isPrimary?: boolean;
@@ -93,17 +97,11 @@ function getSign(date: string) {
   return zodiac.find(([, end]) => code <= end)?.[0] ?? "Capricórnio";
 }
 
-function track(event: string, data: Record<string, unknown> = {}) {
-  if (typeof window === "undefined") return;
-  const item = { event, data, at: new Date().toISOString() };
-  const events = JSON.parse(localStorage.getItem("vds-analytics") || "[]");
-  localStorage.setItem("vds-analytics", JSON.stringify([...events.slice(-49), item]));
-  window.dispatchEvent(new CustomEvent("vds:analytics", { detail: item }));
-}
 
 export default function HomePage() {
   const [view, setView] = useState<View>("home");
   const [navigated, setNavigated] = useState(false);
+  const [diagnostics, setDiagnostics] = useState<DiagnosticResult[]>([]);
   const [ready, setReady] = useState(false);
   const [account, setAccount] = useState<Account | null>(null);
   const [welcomeAuthMode, setWelcomeAuthMode] = useState<"register" | "login" | null>(null);
@@ -256,6 +254,12 @@ export default function HomePage() {
     setOracleOpen(false);
     setAnswers(["", "", "", ""]);
   }, [dayKey]);
+
+  // The diagnostic lives on this device, per account (see lib/diagnostic.ts).
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setDiagnostics(loadDiagnostics(account?.email));
+  }, [account?.email]);
 
   const isPremium = profile.plan === "premium";
   const level = Math.floor(xp / 100) + 1;
@@ -460,6 +464,11 @@ export default function HomePage() {
     goalStage={obGoalStage} setGoalStage={setObGoalStage} goalBlocker={obGoalBlocker} setGoalBlocker={setObGoalBlocker}
     goalDailyMinutes={obGoalDailyMinutes} setGoalDailyMinutes={setObGoalDailyMinutes} goalMotivation={obGoalMotivation} setGoalMotivation={setObGoalMotivation} />;
 
+  function openTree(source: string) {
+    track("prosperity_tree_opened", { source });
+    navigate("tree");
+  }
+
   function navigate(next: View) {
     const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
     // Tapping the tab you're already on brings you back to the top, like native tab bars.
@@ -499,9 +508,10 @@ export default function HomePage() {
         </header>
 
         <div className="view-swap" key={view}>
-          {view === "home" && <HomeView profile={profile} plan={plan} week={week} part={part} xp={xp} level={level} stage={stage} streak={streak} fruits={goals.filter((goal) => goal.progress === 100).length} missionDone={missionDone} ritualDone={ritualDone} treeCelebrating={treeCelebrating} completeMission={completeMission} openRitual={() => { haptic(8); setRitualOpen(true); }} oracleOpen={oracleOpen} setOracleOpen={setOracleOpen} mainGoal={mainGoal} advanceGoal={advanceGoal} openGoals={() => navigate(mainGoal ? "goal" : "profile")} navigate={navigate} isPremium={isPremium} openPaywall={openPaywall} />}
+          {view === "home" && <HomeView profile={profile} plan={plan} week={week} part={part} xp={xp} level={level} stage={stage} streak={streak} fruits={goals.filter((goal) => goal.progress === 100).length} missionDone={missionDone} ritualDone={ritualDone} treeCelebrating={treeCelebrating} completeMission={completeMission} openRitual={() => { haptic(8); setRitualOpen(true); }} oracleOpen={oracleOpen} setOracleOpen={setOracleOpen} mainGoal={mainGoal} advanceGoal={advanceGoal} openGoals={() => navigate(mainGoal ? "goal" : "profile")} navigate={navigate} isPremium={isPremium} openPaywall={openPaywall} diagnostic={diagnostics[0]} openTree={(source) => openTree(source)} />}
+          {view === "diagnostic" && <DiagnosticView results={diagnostics} profileSign={profile.sign || undefined} xp={xp} onComplete={(result) => setDiagnostics((current) => saveDiagnostic(account?.email, result, current))} onOpenTree={() => openTree("diagnostic_result")} />}
           {view === "signs" && <SignsView profile={profile} isPremium={isPremium} openPaywall={openPaywall} navigate={navigate} />}
-          {view === "tree" && <TreeView xp={xp} level={level} stage={stage} streak={streak} mapScores={mapScores} goals={goals} />}
+          {view === "tree" && <TreeView xp={xp} level={level} stage={stage} streak={streak} mapScores={mapScores} goals={goals} diagnostic={diagnostics[0]} openDiagnostic={() => navigate("diagnostic")} />}
           {view === "missions" && <JourneyView profile={profile} plan={plan} snapshot={snapshot} week={week} missionDone={missionDone} ritualDone={ritualDone} completeMission={completeMission} openRitual={() => { haptic(8); setRitualOpen(true); }} activeTrail={activeTrail} startTrail={startTrail} completeTrailDay={completeTrailDay} abandonTrail={abandonTrail} isPremium={isPremium} openPaywall={openPaywall} />}
           {view === "journal" && <JournalView plan={plan} answers={answers} setAnswers={setAnswers} save={saveJournal} entries={entries} isPremium={isPremium} openPaywall={openPaywall} />}
           {view === "profile" && <ProfileView profile={profile} setProfile={setProfile} account={account} guide={guide} goals={goals} advanceGoal={advanceGoal} goalDialog={goalDialog} setGoalDialog={setGoalDialog} goalTitle={goalTitle} setGoalTitle={setGoalTitle} goalCategory={goalCategory} setGoalCategory={setGoalCategory} addGoal={() => addGoal()} syncStatus={syncStatus} avatarVersion={avatarVersion} setAvatarVersion={setAvatarVersion} logout={logout} isPremium={isPremium} openPaywall={openPaywall} navigate={navigate} />}
@@ -509,7 +519,7 @@ export default function HomePage() {
           {view === "chat" && <ChatView profile={profile} isPremium={isPremium} navigate={navigate} openPaywall={openPaywall} onSessionExpired={handleSessionExpired} />}
         </div>
 
-        <nav className="bottom-nav" aria-label="Navegação principal" style={{ "--tab-index": Math.max(tabOrder.indexOf(view), 0) } as React.CSSProperties}>
+        <nav className="bottom-nav" aria-label="Navegação principal" style={{ "--tab-index": Math.max(tabOrder.indexOf(view), 0), "--tab-count": navTabs.length } as React.CSSProperties}>
           <span className={`nav-indicator ${tabOrder.includes(view) ? "" : "is-hidden"}`} aria-hidden="true" />
           {navTabs.map(({ view: tab, label, icon }) => <NavButton key={tab} active={view === tab} onClick={() => navigate(tab)} icon={icon} label={label} />)}
         </nav>
@@ -529,6 +539,8 @@ export default function HomePage() {
 
 const navTabs: { view: View; label: string; icon: React.ReactNode }[] = [
   { view: "home", label: "Início", icon: <Home/> },
+  // "Diagnóstico" does not fit a seven-column bar on phones; the screen itself is titled "Meu Diagnóstico".
+  { view: "diagnostic", label: "Momento", icon: <Telescope/> },
   { view: "signs", label: "Signos", icon: <Sparkles/> },
   { view: "tree", label: "Árvore", icon: <Leaf/> },
   { view: "missions", label: "Jornada", icon: <Route/> },
@@ -537,7 +549,7 @@ const navTabs: { view: View; label: string; icon: React.ReactNode }[] = [
 ];
 const tabOrder = navTabs.map((tab) => tab.view);
 let activeNavTransition: ViewTransition | null = null;
-const viewLabels: Record<View, string> = { home: "Início", signs: "Signos & Astrologia", tree: "Sua Árvore", missions: "Sua Jornada", journal: "Seu Diário", profile: "Seu Caminho", goal: "Meu Objetivo", chat: "Conversar" };
+const viewLabels: Record<View, string> = { home: "Início", diagnostic: "Meu Diagnóstico", signs: "Signos & Astrologia", tree: "Sua Árvore", missions: "Sua Jornada", journal: "Seu Diário", profile: "Seu Caminho", goal: "Meu Objetivo", chat: "Conversar" };
 
 function AppSplash() {
   return <main className="app-splash"><div className="stars" aria-hidden="true"/><div><div className="brand-mark"><Leaf/></div><p>Veias da Sintonia</p><div className="splash-bar" aria-hidden="true"><i/></div></div></main>;
@@ -823,7 +835,7 @@ function Onboarding({ step, setStep, profile, setProfile, finish, goalTitle, set
 
 type WeekDay = ReturnType<typeof weekPlan>[number];
 
-function HomeView({ profile, plan, week, part, xp, level, stage, streak, fruits, missionDone, ritualDone, treeCelebrating, completeMission, openRitual, oracleOpen, setOracleOpen, mainGoal, advanceGoal, openGoals, navigate, isPremium, openPaywall }: { profile: Profile; plan: DailyPlan; week: WeekDay[]; part: DayPart; xp: number; level: number; stage: string; streak: number; fruits: number; missionDone: boolean; ritualDone: boolean; treeCelebrating: boolean; completeMission: () => void; openRitual: () => void; oracleOpen: boolean; setOracleOpen: (v: boolean) => void; mainGoal?: Goal; advanceGoal: (id: number) => void; openGoals: () => void; navigate: (view: View) => void; isPremium: boolean; openPaywall: (reason: string) => void }) {
+function HomeView({ profile, plan, week, part, xp, level, stage, streak, fruits, missionDone, ritualDone, treeCelebrating, completeMission, openRitual, oracleOpen, setOracleOpen, mainGoal, advanceGoal, openGoals, navigate, isPremium, openPaywall, diagnostic, openTree }: { profile: Profile; plan: DailyPlan; week: WeekDay[]; part: DayPart; xp: number; level: number; stage: string; streak: number; fruits: number; missionDone: boolean; ritualDone: boolean; treeCelebrating: boolean; completeMission: () => void; openRitual: () => void; oracleOpen: boolean; setOracleOpen: (v: boolean) => void; mainGoal?: Goal; advanceGoal: (id: number) => void; openGoals: () => void; navigate: (view: View) => void; isPremium: boolean; openPaywall: (reason: string) => void; diagnostic?: DiagnosticResult; openTree: (source: string) => void }) {
   const firstName = profile.name.split(" ")[0];
   const tomorrow = week[1];
   return <div className="home-flow">
@@ -833,6 +845,7 @@ function HomeView({ profile, plan, week, part, xp, level, stage, streak, fruits,
       {!isPremium && <LockKeyhole size={16}/>}
       <ChevronRight/>
     </button>
+    {!diagnostic && <DiagnosticHomeCards onOpenDiagnostic={() => navigate("diagnostic")} onOpenTree={() => openTree("home")}/>}
     <section className="daily-briefing">
       <div className="briefing-orbit" aria-hidden="true"><span/><span/><span/></div>
       <div className="briefing-top"><span className="theme-pill"><Compass/>Dia de {plan.theme.name}</span><span className="day-phase">{dayPartIcon[part]}{dayPartLabel[part]}</span></div>
@@ -843,6 +856,7 @@ function HomeView({ profile, plan, week, part, xp, level, stage, streak, fruits,
       <button className={`ritual-button ${ritualDone ? "done" : ""}`} onClick={openRitual}>{ritualDone ? <Check/> : <Play/>}<span><strong>{ritualDone ? "Ritual concluído" : "Começar ritual de 3 minutos"}</strong><small>{ritualDone ? "Sua árvore foi nutrida hoje" : "Check-in · respiração · ação"}</small></span><ChevronRight/></button>
     </section>
     <section className={`mission-card ${missionDone ? "done" : ""}`}><div className="mission-icon">{missionDone ? <Check/> : <Target/>}</div><div className="mission-copy"><p className="eyebrow">Missão do dia · {missionDone ? "concluída" : "+20 XP"}</p><h2>{missionDone ? "Intenção em movimento" : plan.theme.verb}</h2><p>{plan.mission}</p></div><button className="gold-button" disabled={missionDone} onClick={completeMission}>{missionDone ? <><Check/> Missão concluída</> : <><Target/> Começar missão</>}</button></section>
+    {diagnostic && <DiagnosticHomeCards result={diagnostic} onOpenDiagnostic={() => navigate("diagnostic")} onOpenTree={() => openTree("home")}/>}
     <TreeCard xp={xp} level={level} stage={stage} streak={streak} fruits={fruits} celebrating={treeCelebrating} goalProgress={mainGoal?.progress}/>
     <section className="week-orbit" aria-label="Próximos sete dias">
       <div className="section-heading"><div><p className="eyebrow">Seu ciclo</p><h2>Próximos 7 dias</h2></div><CalendarDays/></div>
@@ -918,13 +932,14 @@ function TreeCard({ xp, level, stage, streak, fruits = 0, celebrating = false, g
   return <section className={`tree-card ${celebrating ? "is-growing" : ""}`}><div className="tree-card__heading"><div><p className="eyebrow">Sua árvore viva</p><h2>{stage}</h2></div><div className="level-medal"><span>{level}</span><small>NÍVEL</small></div></div><div className="tree-stage"><ProsperityTree xp={xp} celebrating={celebrating} goalProgress={goalProgress}/>{onSelectPart && <div className="tree-parts">{TREE_PART_HOTSPOTS.map((part) => { const locked = xp < part.unlockedAt; return <button key={part.key} className={locked ? "locked" : ""} style={{ left: `${part.x}%`, top: `${part.y}%` }} onClick={() => { haptic(8); onSelectPart(part); }} aria-label={`${part.name}${locked ? " (bloqueado)" : ""}`}>{locked ? <LockKeyhole/> : treePartIcon[part.key] ?? <Sparkles/>}</button>; })}</div>}</div><div className="xp-row"><div><span><Odometer value={xp}/> XP</span><small>{next ? `Próxima evolução: ${next.name} · faltam ${next.minXP - xp} XP` : "sua árvore alcançou o estágio máximo"}</small></div><strong>{progressPct}%</strong></div><Progress value={progressPct}/><div className="stats-row"><div><Flame/><strong><Odometer value={streak}/></strong><span>{streak === 1 ? "dia" : "dias"}</span></div><div><Apple/><strong><Odometer value={fruits}/></strong><span>{fruits === 1 ? "fruto" : "frutos"}</span></div><div><Sparkles/><strong><Odometer value={xp}/></strong><span>pontos</span></div></div></section>;
 }
 
-function TreeView({ xp, level, stage, streak, mapScores, goals }: { xp: number; level: number; stage: string; streak: number; mapScores: [string, number][]; goals: Goal[] }) {
+function TreeView({ xp, level, stage, streak, mapScores, goals, diagnostic, openDiagnostic }: { xp: number; level: number; stage: string; streak: number; mapScores: [string, number][]; goals: Goal[]; diagnostic?: DiagnosticResult; openDiagnostic: () => void }) {
   const [selected, setSelected] = useState<TreePartHotspot | null>(null);
   const fruits = goals.filter((goal) => goal.progress === 100).length;
   const goalProgress = goals[0]?.progress;
   const finalStage = TREE_STAGES[TREE_STAGES.length - 1];
   return <div className="view-stack">
     <p className="view-intro">Toque nas partes da árvore para entender o que cada uma representa na sua jornada.</p>
+    <DiagnosticTreeFocus result={diagnostic} onOpenDiagnostic={openDiagnostic}/>
     <TreeCard xp={xp} level={level} stage={stage} streak={streak} fruits={fruits} goalProgress={goalProgress} onSelectPart={setSelected}/>
     <Dialog open={selected !== null} onOpenChange={(open) => { if (!open) setSelected(null); }}>
       <DialogContent className="goal-dialog permission-dialog">

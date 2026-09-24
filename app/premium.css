@@ -244,8 +244,10 @@ body .week-days .today b{color:#fff8e4}
 body .bottom-nav{background:linear-gradient(180deg,#0a1a4ceb,#050f34f2);border-color:#e9cf7b26;box-shadow:0 20px 50px #000c,inset 0 1px 0 #ffffff14}
 body .bottom-nav button{font-size:.63rem;font-weight:700;letter-spacing:.01em}
 body .bottom-nav button{z-index:1}
-/* One pill that glides to the active tab (6 columns, 4px side padding, 2px gaps). */
-.nav-indicator{position:absolute;top:8px;left:4px;width:calc((100% - 18px) / 6);height:48px;border-radius:16px;background:linear-gradient(180deg,#e8c96517,#e8c96506);box-shadow:inset 0 0 0 1px #e8c96514;translate:calc(var(--tab-index,0) * (100% + 2px)) 0;transition:translate 420ms var(--ease),opacity var(--dur-card) var(--ease);pointer-events:none}
+/* One pill that glides to the active tab (--tab-count columns, 2px side padding, no gaps so seven labels fit a 320px phone). */
+body .bottom-nav{grid-template-columns:repeat(var(--tab-count,6),minmax(0,1fr));gap:0;padding-left:2px;padding-right:2px}
+body .bottom-nav button{padding-left:0;padding-right:0;font-size:clamp(.53rem,2.65vw,.63rem)}
+.nav-indicator{position:absolute;top:8px;left:2px;width:calc((100% - 4px) / var(--tab-count,6));height:48px;border-radius:16px;background:linear-gradient(180deg,#e8c96517,#e8c96506);box-shadow:inset 0 0 0 1px #e8c96514;translate:calc(var(--tab-index,0) * 100%) 0;transition:translate 420ms var(--ease),opacity var(--dur-card) var(--ease);pointer-events:none}
 .nav-indicator::before{content:"";position:absolute;top:-5px;left:50%;width:22px;height:2px;margin-left:-11px;border-radius:99px;background:#efd57d;box-shadow:0 0 10px #efd57d}
 .nav-indicator.is-hidden{opacity:0}
 .app-shell[data-theme="lua"] .nav-indicator::before{background:#aad2ff;box-shadow:0 0 10px #aad2ff}
