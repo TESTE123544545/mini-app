@@ -12,7 +12,6 @@ import { toast } from "sonner";
 import { dailyPlan, dayPart, dayPartLabel, greetingLabel, journalAnchors, localDayKey, weekPlan, type DailyPlan, type DayPart } from "@/lib/daily";
 import { achievementState, weeklyReport, type Achievement, type JourneySnapshot } from "@/lib/journey";
 import { findTrail, trailStatus, trails, type Trail, type TrailProgress } from "@/lib/trails";
-import { fetchPremiumPrice, isPlayBillingAvailable, purchasePremium, verifyPurchaseWithServer } from "@/lib/billing";
 import { TREE_PART_HOTSPOTS, TREE_STAGES, treeStageFor, type TreePartHotspot } from "@/lib/treeStages";
 import { ProsperityTree } from "@/components/ProsperityTree";
 import { SignsView } from "@/components/views/SignsView";
@@ -43,7 +42,6 @@ const TOTAL_ONBOARDING_STEPS = 10;
 const FREE_JOURNAL_HISTORY = 7;
 const FREE_THEMES: readonly Theme[] = ["dourado"];
 
-const INFINITEPAY_PLAN_URL = process.env.NEXT_PUBLIC_INFINITEPAY_PLAN_URL ?? "https://invoice.infinitepay.io/plans/isaac-jacob-/EplLDFC18c";
 
 const zodiac = [
   ["Capricórnio", 120], ["Aquário", 219], ["Peixes", 321], ["Áries", 420],
@@ -547,10 +545,7 @@ export default function HomePage() {
         </nav>
       </section>
       <DailyRitual open={ritualOpen} onOpenChange={setRitualOpen} profile={profile} plan={plan} done={ritualDone} onComplete={completeRitual} />
-      <PaywallDialog reason={paywall} onOpenChange={(open) => { if (!open) setPaywall(null); }} onPurchased={async () => {
-        setProfile((current) => ({ ...current, plan: "premium" }));
-        if (account && deviceId) await loadCloudState(account, deviceId);
-      }} />
+      <PaywallDialog reason={paywall} onOpenChange={(open) => { if (!open) setPaywall(null); }} />
       {xpBurst && <div className="xp-float" key={xpBurst.id} aria-hidden="true">+{xpBurst.amount} XP</div>}
       {stageUnlocked && <TreeStageUnlockedOverlay name={stageUnlocked.name} note={stageUnlocked.note} />}
       {intro && <IntroExperience mode={intro} accountKey={account?.email} onComplete={() => setIntro(null)} />}
@@ -597,36 +592,12 @@ const comparisonRows: [string, string, string][] = [
   ["Temas da árvore", "Sol dourado", "Sol dourado, Lua azul e Aurora"],
 ];
 
-function PaywallDialog({ reason, onOpenChange, onPurchased }: { reason: string | null; onOpenChange: (open: boolean) => void; onPurchased: () => void | Promise<void> }) {
+/**
+ * Premium offer. No payment provider is wired in (Google Play and InfinitePay were removed in favour
+ * of the owner's own checkout), so the subscribe button stays inactive until that checkout exists.
+ */
+function PaywallDialog({ reason, onOpenChange }: { reason: string | null; onOpenChange: (open: boolean) => void }) {
   const previewDay = findTrail("constancia-21")?.days[0];
-  const [available, setAvailable] = useState(false);
-  const [price, setPrice] = useState<{ currency: string; value: string } | null>(null);
-  const [buying, setBuying] = useState(false);
-
-  useEffect(() => {
-    if (reason === null) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setAvailable(isPlayBillingAvailable());
-    fetchPremiumPrice().then(setPrice);
-  }, [reason]);
-
-  async function buy() {
-    setBuying(true);
-    track("checkout_started", { provider: "google_play", from: reason });
-    try {
-      const { purchaseToken, itemId } = await purchasePremium();
-      await verifyPurchaseWithServer(purchaseToken, itemId);
-      track("checkout_completed", { provider: "google_play", from: reason });
-      toast.success("Assinatura ativada. Bem-vindo ao Premium.");
-      await onPurchased();
-      onOpenChange(false);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Não foi possível concluir a compra.";
-      if (message !== "AbortError") toast.error(message);
-    } finally {
-      setBuying(false);
-    }
-  }
 
   return <Dialog open={reason !== null} onOpenChange={onOpenChange}>
     <DialogContent className="goal-dialog paywall-dialog">
@@ -646,30 +617,8 @@ function PaywallDialog({ reason, onOpenChange, onPurchased }: { reason: string |
         {comparisonRows.map(([label, free, premium]) => <div className="paywall-compare-row" key={label}><span>{label}</span><span>{free}</span><span className="is-premium"><Check size={13}/>{premium}</span></div>)}
       </div>
 
-      {available
-        ? <button className="gold-button" disabled={buying} onClick={buy}>
-            {buying ? "Abrindo o Google Play…" : price ? `Assinar Premium · ${price.currency} ${price.value}/mês` : "Assinar Premium"}
-          </button>
-        : <div className="paywall-fallback">
-            <button className="gold-button" disabled>Assinar Premium</button>
-            <p className="paywall-fine-print">Abra o app instalado pela Google Play Store para assinar — a compra é processada com segurança pelo Google.</p>
-          </div>}
-      <p className="paywall-fine-print">Assinatura mensal via Google Play, sem contagem regressiva nem letras miúdas. Cancele quando quiser, direto nas assinaturas da sua conta Google.</p>
-
-      <div className="paywall-divider"><span>ou</span></div>
-
-      <a
-        className="liquid-glass welcome-secondary paywall-alt-pay"
-        href={INFINITEPAY_PLAN_URL}
-        target="_blank"
-        rel="noopener noreferrer"
-        onClick={() => track("checkout_started", { provider: "infinitepay", from: reason })}
-      >
-        Pagar com Pix ou cartão
-      </a>
-      <p className="paywall-fine-print">
-        Abre o checkout seguro da InfinitePay numa nova aba. Use o mesmo e-mail da sua conta ao pagar — a confirmação pode levar alguns minutos para liberar o Premium aqui no app.
-      </p>
+      <button className="gold-button" disabled>Assinar Premium</button>
+      <p className="paywall-fine-print">A assinatura do Premium estará disponível em breve.</p>
     </DialogContent>
   </Dialog>;
 }
