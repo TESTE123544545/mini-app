@@ -142,7 +142,8 @@ export async function applySubscription(subscription: StripeSubscription, userId
 /** Applies a finished Checkout Session: fetches the subscription, or records a one-time purchase as lifetime. */
 export async function applyCheckoutSession(session: StripeCheckoutSession) {
   const userId = session.client_reference_id ?? session.metadata?.userId;
-  if (!userId || session.status !== "complete") return null;
+  // `status` is missing from payloads rendered in very old API versions; checkout.session.completed already implies it.
+  if (!userId || (session.status && session.status !== "complete")) return null;
   if (session.mode === "subscription" && session.subscription) {
     const subscription = await stripe<StripeSubscription>(`/subscriptions/${session.subscription}`, undefined, "GET");
     return applySubscription(subscription, userId);
