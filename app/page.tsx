@@ -200,7 +200,9 @@ export default function HomePage() {
   }
 
   async function handleAuthenticated(user: Account) {
-    setIntro(introModeFor(user.email));
+    // Every login or sign-up plays the full journey (signos → portal); reopening an app that is
+    // already signed in gets the short portal crossing instead (see the auth check on mount).
+    setIntro("full");
     setAccount(user);
     const currentId = localStorage.getItem("vds-device-id") || crypto.randomUUID();
     await loadCloudState(user, currentId);

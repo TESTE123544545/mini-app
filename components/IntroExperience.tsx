@@ -3,8 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 
 /**
- * Cinematic entrance after login. The first time an account enters on a device it gets the
- * full journey (corredor dos signos → portal, ~16–20s), later entries a ~2.5s portal crossing.
+ * Cinematic entrance. Logging in always plays the full journey (corredor dos signos → portal,
+ * ~16–20s). Reopening an app that is already signed in plays it the first time on a device, then
+ * only a ~2.5s portal crossing.
  * Both end on the video's own golden flash, which this overlay holds and fades into the app.
  */
 export type IntroMode = "full" | "short";
