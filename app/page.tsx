@@ -21,6 +21,7 @@ import { ZodiacBackdrop } from "@/components/ZodiacBackdrop";
 import { DiagnosticView } from "@/components/diagnostic/DiagnosticView";
 import { DiagnosticHomeCards, DiagnosticTreeFocus } from "@/components/diagnostic/DiagnosticEntryPoints";
 import { track } from "@/lib/analytics";
+import { recallLogin, rememberLogin, stopSilentLogin } from "@/lib/savedLogin";
 import { loadDiagnostics, saveDiagnostic, type DiagnosticResult } from "@/lib/diagnostic";
 
 type View = "home" | "diagnostic" | "signs" | "tree" | "missions" | "journal" | "profile" | "goal" | "chat";
@@ -92,6 +93,20 @@ function haptic(pattern: number | number[] = 12) {
   try { navigator.vibrate(pattern); } catch { /* no haptics available */ }
 }
 
+/** Signs back in with the credential the browser's password manager kept for this site, if any. */
+async function signInWithSavedLogin(): Promise<Account | null> {
+  const saved = await recallLogin();
+  if (!saved) return null;
+  try {
+    const response = await fetch("/api/auth", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "login", email: saved.email, password: saved.password }) });
+    if (!response.ok) return null;
+    const { user } = await response.json() as { user?: Account };
+    return user ?? null;
+  } catch {
+    return null;
+  }
+}
+
 function getSign(date: string) {
   if (!date) return "Capricórnio";
   const [, month, day] = date.split("-").map(Number);
@@ -153,11 +168,14 @@ export default function HomePage() {
     setDeviceId(id);
     fetch("/api/auth")
       .then((response) => response.ok ? response.json() : Promise.reject(new Error("auth unavailable")))
-      .then(({ user }) => {
-        setAccount(user);
-        if (!user) return null;
-        setIntro(introModeFor(user.email));
-        return loadCloudState(user, id);
+      .then(async ({ user }) => {
+        // No session (expired, or the browser's history/cookies were cleared): try the password the
+        // browser saved for this site before showing the welcome screen, so the account is recognised.
+        const signedIn: Account | null = user ?? await signInWithSavedLogin();
+        setAccount(signedIn);
+        if (!signedIn) return null;
+        setIntro(user ? introModeFor(signedIn.email) : "full");
+        return loadCloudState(signedIn, id);
       })
       .catch(() => toast.error("Não foi possível verificar sua conta."))
       .finally(() => setReady(true));
@@ -211,6 +229,7 @@ export default function HomePage() {
 
   async function logout() {
     await fetch("/api/auth", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "logout" }) });
+    stopSilentLogin();
     localStorage.removeItem("vds-state");
     localStorage.setItem("vds-device-id", crypto.randomUUID());
     setAccount(null); setProfile(emptyProfile); setXp(0); setMissionDone(false); setRitualDone(false); setStreak(0); setGoals([]); setEntries([]); setActiveTrail(null); setOnboarding(0); setView("home"); setSyncReady(false); setUnlockedAchievements([]); setWelcomeAuthMode(null); setIntro(null);
@@ -745,6 +764,8 @@ function AuthScreen({ onAuthenticated, initialMode, onBack }: { onAuthenticated:
       const response = await fetch("/api/auth", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: mode, email, password }) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Não foi possível continuar.");
+      // Offer the browser's "Salvar senha" so the account can be recognised after history is cleared.
+      void rememberLogin(email.trim(), password);
       await onAuthenticated(result.user, mode as "register" | "login");
       toast.success(mode === "register" ? "Conta criada com sucesso." : "Bem-vindo de volta.");
     } catch (reason) {
@@ -770,7 +791,7 @@ function AuthScreen({ onAuthenticated, initialMode, onBack }: { onAuthenticated:
     <p className="auth-copy">{descriptions[mode]}</p>
     {(mode === "register" || mode === "login") && <div className="auth-tabs" role="tablist" aria-label="Acesso à conta"><button type="button" role="tab" aria-selected={mode === "register"} className={mode === "register" ? "active" : ""} onClick={() => switchMode("register")}>Criar conta</button><button type="button" role="tab" aria-selected={mode === "login"} className={mode === "login" ? "active" : ""} onClick={() => switchMode("login")}>Já tenho conta</button></div>}
     <form className="auth-form" onSubmit={submit}>
-      {mode !== "reset" && <label>E-mail<div className="input-with-icon"><Mail/><input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="voce@email.com" required/></div></label>}
+      {mode !== "reset" && <label>E-mail<div className="input-with-icon"><Mail/><input type="email" name="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="voce@email.com" required/></div></label>}
       {mode !== "recover" && <label>{mode === "reset" ? "Nova senha" : "Senha"}<div className="input-with-icon"><LockKeyhole/><input type={visible ? "text" : "password"} autoComplete={mode === "login" ? "current-password" : "new-password"} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Mínimo de 8 caracteres" minLength={8} required/><button type="button" onClick={() => setVisible(!visible)} aria-label={visible ? "Ocultar senha" : "Mostrar senha"}>{visible ? <EyeOff/> : <Eye/>}</button></div></label>}
       {(mode === "register" || mode === "reset") && <label>Confirme sua senha<div className="input-with-icon"><LockKeyhole/><input type={visible ? "text" : "password"} autoComplete="new-password" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} placeholder="Digite novamente" minLength={8} required/></div></label>}
       {mode === "login" && <button className="forgot-button link-grow" type="button" onClick={() => switchMode("recover")}>Esqueci minha senha</button>}

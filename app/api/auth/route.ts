@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { getDb } from "@/db";
 import { users } from "@/db/schema";
-import { createPassword, createSession, deleteSession, getSessionUser, normalizeEmail, PASSWORD_ITERATIONS, publicUser, validEmail, validPassword, verifyPassword } from "@/lib/auth";
+import { createPassword, createSession, deleteSession, getSessionUser, normalizeEmail, PASSWORD_ITERATIONS, publicUser, renewSession, validEmail, validPassword, verifyPassword } from "@/lib/auth";
 import { enforceRateLimit, readJsonBody, secureErrorResponse } from "@/lib/security";
 
 type AuthPayload = { action?: "register" | "login" | "logout"; email?: string; password?: string };
@@ -13,7 +13,8 @@ function errorResponse(error: unknown) {
 export async function GET(request: Request) {
   try {
     const user = await getSessionUser(request);
-    return Response.json({ user: user ? publicUser(user) : null });
+    const renewed = user ? await renewSession(request) : null;
+    return Response.json({ user: user ? publicUser(user) : null }, renewed ? { headers: { "set-cookie": renewed } } : undefined);
   } catch (error) {
     return errorResponse(error);
   }

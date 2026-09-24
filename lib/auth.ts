@@ -3,7 +3,9 @@ import { getDb } from "@/db";
 import { sessions, users } from "@/db/schema";
 
 const SESSION_COOKIE = "vds_session";
-const SESSION_DAYS = 7;
+// Long-lived and sliding: people who keep using the app are never logged out by the clock.
+const SESSION_DAYS = 180;
+const DAY_MS = 24 * 60 * 60 * 1000;
 // Cloudflare Workers currently rejects a single PBKDF2 operation above 100,000
 // iterations. Keep this versioned so accounts can be rehashed when authentication
 // moves to the dedicated backend with Argon2id support.
@@ -74,12 +76,30 @@ export async function createSession(userId: string) {
   const tokenBytes = crypto.getRandomValues(new Uint8Array(32));
   const token = bytesToBase64(tokenBytes).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
   const tokenHash = await hashToken(token);
-  const expires = new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000);
+  const expires = new Date(Date.now() + SESSION_DAYS * DAY_MS);
   await getDb().insert(sessions).values({ tokenHash, userId, expiresAt: expires.toISOString() });
-  return {
-    token,
-    cookie: `${SESSION_COOKIE}=${encodeURIComponent(token)}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${SESSION_DAYS * 24 * 60 * 60}`,
-  };
+  return { token, cookie: sessionCookie(token) };
+}
+
+function sessionCookie(token: string) {
+  return `${SESSION_COOKIE}=${encodeURIComponent(token)}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${SESSION_DAYS * 24 * 60 * 60}`;
+}
+
+/**
+ * Pushes a valid session's expiry back to a full SESSION_DAYS (at most once a day) and returns
+ * the refreshed cookie, so an app that is opened regularly stays signed in indefinitely.
+ */
+export async function renewSession(request: Request) {
+  const token = readCookie(request, SESSION_COOKIE);
+  if (!token) return null;
+  const tokenHash = await hashToken(token);
+  const db = getDb();
+  const [session] = await db.select().from(sessions).where(eq(sessions.tokenHash, tokenHash)).limit(1);
+  if (!session) return null;
+  const remaining = new Date(session.expiresAt).getTime() - Date.now();
+  if (remaining <= 0 || remaining > (SESSION_DAYS - 1) * DAY_MS) return null;
+  await db.update(sessions).set({ expiresAt: new Date(Date.now() + SESSION_DAYS * DAY_MS).toISOString() }).where(eq(sessions.tokenHash, tokenHash));
+  return sessionCookie(token);
 }
 
 export async function getSessionUser(request: Request) {
