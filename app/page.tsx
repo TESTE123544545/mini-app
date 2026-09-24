@@ -36,6 +36,8 @@ const TOTAL_ONBOARDING_STEPS = 10;
 const FREE_JOURNAL_HISTORY = 7;
 const FREE_THEMES: readonly Theme[] = ["dourado"];
 
+const INFINITEPAY_PLAN_URL = process.env.NEXT_PUBLIC_INFINITEPAY_PLAN_URL ?? "https://invoice.infinitepay.io/plans/isaac-jacob-/EplLDFC18c";
+
 const zodiac = [
   ["Capricórnio", 120], ["Aquário", 219], ["Peixes", 321], ["Áries", 420],
   ["Touro", 521], ["Gêmeos", 621], ["Câncer", 723], ["Leão", 823],
@@ -619,6 +621,21 @@ function PaywallDialog({ reason, onOpenChange, onPurchased }: { reason: string |
             <p className="paywall-fine-print">Abra o app instalado pela Google Play Store para assinar — a compra é processada com segurança pelo Google.</p>
           </div>}
       <p className="paywall-fine-print">Assinatura mensal via Google Play, sem contagem regressiva nem letras miúdas. Cancele quando quiser, direto nas assinaturas da sua conta Google.</p>
+
+      <div className="paywall-divider"><span>ou</span></div>
+
+      <a
+        className="liquid-glass welcome-secondary paywall-alt-pay"
+        href={INFINITEPAY_PLAN_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={() => track("checkout_started", { provider: "infinitepay", from: reason })}
+      >
+        Pagar com Pix ou cartão
+      </a>
+      <p className="paywall-fine-print">
+        Abre o checkout seguro da InfinitePay numa nova aba. Use o mesmo e-mail da sua conta ao pagar — a confirmação pode levar alguns minutos para liberar o Premium aqui no app.
+      </p>
     </DialogContent>
   </Dialog>;
 }

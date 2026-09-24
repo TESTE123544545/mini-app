@@ -313,6 +313,9 @@ body .ritual-progress{grid-template-columns:repeat(4,1fr)}
 .paywall-compare-row .is-premium svg{width:13px;flex:0 0 auto;color:#8ce0b4}
 .paywall-dialog .gold-button{width:100%;margin-top:16px}
 .paywall-fine-print{margin:11px 0 0;color:#7e8caf;font-size:.72rem;line-height:1.5;text-align:center}
+.paywall-divider{display:flex;align-items:center;gap:12px;margin:18px 0 14px;color:#5c6a8f;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em}
+.paywall-divider::before,.paywall-divider::after{content:"";flex:1;height:1px;background:#ffffff14}
+.paywall-alt-pay{display:flex;align-items:center;justify-content:center;width:100%;min-height:50px;border-radius:14px;color:#f8f5ea;font-size:.92rem;font-weight:600;text-decoration:none}
 @media(max-width:370px){.paywall-compare-head,.paywall-compare-row{grid-template-columns:1.1fr .8fr 1fr;font-size:.68rem}}
 @media(prefers-reduced-motion:reduce){.report-locked-blur,.paywall-preview-blur{filter:blur(3px)}}
 
