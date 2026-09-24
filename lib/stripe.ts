@@ -57,7 +57,10 @@ export type StripePrice = {
 
 export async function premiumPrices() {
   const { data } = await stripe<{ data: StripePrice[] }>("/prices", { product: premiumProductId(), active: true, limit: 20 }, "GET");
-  return data.filter((price) => price.unit_amount !== null).sort((a, b) => (a.unit_amount ?? 0) - (b.unit_amount ?? 0));
+  const priced = data.filter((price) => price.unit_amount !== null).sort((a, b) => (a.unit_amount ?? 0) - (b.unit_amount ?? 0));
+  // The product also carries GBP/EUR/USD prices; the app is Brazilian, so offer the BRL ones when they exist.
+  const inReais = priced.filter((price) => price.currency === "brl");
+  return inReais.length ? inReais : priced;
 }
 
 /* --- Webhook signature (Stripe-Signature: t=…,v1=…) ------------------------------------------ */
