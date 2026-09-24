@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 /**
  * Cinematic entrance after login. The first time an account enters on a device it gets the
- * full journey (corredor dos signos → portal, ~16–18s), later entries a ~2.5s portal crossing.
+ * full journey (corredor dos signos → portal, ~16–20s), later entries a ~2.5s portal crossing.
  * Both end on the video's own golden flash, which this overlay holds and fades into the app.
  */
 export type IntroMode = "full" | "short";
@@ -17,7 +17,7 @@ const SOURCES: Record<IntroMode, Record<Orientation, string>> = {
   short: { portrait: "/intro-portal-short-portrait.mp4", landscape: "/intro-portal-short.mp4" },
 };
 /** Upper bound in case the video stalls or `ended` never fires (slow network, battery saver). */
-const MAX_PLAY_MS: Record<IntroMode, number> = { full: 21_000, short: 5_000 };
+const MAX_PLAY_MS: Record<IntroMode, number> = { full: 23_000, short: 5_000 };
 const FLASH_MS = 1_100;
 
 const seenKey = (accountKey: string) => `vds-intro-seen:${accountKey}`;
