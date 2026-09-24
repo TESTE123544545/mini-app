@@ -4,17 +4,20 @@ import { useEffect, useRef, useState } from "react";
 
 /**
  * Cinematic entrance after login. The first time an account enters on a device it gets the
- * full 16s journey (corredor dos signos → portal), later entries a ~2.5s portal crossing.
+ * full journey (corredor dos signos → portal, ~16–18s), later entries a ~2.5s portal crossing.
  * Both end on the video's own golden flash, which this overlay holds and fades into the app.
  */
 export type IntroMode = "full" | "short";
 
-const SOURCES: Record<IntroMode, string> = {
-  full: "/intro-journey.mp4",
-  short: "/intro-portal-short.mp4",
+type Orientation = "portrait" | "landscape";
+
+/** Phones get 9:16 cuts; desktops and landscape tablets keep the original 16:9 footage. */
+const SOURCES: Record<IntroMode, Record<Orientation, string>> = {
+  full: { portrait: "/intro-journey-portrait.mp4", landscape: "/intro-journey.mp4" },
+  short: { portrait: "/intro-portal-short-portrait.mp4", landscape: "/intro-portal-short.mp4" },
 };
 /** Upper bound in case the video stalls or `ended` never fires (slow network, battery saver). */
-const MAX_PLAY_MS: Record<IntroMode, number> = { full: 19_000, short: 5_000 };
+const MAX_PLAY_MS: Record<IntroMode, number> = { full: 21_000, short: 5_000 };
 const FLASH_MS = 1_100;
 
 const seenKey = (accountKey: string) => `vds-intro-seen:${accountKey}`;
@@ -32,6 +35,8 @@ function markIntroSeen(accountKey: string | undefined) {
 export function IntroExperience({ mode, accountKey, onComplete }: { mode: IntroMode; accountKey?: string; onComplete: () => void }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [phase, setPhase] = useState<"playing" | "flash">("playing");
+  // Chosen once: the overlay only ever renders on the client, after login state is known.
+  const [orientation] = useState<Orientation>(() => window.matchMedia?.("(orientation: portrait)").matches ? "portrait" : "landscape");
   const finishing = useRef(false);
   // The parent re-renders often (sync, timers); keep the latest callback without restarting the flash timer.
   const onCompleteRef = useRef(onComplete);
@@ -68,7 +73,7 @@ export function IntroExperience({ mode, accountKey, onComplete }: { mode: IntroM
     <video
       ref={videoRef}
       className="intro-video"
-      src={SOURCES[mode]}
+      src={SOURCES[mode][orientation]}
       autoPlay
       muted
       playsInline
