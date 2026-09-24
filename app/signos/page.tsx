@@ -45,11 +45,10 @@ export default function ZodiacIndexPage() {
 
         <div className="zodiac-grid">
           {ZODIAC_SIGNS.map((sign) => (
-            <Link key={sign.slug} href={`/signos/${sign.slug}`} className="zodiac-card">
-              <span className="zodiac-symbol" aria-hidden="true">{sign.symbol}</span>
+            <Link key={sign.slug} href={`/signos/${sign.slug}`} className="zodiac-card" data-element={sign.element}>
+              <span className="zodiac-badge"><span className="zodiac-symbol" aria-hidden="true">{sign.symbol}</span></span>
               <h2>{sign.name}</h2>
               <p className="zodiac-dates">{sign.dateRange}</p>
-              <p>{sign.tagline}</p>
             </Link>
           ))}
         </div>

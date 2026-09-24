@@ -51,8 +51,8 @@ export default async function ZodiacSignPage({ params }: { params: Promise<{ slu
         </nav>
         <p className="zodiac-breadcrumb"><Link href="/signos">Os 12 signos</Link> / {sign.name}</p>
 
-        <header className="zodiac-sign-hero">
-          <span className="zodiac-symbol-big" aria-hidden="true">{sign.symbol}</span>
+        <header className="zodiac-sign-hero" data-element={sign.element}>
+          <span className="zodiac-badge zodiac-badge-big"><span className="zodiac-symbol" aria-hidden="true">{sign.symbol}</span></span>
           <p className="eyebrow">{sign.dateRange}</p>
           <h1>Signo de {sign.name}</h1>
           <p className="zodiac-tagline">{sign.tagline}</p>
