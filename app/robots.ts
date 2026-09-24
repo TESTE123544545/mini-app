@@ -6,6 +6,6 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: "*",
       allow: "/",
     },
-    sitemap: "https://miniapp-liard-chi.vercel.app/sitemap.xml",
+    sitemap: "https://veiasdasintonia.com.br/sitemap.xml",
   };
 }

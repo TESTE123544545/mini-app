@@ -5,7 +5,7 @@ import "./premium.css";
 import { PwaRegister } from "./pwa-register";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://miniapp-liard-chi.vercel.app"),
+  metadataBase: new URL("https://veiasdasintonia.com.br"),
   title: {
     default: "Use Seu Signo Para Prosperar | Signos, Astrologia e Prosperidade",
     template: "%s | Use Seu Signo Para Prosperar",
@@ -49,7 +49,7 @@ export const metadata: Metadata = {
     title: "Use Seu Signo Para Prosperar | Signos, Astrologia e Prosperidade",
     description:
       "Conheça os padrões do seu signo, ciclos lunares em tempo real e transforme sua rotina com hábitos diários de prosperidade.",
-    url: "https://miniapp-liard-chi.vercel.app",
+    url: "https://veiasdasintonia.com.br",
     siteName: "Use Seu Signo Para Prosperar",
     locale: "pt_BR",
     type: "website",

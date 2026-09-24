@@ -85,8 +85,27 @@ body .gold-button:not(:disabled):active::after{animation:gold-sheen .5s var(--ea
 @keyframes splash-slide{0%{transform:translateX(-110%)}100%{transform:translateX(280%)}}
 
 /* --- View transitions ---------------------------------------------------- */
-.view-swap{animation:view-in var(--dur-view) var(--ease) both}
-@keyframes view-in{from{opacity:0;transform:translateY(12px) scale(.995)}to{opacity:1;transform:none}}
+/* Tab changes run through the View Transitions API: only the page content and title move,
+   the header, background and nav stay put. Browsers without it get a plain fade. */
+.view-swap{animation:view-in var(--dur-view) var(--ease) both;view-transition-name:page}
+@keyframes view-in{from{opacity:0}to{opacity:1}}
+@supports (view-transition-name:none){.view-swap{animation:none}}
+.topbar h1{view-transition-name:page-title}
+body .bottom-nav{view-transition-name:bottom-nav}
+::view-transition-old(root),::view-transition-old(bottom-nav){display:none}
+::view-transition-new(root),::view-transition-new(bottom-nav){animation:none}
+::view-transition-group(page){animation:none}
+::view-transition-old(page){translate:0 var(--nav-scroll-offset,0px);animation:page-out 160ms var(--ease-soft) both}
+::view-transition-new(page){animation:page-in 340ms var(--ease) 40ms both}
+::view-transition-old(page-title){animation:title-out 140ms var(--ease-soft) both}
+::view-transition-new(page-title){animation:title-in 300ms var(--ease) 40ms both}
+::view-transition-old(page-title),::view-transition-new(page-title){height:100%;width:auto}
+html{--nav-shift:22px}
+html[data-nav-direction="back"]{--nav-shift:-22px}
+@keyframes page-out{to{opacity:0;transform:translateX(calc(var(--nav-shift) * -.6))}}
+@keyframes page-in{from{opacity:0;transform:translateX(var(--nav-shift))}}
+@keyframes title-out{to{opacity:0;transform:translateX(calc(var(--nav-shift) * -.3))}}
+@keyframes title-in{from{opacity:0;transform:translateX(calc(var(--nav-shift) * .4))}}
 
 /* --- XP celebration and level up ----------------------------------------- */
 .xp-float{position:fixed;left:50%;top:36%;z-index:61;transform:translateX(-50%);color:var(--gold-soft);font-size:2.4rem;font-weight:700;text-shadow:0 0 30px #f0d47baa;pointer-events:none;animation:xp-rise 1.3s var(--ease) both}
@@ -224,7 +243,13 @@ body .week-days .today b{color:#fff8e4}
 /* --- Bottom nav: glass and a moving indicator --------------------------- */
 body .bottom-nav{background:linear-gradient(180deg,#0a1a4ceb,#050f34f2);border-color:#e9cf7b26;box-shadow:0 20px 50px #000c,inset 0 1px 0 #ffffff14}
 body .bottom-nav button{font-size:.63rem;font-weight:700;letter-spacing:.01em}
-body .bottom-nav .active::before{width:22px;transition:width var(--dur-view) var(--ease)}
+body .bottom-nav button{z-index:1}
+/* One pill that glides to the active tab (6 columns, 4px side padding, 2px gaps). */
+.nav-indicator{position:absolute;top:8px;left:4px;width:calc((100% - 18px) / 6);height:48px;border-radius:16px;background:linear-gradient(180deg,#e8c96517,#e8c96506);box-shadow:inset 0 0 0 1px #e8c96514;translate:calc(var(--tab-index,0) * (100% + 2px)) 0;transition:translate 420ms var(--ease),opacity var(--dur-card) var(--ease);pointer-events:none}
+.nav-indicator::before{content:"";position:absolute;top:-5px;left:50%;width:22px;height:2px;margin-left:-11px;border-radius:99px;background:#efd57d;box-shadow:0 0 10px #efd57d}
+.nav-indicator.is-hidden{opacity:0}
+.app-shell[data-theme="lua"] .nav-indicator::before{background:#aad2ff;box-shadow:0 0 10px #aad2ff}
+.app-shell[data-theme="aurora"] .nav-indicator::before{background:#f0a6d7;box-shadow:0 0 10px #f0a6d7}
 
 /* --- Copy rhythm -------------------------------------------------------- */
 body .eyebrow{letter-spacing:.18em}
@@ -358,6 +383,7 @@ body .ritual-progress{grid-template-columns:repeat(4,1fr)}
 .welcome-actions{display:flex;flex-direction:column;gap:10px}
 .welcome-actions .gold-button{width:100%}
 .welcome-secondary{width:100%;color:#f8f5ea;font-size:.92rem;font-weight:600;padding:13px;border-radius:14px;min-height:50px}
+.welcome-signs-link{display:block;text-align:center;margin-top:16px;color:#dcc16f;font-size:.82rem;font-weight:600;text-decoration:underline;text-underline-offset:3px}
 .welcome-rotating{display:flex;align-items:baseline;justify-content:center;gap:6px;margin:-14px 0 22px!important;color:#dcc16f!important;font-size:.86rem!important;font-weight:600}
 
 /* 18 · odometer — rolling digit strip driven by a CSS transition on transform */
@@ -391,6 +417,9 @@ body .ritual-progress{grid-template-columns:repeat(4,1fr)}
 @media(prefers-reduced-motion:reduce){
   .app-shell .cosmos,.app-shell::after,.tree-parts>button::after,.levelup-ring::before,.levelup-ring::after,.splash-bar i,.app-splash .brand-mark{animation:none!important}
   .view-swap,.xp-float,.levelup{animation:none!important}
+  .nav-indicator{transition:opacity var(--dur-card) linear}
+  ::view-transition-old(page),::view-transition-old(page-title){animation:fade-out 120ms linear both}
+  ::view-transition-new(page),::view-transition-new(page-title){animation:fade-in 180ms linear both}
   .xp-float{display:none}
   .ai-bubble{animation:none!important}
   .chat-turn.typing span{animation:none!important;opacity:.6}
@@ -400,3 +429,5 @@ body .ritual-progress{grid-template-columns:repeat(4,1fr)}
   .odometer-strip,.rotating-word-strip{transition:none!important}
   .prosperity-tree-svg *{transition:none!important;animation:none!important}
 }
+
+@keyframes fade-out{to{opacity:0}}@keyframes fade-in{from{opacity:0}}

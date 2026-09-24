@@ -1,7 +1,9 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { Anchor, Apple, ArrowLeft, BookOpen, BriefcaseBusiness, CalendarDays, Camera, CameraOff, Check, ChevronRight, CircleDollarSign, Cloud, Compass, Crown, Eye, EyeOff, Flame, Flower2, Gem, Home, ImagePlus, Leaf, LockKeyhole, LogOut, Mail, MoonStar, Orbit, Pencil, Play, Plus, Rocket, Route, Save, Send, Settings2, ShieldCheck, Sparkles, Sprout, Sun, Sunrise, Sunset, Target, TreeDeciduous, Trophy, UserRound, Wind, X } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
@@ -99,6 +101,7 @@ function track(event: string, data: Record<string, unknown> = {}) {
 
 export default function HomePage() {
   const [view, setView] = useState<View>("home");
+  const [navigated, setNavigated] = useState(false);
   const [ready, setReady] = useState(false);
   const [account, setAccount] = useState<Account | null>(null);
   const [welcomeAuthMode, setWelcomeAuthMode] = useState<"register" | "login" | null>(null);
@@ -456,9 +459,29 @@ export default function HomePage() {
     goalDailyMinutes={obGoalDailyMinutes} setGoalDailyMinutes={setObGoalDailyMinutes} goalMotivation={obGoalMotivation} setGoalMotivation={setObGoalMotivation} />;
 
   function navigate(next: View) {
-    if (next === view) return;
+    const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    // Tapping the tab you're already on brings you back to the top, like native tab bars.
+    if (next === view) { window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" }); return; }
     haptic(8);
-    setView(next);
+    // Tabs slide in the direction of the bar; drill-in screens (goal, chat) always push forward and pop back.
+    const from = tabOrder.indexOf(view), to = tabOrder.indexOf(next);
+    const direction = from === -1 ? "back" : to === -1 || to > from ? "forward" : "back";
+    const root = document.documentElement;
+    const commit = () => { setView(next); setNavigated(true); };
+    if (!document.startViewTransition) { commit(); window.scrollTo(0, 0); return; }
+    root.dataset.navDirection = direction;
+    // The outgoing snapshot was taken mid-scroll; keep it where it was on screen while the new tab starts at the top.
+    root.style.setProperty("--nav-scroll-offset", `${-window.scrollY}px`);
+    const transition = document.startViewTransition(() => { flushSync(commit); window.scrollTo(0, 0); });
+    activeNavTransition = transition;
+    // A quick second tap skips this transition; only the latest one may clear the shared direction state.
+    const cleanup = () => {
+      if (activeNavTransition !== transition) return;
+      activeNavTransition = null;
+      delete root.dataset.navDirection;
+      root.style.removeProperty("--nav-scroll-offset");
+    };
+    transition.finished.then(cleanup, cleanup);
   }
 
   return (
@@ -467,7 +490,7 @@ export default function HomePage() {
         <source src="/galaxy-bg.mp4" type="video/mp4" />
       </video>
       <div className="cosmos" aria-hidden="true" />
-      <section className="app-frame">
+      <section className="app-frame" data-navigated={navigated || undefined}>
         <header className="topbar">
           <div><p className="eyebrow">Veias da Sintonia</p><h1>{view === "home" ? `Olá, ${profile.name.split(" ")[0]}` : viewLabels[view]} <span aria-hidden="true">✦</span></h1></div>
           <button className={`avatar ${profile.hasAvatar ? "has-photo" : ""}`} onClick={() => navigate("profile")} aria-label="Abrir perfil">{profile.hasAvatar ? <Image unoptimized src={`/api/profile/avatar?v=${avatarVersion}`} alt="" width={44} height={44} /> : profile.name.slice(0, 2).toUpperCase()}</button>
@@ -484,13 +507,9 @@ export default function HomePage() {
           {view === "chat" && <ChatView profile={profile} isPremium={isPremium} navigate={navigate} openPaywall={openPaywall} onSessionExpired={handleSessionExpired} />}
         </div>
 
-        <nav className="bottom-nav" aria-label="Navegação principal">
-          <NavButton active={view === "home"} onClick={() => navigate("home")} icon={<Home/>} label="Início" />
-          <NavButton active={view === "signs"} onClick={() => navigate("signs")} icon={<Sparkles/>} label="Signos" />
-          <NavButton active={view === "tree"} onClick={() => navigate("tree")} icon={<Leaf/>} label="Árvore" />
-          <NavButton active={view === "missions"} onClick={() => navigate("missions")} icon={<Route/>} label="Jornada" />
-          <NavButton active={view === "journal"} onClick={() => navigate("journal")} icon={<BookOpen/>} label="Diário" />
-          <NavButton active={view === "profile"} onClick={() => navigate("profile")} icon={<UserRound/>} label="Perfil" />
+        <nav className="bottom-nav" aria-label="Navegação principal" style={{ "--tab-index": Math.max(tabOrder.indexOf(view), 0) } as React.CSSProperties}>
+          <span className={`nav-indicator ${tabOrder.includes(view) ? "" : "is-hidden"}`} aria-hidden="true" />
+          {navTabs.map(({ view: tab, label, icon }) => <NavButton key={tab} active={view === tab} onClick={() => navigate(tab)} icon={icon} label={label} />)}
         </nav>
       </section>
       <DailyRitual open={ritualOpen} onOpenChange={setRitualOpen} profile={profile} plan={plan} done={ritualDone} onComplete={completeRitual} />
@@ -506,6 +525,16 @@ export default function HomePage() {
   );
 }
 
+const navTabs: { view: View; label: string; icon: React.ReactNode }[] = [
+  { view: "home", label: "Início", icon: <Home/> },
+  { view: "signs", label: "Signos", icon: <Sparkles/> },
+  { view: "tree", label: "Árvore", icon: <Leaf/> },
+  { view: "missions", label: "Jornada", icon: <Route/> },
+  { view: "journal", label: "Diário", icon: <BookOpen/> },
+  { view: "profile", label: "Perfil", icon: <UserRound/> },
+];
+const tabOrder = navTabs.map((tab) => tab.view);
+let activeNavTransition: ViewTransition | null = null;
 const viewLabels: Record<View, string> = { home: "Início", signs: "Signos & Astrologia", tree: "Sua Árvore", missions: "Sua Jornada", journal: "Seu Diário", profile: "Seu Caminho", goal: "Meu Objetivo", chat: "Conversar" };
 
 function AppSplash() {
@@ -648,6 +677,7 @@ function WelcomeHero({ onStart, onLogin }: { onStart: () => void; onLogin: () =>
         <button type="button" className="gold-button fx-pulse" onClick={onStart}>Começar minha jornada <ChevronRight/></button>
         <button type="button" className="liquid-glass welcome-secondary" onClick={onLogin}>Já tenho conta</button>
       </div>
+      <Link href="/signos" className="welcome-signs-link">Conheça os 12 signos do zodíaco</Link>
     </div>
   </main>;
 }
