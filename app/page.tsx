@@ -774,8 +774,8 @@ function TreeStageUnlockedOverlay({ name, note }: { name: string; note: string }
 
 function WelcomeHero({ onStart, onLogin }: { onStart: () => void; onLogin: () => void }) {
   return <main className="welcome-hero">
-    <video className="welcome-portal-video" autoPlay muted loop playsInline aria-hidden="true">
-      <source src="/portal-v2.mp4" type="video/mp4" />
+    <video className="welcome-portal-video" autoPlay muted loop playsInline preload="auto" poster="/portal-poster.webp" aria-hidden="true">
+      <source src="/portal-v3.mp4" type="video/mp4" />
     </video>
     <div className="welcome-portal-overlay" />
     <header className="welcome-nav">

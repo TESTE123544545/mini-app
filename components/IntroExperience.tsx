@@ -14,8 +14,8 @@ type Orientation = "portrait" | "landscape";
 
 /** Phones get 9:16 cuts; desktops and landscape tablets keep the original 16:9 footage. */
 const SOURCES: Record<IntroMode, Record<Orientation, string>> = {
-  full: { portrait: "/intro-journey-portrait.mp4", landscape: "/intro-journey.mp4" },
-  short: { portrait: "/intro-portal-short-portrait.mp4", landscape: "/intro-portal-short.mp4" },
+  full: { portrait: "/intro-journey-portrait-v2.mp4", landscape: "/intro-journey-v2.mp4" },
+  short: { portrait: "/intro-portal-short-portrait-v2.mp4", landscape: "/intro-portal-short-v2.mp4" },
 };
 /** Upper bound in case the video stalls or `ended` never fires (slow network, battery saver). */
 const MAX_PLAY_MS: Record<IntroMode, number> = { full: 23_000, short: 5_000 };

@@ -435,7 +435,7 @@ body .ritual-progress{grid-template-columns:repeat(4,1fr)}
 @keyframes fade-out{to{opacity:0}}@keyframes fade-in{from{opacity:0}}
 
 /* --- Glass: the zodiac background shows through the remaining solid blocks --- */
-.galaxy-bg-video{opacity:.8}
+
 body .daily-briefing{background:radial-gradient(circle at 88% 10%,#d9b34f24,transparent 30%),linear-gradient(145deg,rgba(22,55,119,.6),rgba(8,22,66,.72) 72%)}
 body .week-orbit{background:linear-gradient(150deg,rgba(14,37,92,.58),rgba(7,20,61,.68))}
 body .ritual-button{background:rgba(7,20,62,.55)}
@@ -482,3 +482,10 @@ body .tree-card{animation:none}
 .premium-view__hero h2{margin:4px 0}
 .premium-view__hero>p:last-child{margin:0;color:#b6c2df;line-height:1.5}
 .premium-view__offer .gold-button{width:100%;margin-top:16px}
+
+/* --- Zodiac background: twelve stills with a crossfade (replaces the scrubbed video) --- */
+.zodiac-backdrop{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.8}
+.zodiac-backdrop img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.zodiac-backdrop img.is-entering{animation:zodiac-in .9s ease both}
+@keyframes zodiac-in{from{opacity:0}}
+@media(prefers-reduced-motion:reduce){.zodiac-backdrop img.is-entering{animation:none}}

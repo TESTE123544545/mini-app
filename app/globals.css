@@ -27,7 +27,7 @@
 @keyframes intro-darken{from{background:#00000000}}
 @keyframes intro-video-in{from{opacity:0}}
 @keyframes intro-flash{to{opacity:1}}
-@keyframes intro-out{to{opacity:0;visibility:hidden}}.galaxy-bg-video{position:fixed;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:0;opacity:.45}
+@keyframes intro-out{to{opacity:0;visibility:hidden}}
 .onboarding-chrome{display:grid;gap:10px;margin-bottom:16px;text-align:left}.onboarding-chrome .auth-back{margin:0}
 .onboarding-progress-bar{height:4px;border-radius:99px;background:#ffffff14;overflow:hidden}.onboarding-progress-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#c7922e,#f2dc8a);transition:width .35s var(--ease,ease)}
 .form-stack textarea{min-height:96px;border:1px solid #ffffff1c;border-radius:13px;background:#06123a;color:#fff;padding:11px 13px;outline:none;resize:vertical;font:inherit}.form-stack textarea:focus{border-color:#e6ca7380}
