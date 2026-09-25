@@ -52,6 +52,7 @@ export async function POST(request: Request) {
     const base = weeklyReport(
       {
         xp: progress?.xp ?? 0,
+        level: Math.floor((progress?.xp ?? 0) / 100) + 1,
         streak: progress?.streak ?? 0,
         entries: entryDates.map((entry) => ({ date: entry.entryDate, answers: [] })),
         goals: activeGoals.map((goal) => ({ title: goal.title, category: goal.category, progress: goal.progress })),

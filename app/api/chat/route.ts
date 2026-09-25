@@ -59,8 +59,8 @@ export async function POST(request: Request) {
 
     const nextMessages: StoredMessage[] = [
       ...history,
-      { role: "user", content: parsed.data.message },
-      { role: "assistant", content: reply },
+      { role: "user" as const, content: parsed.data.message },
+      { role: "assistant" as const, content: reply },
     ].slice(-MAX_STORED_MESSAGES);
     const now = new Date().toISOString();
 
