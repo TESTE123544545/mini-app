@@ -11,7 +11,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import { dailyPlan, dayPart, dayPartLabel, greetingLabel, journalAnchors, localDayKey, weekPlan, type DailyPlan, type DayPart } from "@/lib/daily";
 import { achievementState, weeklyReport, type Achievement, type JourneySnapshot } from "@/lib/journey";
-import { findTrail, trailStatus, trails, type TrailProgress } from "@/lib/trails";
+import { findTrail, trailStatus, trails, type Trail, type TrailProgress } from "@/lib/trails";
 import { TREE_PART_HOTSPOTS, TREE_STAGES, treeStageFor, type TreePartHotspot } from "@/lib/treeStages";
 import { ProsperityTree } from "@/components/ProsperityTree";
 import { SignsView } from "@/components/views/SignsView";
@@ -20,6 +20,8 @@ import { ZodiacBackdrop } from "@/components/ZodiacBackdrop";
 import { DiagnosticView } from "@/components/diagnostic/DiagnosticView";
 import { DiagnosticHomeCards, DiagnosticTreeFocus } from "@/components/diagnostic/DiagnosticEntryPoints";
 import { track } from "@/lib/analytics";
+import { GUIDES, type GuideId } from "@/lib/library";
+import { LibraryReader } from "@/components/LibraryReader";
 import { recallLogin, rememberLogin, stopSilentLogin } from "@/lib/savedLogin";
 import { loadDiagnostics, saveDiagnostic, type DiagnosticResult } from "@/lib/diagnostic";
 
@@ -69,6 +71,8 @@ const signGuides: Record<string, { strengths: string[]; care: string[]; style: s
   "Aquário": { strengths: ["originalidade", "visão coletiva", "inovação"], care: ["distanciamento", "rupturas impulsivas"], style: "Dê forma prática às ideias que podem melhorar sua realidade." },
   "Peixes": { strengths: ["imaginação", "empatia", "sensibilidade"], care: ["idealização", "falta de limites"], style: "Proteja sua energia com limites e traduza inspiração em rotina." },
 };
+
+const guideIcon: Record<GuideId, typeof BookOpen> = { intro: BookOpen, "sign-strategies": Rocket, career: BriefcaseBusiness, money: CircleDollarSign };
 
 const objectives = ["Dinheiro", "Carreira", "Negócios", "Organização financeira", "Disciplina", "Desenvolvimento pessoal"];
 
@@ -478,7 +482,7 @@ export default function HomePage() {
   function startTrail(trailId: string) {
     const trail = findTrail(trailId);
     if (!trail) return;
-    if (trail.premium) { openPaywall("trail_start"); return; }
+    if (trail.premium && !isPremium) { openPaywall("trail_start"); return; }
     setActiveTrail({ trailId, startedAt: dayKey, completedDays: [] });
     track("trail_started", { trail: trailId });
     toast.success(`${trail.title} · dia 1 começou`);
@@ -1120,7 +1124,7 @@ function JourneyView({ profile, plan, snapshot, week, missionDone, ritualDone, c
 
     {!ritualDone && <section className="achievement-row"><Wind/><div><strong>Ritual de 3 minutos</strong><span>Check-in, respiração e um gesto pequeno.</span></div><button className="ghost-button" onClick={openRitual}>Fazer</button></section>}
 
-    <TrailHub activeTrail={activeTrail} startTrail={startTrail} completeTrailDay={completeTrailDay} abandonTrail={abandonTrail}/>
+    <TrailHub activeTrail={activeTrail} startTrail={startTrail} completeTrailDay={completeTrailDay} abandonTrail={abandonTrail} isPremium={isPremium} />
 
     <section className="weekly-report">
       <div className="section-heading"><div><p className="eyebrow">Relatório da semana</p><h2>Como foram seus últimos 7 dias</h2></div><Compass/></div>
@@ -1162,17 +1166,23 @@ function JourneyView({ profile, plan, snapshot, week, missionDone, ritualDone, c
   </div>;
 }
 
-function TrailHub({ activeTrail, startTrail, completeTrailDay, abandonTrail }: { activeTrail: TrailProgress | null; startTrail: (id: string) => void; completeTrailDay: (day: number) => void; abandonTrail: () => void }) {
+/** Premium members do not need the "· Premium" tag; the length is shown once. */
+function trailSubtitle(item: Trail, isPremium: boolean) {
+  const subtitle = isPremium ? item.subtitle.replace(/\s*·\s*Premium$/i, "") : item.subtitle;
+  return /\d+ dias/.test(subtitle) ? subtitle : `${subtitle} · ${item.length} dias`;
+}
+
+function TrailHub({ activeTrail, startTrail, completeTrailDay, abandonTrail, isPremium }: { activeTrail: TrailProgress | null; startTrail: (id: string) => void; completeTrailDay: (day: number) => void; abandonTrail: () => void; isPremium: boolean }) {
   const trail = findTrail(activeTrail?.trailId);
   if (!activeTrail || !trail) {
     return <section className="trail-card">
       <div className="section-heading"><div><p className="eyebrow">Trilhas guiadas</p><h2>Escolha um caminho</h2></div><Route/></div>
       <p className="trail-hub-intro">Cada trilha libera um capítulo pequeno por dia: mensagem, prática e reflexão.</p>
-      <div className="trail-list">{trails.map((item) => <button key={item.id} className={item.premium ? "locked" : ""} onClick={() => startTrail(item.id)}>
-        <span className="trail-list-icon">{item.premium ? <LockKeyhole/> : <Sprout/>}</span>
-        <span className="trail-list-copy"><strong>{item.title}</strong><small>{item.subtitle} · {item.length} dias</small></span>
+      <div className="trail-list">{trails.map((item) => { const locked = item.premium && !isPremium; return <button key={item.id} className={locked ? "locked" : ""} onClick={() => startTrail(item.id)}>
+        <span className="trail-list-icon">{locked ? <LockKeyhole/> : <Sprout/>}</span>
+        <span className="trail-list-copy"><strong>{item.title}</strong><small>{trailSubtitle(item, isPremium)}</small></span>
         <ChevronRight/>
-      </button>)}</div>
+      </button>; })}</div>
     </section>;
   }
 
@@ -1222,6 +1232,7 @@ async function prepareAvatar(file: File) {
 }
 
 function ProfileView({ profile, setProfile, account, guide, goals, advanceGoal, goalDialog, setGoalDialog, goalTitle, setGoalTitle, goalCategory, setGoalCategory, addGoal, syncStatus, avatarVersion, setAvatarVersion, logout, isPremium, openPaywall, navigate }: { profile: Profile; setProfile: (profile: Profile) => void; account: Account; guide: { strengths: string[]; care: string[]; style: string }; goals: Goal[]; advanceGoal: (id: number) => void; goalDialog: boolean; setGoalDialog: (v: boolean) => void; goalTitle: string; setGoalTitle: (s: string) => void; goalCategory: string; setGoalCategory: (s: string) => void; addGoal: () => void; syncStatus: "loading" | "saved" | "offline"; avatarVersion: number; setAvatarVersion: (value: number) => void; logout: () => Promise<void>; isPremium: boolean; openPaywall: (reason: string) => void; navigate?: (v: View) => void }) {
+  const [openGuide, setOpenGuide] = useState<string | null>(null);
   const cameraInput = useRef<HTMLInputElement>(null);
   const galleryInput = useRef<HTMLInputElement>(null);
   const cameraVideo = useRef<HTMLVideoElement>(null);
@@ -1331,7 +1342,8 @@ function ProfileView({ profile, setProfile, account, guide, goals, advanceGoal, 
     <section className={`sync-card ${syncStatus}`}><span><Cloud/></span><div><strong>{syncStatus === "saved" ? "Jornada salva na sua conta" : syncStatus === "loading" ? "Salvando sua evolução…" : "Modo offline ativo"}</strong><small>{syncStatus === "saved" ? "Entre em outro celular com o mesmo e-mail para continuar." : syncStatus === "offline" ? "Suas mudanças continuam salvas neste dispositivo e serão sincronizadas depois." : "Aguarde um instante."}</small></div><i aria-hidden="true"/></section>
     {isPremium ? <section className="premium-card is-active"><div className="premium-icon"><Gem/></div><p className="eyebrow">Central da Prosperidade</p><h2>Sua jornada está completa.</h2><p>Trilhas ilimitadas, histórico completo, metas sem limite e todos os temas já estão liberados na sua conta.</p><button type="button" className="ghost-button" onClick={openBillingPortal}>Gerenciar assinatura</button></section>
       : <section className="premium-card"><div className="premium-icon"><Gem/></div><p className="eyebrow">Central da Prosperidade</p><h2>Você já descobriu seu signo.<br/>Agora destrave a jornada completa.</h2><p>Hoje seu plano grátis tem 1 trilha, {FREE_GOAL_LIMIT} metas e {FREE_JOURNAL_HISTORY} registros de histórico. O Premium remove esses limites.</p><ul><li><Check/> Trilhas de 21 dias e temas por objetivo</li><li><Check/> Metas e histórico do diário sem limite</li><li><Check/> Relatório semanal completo e temas da árvore</li></ul><button className="gold-button" onClick={() => openPaywall("premium_card")}>Desbloquear minha jornada</button><small>Sem promessas financeiras. Uma experiência de autoconhecimento, hábitos e metas.</small></section>}
-    <section className="content-list"><div className="section-heading"><div><p className="eyebrow">Conteúdo</p><h2>Sua biblioteca</h2></div></div>{[[BookOpen,"Guia Use Seu Signo para Prosperar","Introdução"],[Rocket,"Estratégias para cada signo","Premium"],[BriefcaseBusiness,"Decisões e carreira","Premium"],[CircleDollarSign,"Organização financeira consciente","Premium"]].map(([Icon,title,badge]) => <button key={String(title)} onClick={() => { if (badge === "Premium") { openPaywall("content_library"); } else { track("ebook_opened"); toast("Conteúdo demonstrativo aberto."); } }}><span className="content-icon"><Icon/></span><span><strong>{String(title)}</strong><small>{String(badge)}</small></span><ChevronRight/></button>)}</section>
+    <section className="content-list"><div className="section-heading"><div><p className="eyebrow">Conteúdo</p><h2>Sua biblioteca</h2></div></div>{GUIDES.map((guide) => { const Icon = guideIcon[guide.id]; const locked = guide.premium && !isPremium; return <button key={guide.id} onClick={() => { if (locked) { openPaywall("content_library"); return; } track("guide_opened", { guide: guide.id }); setOpenGuide(guide.id); }}><span className="content-icon"><Icon/></span><span><strong>{guide.title}</strong><small>{locked ? "Premium" : guide.premium ? "Incluído no seu Premium" : guide.subtitle}</small></span>{locked ? <LockKeyhole size={16}/> : <ChevronRight/>}</button>; })}</section>
+    <LibraryReader guideId={openGuide} sign={profile.sign} onClose={() => setOpenGuide(null)}/>
     <section className="account-card"><div><Mail/><span><small>Conta conectada</small><strong>{account.email}</strong></span></div><button onClick={logout}><LogOut/> Sair da conta</button></section>
   </div>;
 }
