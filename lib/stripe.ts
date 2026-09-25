@@ -60,7 +60,11 @@ export async function premiumPrices() {
   const priced = data.filter((price) => price.unit_amount !== null).sort((a, b) => (a.unit_amount ?? 0) - (b.unit_amount ?? 0));
   // The product also carries GBP/EUR/USD prices; the app is Brazilian, so offer the BRL ones when they exist.
   const inReais = priced.filter((price) => price.currency === "brl");
-  return inReais.length ? inReais : priced;
+  const offered = inReais.length ? inReais : priced;
+  // Premium is sold as a monthly subscription: once a recurring price exists, the old one-time
+  // prices stop being offered (they can stay in Stripe for past buyers).
+  const recurring = offered.filter((price) => price.type === "recurring");
+  return recurring.length ? recurring : offered;
 }
 
 /* --- Webhook signature (Stripe-Signature: t=…,v1=…) ------------------------------------------ */
