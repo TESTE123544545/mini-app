@@ -497,3 +497,45 @@ body .tree-card{animation:none}
 .library-reader__body p{margin:0 0 6px;color:#c9d2ea;line-height:1.6;font-size:.92rem}
 .library-reader__body ul{margin:0;padding-left:18px;display:grid;gap:6px;color:#c9d2ea;font-size:.9rem;line-height:1.5}
 .library-reader__body li::marker{color:var(--gold)}
+
+/* --- Signos: message first, sculpture in the hero ------------------------- */
+.signs-message-card{display:grid;gap:10px}
+.signs-message-card .daily-cosmic-box,.signs-message-card .mantra-container{margin:0}
+body .sign-hero-card{position:relative;overflow:hidden;isolation:isolate}
+.sign-hero-art{position:absolute;z-index:-1;right:-24px;top:-10px;width:58%;max-width:260px;height:auto;opacity:.6;pointer-events:none;-webkit-mask-image:linear-gradient(to left,#000 45%,transparent 95%);mask-image:linear-gradient(to left,#000 45%,transparent 95%)}
+
+/* --- Roda da Fortuna ------------------------------------------------------- */
+.fortune-wheel__stage{position:relative;width:min(100%,300px);aspect-ratio:1;margin:14px auto 18px}
+.fortune-wheel__disc{width:100%;height:100%;display:block;transition-property:transform;transition-timing-function:cubic-bezier(.12,.72,.18,1);filter:drop-shadow(0 12px 30px #02071faa)}
+.fortune-wheel__pointer{position:absolute;z-index:2;top:-8px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:13px solid transparent;border-right:13px solid transparent;border-top:24px solid #f2dc8a;filter:drop-shadow(0 3px 6px #000a)}
+.fortune-wheel__glyph{fill:#f2dc8a;font-size:22px;font-family:"Segoe UI Symbol","Apple Symbols","Noto Sans Symbols",serif}
+.fortune-wheel__num{fill:#9fb0d8;font-size:11px;font-weight:700;font-family:var(--font-sans)}
+.fortune-wheel__hub{fill:#07143e;font-size:22px}
+.fortune-wheel__cta{width:100%}
+.fortune-wheel__result{display:grid;gap:8px;padding:14px;border:1px solid #e9cd7b44;border-radius:16px;background:#e9cd7b0f}
+.fortune-wheel__result .eyebrow{margin:0}
+.fortune-wheel__message,.tarot-draw__message{margin:0;font-family:var(--font-display);font-size:1.2rem;line-height:1.35;color:#fbf4df}
+.fortune-wheel__action{margin:0;color:#c9d2ea;font-size:.9rem;line-height:1.5}
+.fortune-wheel__action strong{color:var(--gold-soft)}
+.fortune-wheel.is-locked .fortune-wheel__disc,.tarot-draw.is-locked .tarot-card{filter:saturate(.55) brightness(.75)}
+
+/* --- Tarô: carta do dia ----------------------------------------------------- */
+.tarot-card{display:block;width:170px;aspect-ratio:2/3.2;margin:12px auto 16px;padding:0;border:0;background:none;perspective:900px;cursor:pointer}
+.tarot-card:disabled{cursor:default;opacity:1}
+.tarot-card:focus-visible{outline:2px solid var(--gold);outline-offset:4px;border-radius:14px}
+.tarot-card__inner{position:relative;display:block;width:100%;height:100%;transform-style:preserve-3d;transition:transform .8s var(--ease)}
+.tarot-card.is-flipped .tarot-card__inner{transform:rotateY(180deg)}
+.tarot-card__face{position:absolute;inset:0;display:grid;place-items:center;align-content:center;gap:10px;padding:14px;border:1.5px solid #e9cd7b;border-radius:14px;text-align:center;-webkit-backface-visibility:hidden;backface-visibility:hidden;box-shadow:0 14px 36px #02071fcc,inset 0 0 0 6px #07143e,inset 0 0 0 7px #e9cd7b66}
+.tarot-card__back{background:repeating-linear-gradient(45deg,#0c2360 0 10px,#0a1c52 10px 20px)}
+.tarot-card__ornament{color:#f2dc8a;font-size:2.4rem;line-height:1}
+.tarot-card__back small{color:#dcc16f;font-size:.68rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
+.tarot-card__front{transform:rotateY(180deg);background:radial-gradient(circle at 50% 30%,#2a4b9a,#07143e 75%)}
+.tarot-card__roman{font-family:var(--font-display);font-size:2.4rem;line-height:1;color:#f2dc8a}
+.tarot-card__name{font-family:var(--font-display);font-size:1.25rem;line-height:1.15;color:#fbf4df}
+.tarot-card__keyword{color:#dcc16f;font-size:.66rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
+.tarot-draw__result{display:grid;gap:8px}
+
+/* --- Moon drawn from its phase ----------------------------------------------- */
+.moon-disc{flex:0 0 auto;width:54px;height:54px;filter:drop-shadow(0 0 12px #f6e3ac55)}
+
+@media(prefers-reduced-motion:reduce){.fortune-wheel__disc,.tarot-card__inner{transition:none!important}}

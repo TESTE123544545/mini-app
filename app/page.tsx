@@ -635,6 +635,9 @@ const paywallHeadline: Record<string, string> = {
   chat: "Converse com a IA sempre que precisar",
   goal_steps: "Passos personalizados pro seu objetivo",
   signs_weekly: "Previsão astrológica completa para o seu signo prosperar",
+  wheel: "A Roda da Fortuna é um ritual diário do Premium",
+  tarot: "Sua carta do dia é exclusiva do Premium",
+  content_library: "Guias completos da sua biblioteca",
 };
 
 const comparisonRows: [string, string, string][] = [

@@ -27,6 +27,8 @@ import {
   Layers
 } from "lucide-react";
 import { toast } from "sonner";
+import { FortuneWheel } from "./FortuneWheel";
+import { TarotDraw } from "./TarotDraw";
 import { SIGNS, getSignByName, getDailySignReading, type ElementType, type SignData } from "@/lib/signs";
 import { localDayKey } from "@/lib/daily";
 import {
@@ -195,6 +197,41 @@ export function SignsView({ profile, isPremium, openPaywall, navigate }: SignsVi
 
       {mainTab === "signos" && (
         <>
+          {/* Message of the day — first thing on the tab */}
+          <section className="surface-card signs-message-card animate-fade-in">
+            <p className="eyebrow">Mensagem do dia · {selectedSign.name}</p>
+            {/* Daily Cosmic Prosperity Energy */}
+            <div className="daily-cosmic-box">
+              <div className="daily-cosmic-header">
+                <Sparkles size={16} />
+                <span>Sintonia de Prosperidade para {selectedSign.name}</span>
+              </div>
+              <p className="daily-cosmic-energy">“{dailyReading.energy}”</p>
+              <div className="daily-cosmic-action">
+                <strong>Foco prático hoje:</strong> {dailyReading.action}
+              </div>
+            </div>
+
+            {/* Prosperity Mantra Box */}
+            <div className="mantra-container">
+              <div className="mantra-content">
+                <span className="mantra-tag">Mantra de Ativação</span>
+                <p className="mantra-text">“{selectedSign.prosperityMantra}”</p>
+              </div>
+              <button
+                type="button"
+                className="mantra-copy-btn"
+                onClick={handleCopyMantra}
+                aria-label="Copiar mantra"
+              >
+                {copiedMantra ? <Check size={16} /> : <Copy size={16} />}
+                <span>{copiedMantra ? "Copiado" : "Copiar"}</span>
+              </button>
+            </div>
+          </section>
+
+          <TarotDraw isPremium={isPremium} openPaywall={openPaywall} sign={userNativeSign.name} />
+
           {/* Top Banner / Introduction */}
           <section className="surface-card signs-intro-card animate-fade-in">
             <div className="section-heading">
@@ -244,6 +281,8 @@ export function SignsView({ profile, isPremium, openPaywall, navigate }: SignsVi
             className={`surface-card sign-hero-card ${elementInfo.colorClass} animate-fade-in`}
             style={{ background: elementInfo.gradient }}
           >
+            {/* eslint-disable-next-line @next/next/no-img-element -- pre-sized WebP still, same file as the app background */}
+            <img className="sign-hero-art" src={`/zodiac/${selectedSign.id}.webp`} alt="" aria-hidden="true" decoding="async" />
             <div className="sign-hero-header">
               <div className="sign-hero-medallion">
                 <span className="sign-hero-glyph">{selectedSign.glyph}</span>
@@ -274,34 +313,6 @@ export function SignsView({ profile, isPremium, openPaywall, navigate }: SignsVi
               </div>
             </div>
 
-            {/* Daily Cosmic Prosperity Energy */}
-            <div className="daily-cosmic-box">
-              <div className="daily-cosmic-header">
-                <Sparkles size={16} />
-                <span>Sintonia de Prosperidade para {selectedSign.name}</span>
-              </div>
-              <p className="daily-cosmic-energy">“{dailyReading.energy}”</p>
-              <div className="daily-cosmic-action">
-                <strong>Foco prático hoje:</strong> {dailyReading.action}
-              </div>
-            </div>
-
-            {/* Prosperity Mantra Box */}
-            <div className="mantra-container">
-              <div className="mantra-content">
-                <span className="mantra-tag">Mantra de Ativação</span>
-                <p className="mantra-text">“{selectedSign.prosperityMantra}”</p>
-              </div>
-              <button
-                type="button"
-                className="mantra-copy-btn"
-                onClick={handleCopyMantra}
-                aria-label="Copiar mantra"
-              >
-                {copiedMantra ? <Check size={16} /> : <Copy size={16} />}
-                <span>{copiedMantra ? "Copiado" : "Copiar"}</span>
-              </button>
-            </div>
           </section>
 
           {/* Navigation Pills for Sign Details */}
@@ -540,6 +551,8 @@ export function SignsView({ profile, isPremium, openPaywall, navigate }: SignsVi
       {/* Main Tab 2: Céu & Astrologia Prática */}
       {mainTab === "astrologia" && (
         <>
+          <FortuneWheel isPremium={isPremium} openPaywall={openPaywall} />
+
           {/* Moon Phase Real-time Card */}
           <section className="surface-card moon-phase-card animate-fade-in">
             <div className="section-heading">
@@ -547,9 +560,7 @@ export function SignsView({ profile, isPremium, openPaywall, navigate }: SignsVi
                 <p className="eyebrow">Céu de Hoje em Tempo Real</p>
                 <h2>Ciclo Lunar & Prosperidade</h2>
               </div>
-              <div className="moon-symbol-badge" aria-hidden="true">
-                {moonPhase.symbol}
-              </div>
+              <MoonDisc illumination={moonPhase.illumination} waning={/Minguante/.test(moonPhase.name)} />
             </div>
 
             <div className="moon-phase-details">
@@ -713,4 +724,20 @@ export function SignsView({ profile, isPremium, openPaywall, navigate }: SignsVi
       </section>
     </div>
   );
+}
+
+/** The moon drawn from its illuminated fraction: the lit limb on the right while waxing, left while waning. */
+function MoonDisc({ illumination, waning }: { illumination: number; waning: boolean }) {
+  const r = 26, cx = 30, cy = 30;
+  const lit = Math.min(1, Math.max(0, illumination / 100));
+  const rx = Math.abs(1 - 2 * lit) * r;
+  const gibbous = lit >= 0.5;
+  const path = waning
+    ? `M${cx},${cy - r} A${r},${r} 0 0 0 ${cx},${cy + r} A${rx},${r} 0 0 ${gibbous ? 0 : 1} ${cx},${cy - r} Z`
+    : `M${cx},${cy - r} A${r},${r} 0 0 1 ${cx},${cy + r} A${rx},${r} 0 0 ${gibbous ? 1 : 0} ${cx},${cy - r} Z`;
+  return <svg className="moon-disc" viewBox="0 0 60 60" role="img" aria-label={`Lua ${illumination}% iluminada`}>
+    <defs><radialGradient id="moon-lit" cx="40%" cy="35%" r="70%"><stop offset="0" stopColor="#fff8e1"/><stop offset="1" stopColor="#d9c28a"/></radialGradient></defs>
+    <circle cx={cx} cy={cy} r={r} fill="#1a2550" stroke="#e9cd7b44"/>
+    {lit > 0.01 && <path d={path} fill="url(#moon-lit)"/>}
+  </svg>;
 }
