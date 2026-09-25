@@ -158,7 +158,7 @@ export async function POST(request: Request) {
         ? [db.insert(achievements).values(payload.unlockedAchievements.map((key) => ({ deviceId, achievementKey: key }))).onConflictDoNothing()]
         : []),
     ];
-    await db.batch(operations as Parameters<typeof db.batch>[0]);
+    await db.batch(operations as unknown as Parameters<typeof db.batch>[0]);
     return Response.json({ saved: true, savedAt: now, deviceId, streak });
   } catch (error) { return errorResponse(error); }
 }

@@ -11,7 +11,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import { dailyPlan, dayPart, dayPartLabel, greetingLabel, journalAnchors, localDayKey, weekPlan, type DailyPlan, type DayPart } from "@/lib/daily";
 import { achievementState, weeklyReport, type Achievement, type JourneySnapshot } from "@/lib/journey";
-import { findTrail, trailStatus, trails, type Trail, type TrailProgress } from "@/lib/trails";
+import { findTrail, trailStatus, trails, type TrailProgress } from "@/lib/trails";
 import { TREE_PART_HOTSPOTS, TREE_STAGES, treeStageFor, type TreePartHotspot } from "@/lib/treeStages";
 import { ProsperityTree } from "@/components/ProsperityTree";
 import { SignsView } from "@/components/views/SignsView";
@@ -31,6 +31,12 @@ type Goal = {
   motivation?: string; stage?: string; blocker?: string; dailyMinutes?: number;
 };
 type JournalEntry = { date: string; answers: string[] };
+type CloudState = {
+  profile: Partial<Profile>; xp?: number; missionDone?: boolean; ritualDone?: boolean; streak?: number;
+  goals?: Goal[]; entries?: JournalEntry[]; trail?: TrailProgress | null; unlockedAchievements?: string[];
+};
+/** Error/notice payload shared by the JSON API routes. */
+type ApiMessage = { error?: string; message?: string };
 type Theme = "dourado" | "lua" | "aurora";
 type Plan = "free" | "premium";
 type Profile = { name: string; birthDate: string; objective: string; sign: string; intention: string; theme: Theme; hasAvatar?: boolean; plan?: Plan };
@@ -177,7 +183,7 @@ export default function HomePage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setDeviceId(id);
     fetch("/api/auth")
-      .then((response) => response.ok ? response.json() : Promise.reject(new Error("auth unavailable")))
+      .then((response) => response.ok ? response.json() as Promise<{ user: Account | null }> : Promise.reject(new Error("auth unavailable")))
       .then(async ({ user }) => {
         // No session (expired, or the browser's history/cookies were cleared): try the password the
         // browser saved for this site before showing the welcome screen, so the account is recognised.
@@ -189,6 +195,8 @@ export default function HomePage() {
       })
       .catch(() => toast.error("Não foi possível verificar sua conta."))
       .finally(() => setReady(true));
+  // Runs once on mount: the session check must not re-run when loadCloudState is recreated.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function handleSessionExpired() {
@@ -204,7 +212,7 @@ export default function HomePage() {
       const response = await fetch(`/api/sync?day=${localDayKey()}`);
       if (response.status === 401) { handleSessionExpired(); return; }
       if (!response.ok) throw new Error("sync unavailable");
-      const { state, deviceId: cloudDeviceId } = await response.json();
+      const { state, deviceId: cloudDeviceId } = await response.json() as { state: CloudState | null; deviceId: string | null };
       const resolvedId = cloudDeviceId || fallbackDeviceId;
       localStorage.setItem("vds-device-id", resolvedId);
       setDeviceId(resolvedId);
@@ -260,7 +268,7 @@ export default function HomePage() {
       }).then(async (response) => {
         if (response.status === 401) { handleSessionExpired(); return; }
         if (!response.ok) throw new Error("sync failed");
-        const result = await response.json().catch(() => null);
+        const result = await response.json().catch(() => null) as { streak?: number } | null;
         if (result && typeof result.streak === "number") setStreak(result.streak);
         setSyncStatus("saved");
       }).catch(() => setSyncStatus("offline"));
@@ -764,21 +772,6 @@ function TreeStageUnlockedOverlay({ name, note }: { name: string; note: string }
   </div>;
 }
 
-const ROTATING_OBJECTIVES = ["dinheiro", "carreira", "hábitos", "relacionamentos", "autoconhecimento"];
-
-/** Cycles through `words` inside a one-line window; stays on the first word if the OS asks for reduced motion. */
-function RotatingWord({ words, intervalMs = 1900 }: { words: string[]; intervalMs?: number }) {
-  const [index, setIndex] = useState(0);
-  useEffect(() => {
-    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
-    const id = window.setInterval(() => setIndex((current) => (current + 1) % words.length), intervalMs);
-    return () => window.clearInterval(id);
-  }, [words, intervalMs]);
-  return <span className="rotating-word"><span className="rotating-word-strip" style={{ transform: `translateY(-${(index * 100) / words.length}%)` }}>
-    {words.map((word) => <span key={word}>{word}</span>)}
-  </span></span>;
-}
-
 function WelcomeHero({ onStart, onLogin }: { onStart: () => void; onLogin: () => void }) {
   return <main className="welcome-hero">
     <video className="welcome-portal-video" autoPlay muted loop playsInline aria-hidden="true">
@@ -829,21 +822,22 @@ function AuthScreen({ onAuthenticated, initialMode, onBack }: { onAuthenticated:
     try {
       if (mode === "recover") {
         const response = await fetch("/api/auth/recover", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email }) });
-        const result = await response.json();
+        const result = await response.json() as ApiMessage & { user?: Account };
         if (!response.ok) throw new Error(result.error || "Não foi possível enviar o e-mail.");
-        setNotice(result.message); return;
+        setNotice(result.message ?? "Se houver uma conta com este e-mail, você receberá as instruções."); return;
       }
       if (mode === "reset") {
         const response = await fetch("/api/auth/recover", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ token: resetToken, password }) });
-        const result = await response.json();
+        const result = await response.json() as ApiMessage & { user?: Account };
         if (!response.ok) throw new Error(result.error || "Não foi possível alterar a senha.");
         window.history.replaceState({}, "", "/");
         setPassword(""); setConfirmation(""); setResetToken(""); setMode("login"); setNotice("Senha alterada. Agora entre com sua nova senha."); return;
       }
       const response = await fetch("/api/auth", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: mode, email, password }) });
-      const result = await response.json();
+      const result = await response.json() as ApiMessage & { user?: Account };
       if (!response.ok) throw new Error(result.error || "Não foi possível continuar.");
       // Offer the browser's "Salvar senha" so the account can be recognised after history is cleared.
+      if (!result.user) throw new Error("Não foi possível continuar.");
       void rememberLogin(email.trim(), password);
       await onAuthenticated(result.user, mode as "register" | "login");
       toast.success(mode === "register" ? "Conta criada com sucesso." : "Bem-vindo de volta.");
@@ -974,7 +968,7 @@ function AiInsightBubble({ profile, week }: { profile: Profile; week: WeekDay[] 
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ dayKey: localDayKey(), nextThemeVerb: week[1].theme.verb }),
-    }).then((response) => (response.ok ? response.json() : null))
+    }).then((response) => (response.ok ? response.json() as Promise<{ summary: string; recommendation: string }> : null))
       .then((data) => {
         if (cancelled || !data?.summary) return;
         const seenKey = `vds-ai-bubble-seen:${data.summary.slice(0, 40)}`;
@@ -1097,7 +1091,7 @@ function JourneyView({ profile, plan, snapshot, week, missionDone, ritualDone, c
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ dayKey: localDayKey(), nextThemeVerb: week[1].theme.verb }),
-    }).then((response) => (response.ok ? response.json() : null))
+    }).then((response) => (response.ok ? response.json() as Promise<{ summary: string; recommendation: string }> : null))
       .then((data) => { if (!cancelled && data?.summary) setAiReport(data); })
       .catch(() => {})
       .finally(() => { if (!cancelled) setAiReportLoading(false); });
@@ -1257,7 +1251,7 @@ function ProfileView({ profile, setProfile, account, guide, goals, advanceGoal, 
       const avatar = await prepareAvatar(file);
       const form = new FormData(); form.append("avatar", avatar);
       const response = await fetch("/api/profile/avatar", { method: "PUT", body: form });
-      const result = await response.json();
+      const result = await response.json() as ApiMessage & { user?: Account };
       if (!response.ok) throw new Error(result.error || "Não foi possível salvar a foto.");
       setProfile({ ...profile, hasAvatar: true }); setDraft({ ...draft, hasAvatar: true }); setAvatarVersion(Date.now());
       toast.success("Foto de perfil atualizada.");
@@ -1353,7 +1347,7 @@ function GoalDetailView({ goal, advanceGoal, addGoalAmount, navigate, isPremium,
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setStepsLoading(true);
     fetch("/api/journey/goal-steps", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ goalId: goal.id }) })
-      .then((response) => (response.ok ? response.json() : null))
+      .then((response) => (response.ok ? response.json() as Promise<{ steps?: string[] }> : null))
       .then((data) => { if (!cancelled && data?.steps) setSteps(data.steps); })
       .catch(() => {})
       .finally(() => { if (!cancelled) setStepsLoading(false); });
@@ -1423,7 +1417,7 @@ function ChatView({ profile, isPremium, navigate, openPaywall, onSessionExpired 
 
   useEffect(() => {
     if (!isPremium) return;
-    fetch("/api/chat/threads").then((response) => (response.ok ? response.json() : null))
+    fetch("/api/chat/threads").then((response) => (response.ok ? response.json() as Promise<{ threads?: ChatThreadSummary[] }> : null))
       .then((data) => { if (Array.isArray(data?.threads)) setThreads(data.threads); }).catch(() => {});
   }, [isPremium]);
 
@@ -1450,7 +1444,7 @@ function ChatView({ profile, isPremium, navigate, openPaywall, onSessionExpired 
     try {
       const response = await fetch(`/api/chat/threads?id=${id}`);
       if (response.status === 401) { onSessionExpired(); return; }
-      const data = await response.json().catch(() => ({}));
+      const data = await response.json().catch(() => ({})) as { messages?: ChatTurn[] };
       if (!response.ok || !Array.isArray(data.messages)) throw new Error();
       setThreadId(id);
       setMessages(data.messages.length ? data.messages : [greeting]);
@@ -1483,18 +1477,20 @@ function ChatView({ profile, isPremium, navigate, openPaywall, onSessionExpired 
         body: JSON.stringify({ threadId: threadId ?? undefined, message: text }),
       });
       if (response.status === 401) { onSessionExpired(); return; }
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error ?? "Não foi possível responder agora.");
-      setMessages((current) => [...current, { role: "assistant", content: data.reply }]);
-      if (typeof data.threadId === "number") {
+      const data = await response.json().catch(() => ({})) as ApiMessage & { reply?: string; threadId?: number };
+      if (!response.ok || !data.reply) throw new Error(data.error ?? "Não foi possível responder agora.");
+      const reply = data.reply;
+      const savedThreadId = data.threadId;
+      setMessages((current) => [...current, { role: "assistant", content: reply }]);
+      if (typeof savedThreadId === "number") {
         const now = new Date().toISOString();
-        const isNew = data.threadId !== threadId;
-        setThreadId(data.threadId);
+        const isNew = savedThreadId !== threadId;
+        setThreadId(savedThreadId);
         setThreads((current) => {
-          const rest = current.filter((item) => item.id !== data.threadId);
-          const existing = current.find((item) => item.id === data.threadId);
+          const rest = current.filter((item) => item.id !== savedThreadId);
+          const existing = current.find((item) => item.id === savedThreadId);
           const title = isNew ? (text.length > 40 ? `${text.slice(0, 40)}…` : text) : (existing?.title ?? text);
-          return [{ id: data.threadId, title, updatedAt: now }, ...rest];
+          return [{ id: savedThreadId, title, updatedAt: now }, ...rest];
         });
       }
     } catch (error) {

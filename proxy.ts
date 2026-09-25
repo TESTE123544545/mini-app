@@ -32,7 +32,7 @@ export function proxy(request: NextRequest) {
 
   const response = NextResponse.next();
   response.headers.set("Content-Security-Policy", CONTENT_SECURITY_POLICY);
-  response.headers.set("Strict-Transport-Security", "max-age=86400");
+  response.headers.set("Strict-Transport-Security", "max-age=31536000");
   response.headers.set("X-Content-Type-Options", "nosniff");
   response.headers.set("X-Frame-Options", "DENY");
   response.headers.set("Referrer-Policy", "no-referrer");
