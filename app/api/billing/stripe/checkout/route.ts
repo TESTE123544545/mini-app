@@ -1,6 +1,6 @@
 import { getSessionUser } from "@/lib/auth";
 import { enforceRateLimit, readJsonBody, RequestError, secureErrorResponse } from "@/lib/security";
-import { premiumProductId, SITE_ORIGIN, stripe, stripeConfigured, type StripePrice } from "@/lib/stripe";
+import { sellableProductIds, SITE_ORIGIN, stripe, stripeConfigured, type StripePrice } from "@/lib/stripe";
 
 /** Opens a Stripe Checkout Session for one of the Premium product's prices and returns its URL. */
 export async function POST(request: Request) {
@@ -14,7 +14,7 @@ export async function POST(request: Request) {
     if (!priceId || !/^price_[A-Za-z0-9]+$/.test(priceId)) throw new RequestError("Plano inválido.", 400);
 
     const price = await stripe<StripePrice>(`/prices/${priceId}`, undefined, "GET");
-    if (!price.active || price.product !== premiumProductId()) throw new RequestError("Plano indisponível.", 400);
+    if (!price.active || !(await sellableProductIds()).includes(price.product)) throw new RequestError("Plano indisponível.", 400);
     const recurring = price.type === "recurring";
 
     const session = await stripe<{ url: string }>("/checkout/sessions", {

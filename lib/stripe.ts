@@ -8,8 +8,9 @@ import { profiles, subscriptions, users } from "@/db/schema";
  * Configuration (Cloudflare secrets / env):
  * - STRIPE_SECRET_KEY      — required; without it the Premium button stays "em breve".
  * - STRIPE_WEBHOOK_SECRET  — signing secret of the webhook pointed at /api/billing/stripe/webhook.
- * - STRIPE_PRODUCT_ID      — optional; defaults to the Premium product below. Every active price
- *                            of this product is offered in the paywall.
+ * - STRIPE_PRODUCT_ID      — optional; defaults to the Premium product below (the monthly plan).
+ * - STRIPE_LIFETIME_PRODUCT_ID — optional; the one-time "vitalício" product. When unset it is found
+ *                            by name ("vitalício") among the account's active products.
  */
 const API = "https://api.stripe.com/v1";
 const DEFAULT_PRODUCT_ID = "prod_UWpOZdImpB8hHp";
@@ -55,16 +56,46 @@ export type StripePrice = {
   type: "recurring" | "one_time"; recurring: { interval: "day" | "week" | "month" | "year"; interval_count: number } | null;
 };
 
-export async function premiumPrices() {
-  const { data } = await stripe<{ data: StripePrice[] }>("/prices", { product: premiumProductId(), active: true, limit: 20 }, "GET");
+type StripeProduct = { id: string; name: string; active: boolean };
+
+/** Cached per Worker instance so the paywall does not list every product on each open. */
+let lifetimeLookup: { id: string | null; at: number } | null = null;
+const LOOKUP_TTL_MS = 10 * 60 * 1000;
+
+export async function lifetimeProductId() {
+  if (process.env.STRIPE_LIFETIME_PRODUCT_ID) return process.env.STRIPE_LIFETIME_PRODUCT_ID;
+  if (lifetimeLookup && Date.now() - lifetimeLookup.at < LOOKUP_TTL_MS) return lifetimeLookup.id;
+  const { data } = await stripe<{ data: StripeProduct[] }>("/products", { active: true, limit: 100 }, "GET");
+  const match = data.find((product) => product.id !== premiumProductId() && /vital[ií]c/i.test(product.name));
+  lifetimeLookup = { id: match?.id ?? null, at: Date.now() };
+  return lifetimeLookup.id;
+}
+
+/** Every product a checkout may sell: the monthly plan and, when it exists, the lifetime one. */
+export async function sellableProductIds() {
+  const lifetime = await lifetimeProductId();
+  return [premiumProductId(), ...(lifetime ? [lifetime] : [])];
+}
+
+async function activePrices(product: string) {
+  const { data } = await stripe<{ data: StripePrice[] }>("/prices", { product, active: true, limit: 20 }, "GET");
   const priced = data.filter((price) => price.unit_amount !== null).sort((a, b) => (a.unit_amount ?? 0) - (b.unit_amount ?? 0));
-  // The product also carries GBP/EUR/USD prices; the app is Brazilian, so offer the BRL ones when they exist.
+  // Products also carry GBP/EUR/USD prices; the app is Brazilian, so offer the BRL ones when they exist.
   const inReais = priced.filter((price) => price.currency === "brl");
-  const offered = inReais.length ? inReais : priced;
-  // Premium is sold as a monthly subscription: once a recurring price exists, the old one-time
-  // prices stop being offered (they can stay in Stripe for past buyers).
-  const recurring = offered.filter((price) => price.type === "recurring");
-  return recurring.length ? recurring : offered;
+  return inReais.length ? inReais : priced;
+}
+
+/**
+ * What the paywall offers: the monthly subscription (the main product's recurring prices; its old
+ * one-time price is kept in Stripe for past buyers but no longer sold) followed by the one-time
+ * price of the "vitalício" product.
+ */
+export async function premiumPrices() {
+  const [main, lifetimeId] = await Promise.all([activePrices(premiumProductId()), lifetimeProductId()]);
+  const recurring = main.filter((price) => price.type === "recurring");
+  const plans = recurring.length ? recurring : main;
+  const lifetime = lifetimeId ? (await activePrices(lifetimeId)).filter((price) => price.type === "one_time") : [];
+  return [...plans, ...lifetime];
 }
 
 /* --- Webhook signature (Stripe-Signature: t=…,v1=…) ------------------------------------------ */
