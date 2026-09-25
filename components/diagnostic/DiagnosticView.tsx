@@ -55,9 +55,11 @@ export function DiagnosticView({ results, profileSign, xp, onComplete, onOpenTre
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<Answers>({});
   const [direction, setDirection] = useState<"forward" | "back">("forward");
-  const [showError, setShowError] = useState(false);
+  const [error, setError] = useState<"option" | "detail" | null>(null);
   const total = DIAGNOSTIC_QUESTIONS.length;
   const question = DIAGNOSTIC_QUESTIONS[index];
+  // Every option of a question shares one follow-up answer key (e.g. "moment-detail").
+  const detailKey = question.options.find((option) => option.followUp)?.followUp?.id;
 
   useEffect(() => { window.scrollTo(0, 0); }, [stage, index]);
 
@@ -71,26 +73,39 @@ export function DiagnosticView({ results, profileSign, xp, onComplete, onOpenTre
     setAnswers(profileSign ? { sign: profileSign } : {});
     setIndex(0);
     setDirection("forward");
-    setShowError(false);
+    setError(null);
     setStage("question");
   }
 
   function select(optionId: string) {
-    setAnswers((current) => ({ ...current, [question.id]: optionId }));
-    setShowError(false);
+    setAnswers((current) => {
+      const next = { ...current, [question.id]: optionId };
+      // A different choice opens a different detail list, so the old detail no longer applies.
+      if (detailKey && current[question.id] !== optionId) delete next[detailKey];
+      return next;
+    });
+    setError(null);
+  }
+
+  function selectDetail(detailId: string) {
+    if (!detailKey) return;
+    setAnswers((current) => ({ ...current, [detailKey]: detailId }));
+    setError(null);
   }
 
   function next() {
     const selected = answers[question.id];
-    if (!selected) { setShowError(true); return; }
-    track("diagnostic_question_answered", { question: question.id, option: selected, step: index + 1 });
+    if (!selected) { setError("option"); return; }
+    const followUp = question.options.find((option) => option.id === selected)?.followUp;
+    if (followUp && !answers[followUp.id]) { setError("detail"); return; }
+    track("diagnostic_question_answered", { question: question.id, option: selected, detail: followUp ? answers[followUp.id] : undefined, step: index + 1 });
     setDirection("forward");
     if (index < total - 1) setIndex(index + 1);
     else setStage("processing");
   }
 
   function back() {
-    setShowError(false);
+    setError(null);
     setDirection("back");
     if (index > 0) setIndex(index - 1);
     else setStage(null);
@@ -112,10 +127,12 @@ export function DiagnosticView({ results, profileSign, xp, onComplete, onOpenTre
       index={index}
       total={total}
       selected={answers[question.id]}
+      detail={detailKey ? answers[detailKey] : undefined}
       direction={direction}
-      showError={showError}
+      error={error}
       suggestedOption={profileSign}
       onSelect={select}
+      onSelectDetail={selectDetail}
       onContinue={next}
       onBack={back}
     />;

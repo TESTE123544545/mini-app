@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { Compass, Flame, Gem, RotateCcw, Sprout, Zap } from "lucide-react";
 import { ProsperityTree } from "@/components/ProsperityTree";
-import { DIMENSIONS, PROFILES, TREE_FOCUS, TREE_OPENING, interpret, optionLabel, type DiagnosticResult as Result, type Dimension, type ProfileId } from "@/lib/diagnostic";
+import { DIMENSIONS, PROFILES, TREE_FOCUS, TREE_OPENING, followUpLabel, interpret, optionLabel, type DiagnosticResult as Result, type Dimension, type ProfileId } from "@/lib/diagnostic";
 
 const dimensionIcon: Record<Dimension, React.ReactNode> = {
   prosperidade: <Gem/>, movimento: <Zap/>, clareza: <Compass/>, confianca: <Flame/>, constancia: <Sprout/>,
@@ -49,7 +49,7 @@ export function DiagnosticResult({ result, xp, onOpenTree, onRestart }: { result
       <span className="diag-hero__halo" aria-hidden="true"/>
       <p className="eyebrow">Seu diagnóstico está pronto</p>
       <h2 ref={headingRef} tabIndex={-1}>{result.sign}, encontramos alguns pontos importantes no seu momento atual.</h2>
-      <p className="diag-result__area">Área que você quer transformar: <strong>{optionLabel("area", result.area)}</strong></p>
+      <p className="diag-result__area">Área que você quer transformar: <strong>{[optionLabel("area", result.area), followUpLabel("area", result.answers)].filter(Boolean).join(" · ")}</strong></p>
       <ProsperityProfile profileId={result.profile}/>
     </section>
 
