@@ -127,18 +127,15 @@ function mapDecl(prop, value) {
   else if (/shadow$/.test(p) || p === "filter" || p === "-webkit-filter") kind = "shadow";
   else if (/^(background|border|outline)/.test(p)) kind = "bg";
   else return null;
-  // Declarations that already use tokens flip through the variables; they are still mirrored
-  // unchanged so they keep their place in the cascade against the mapped rules around them.
+  // Every colour declaration is mirrored, mapped or not (tokens flip through the variables, and
+  // values like "transparent" stay as they are), so inside dark mode the rules keep the same
+  // cascade order they have in light mode.
   if (value.includes("var(")) return value;
-  let changed = false;
-  const next = value.replace(COLOR, (tok) => {
+  return value.replace(COLOR, (tok) => {
     const c = parse(tok);
     if (!c) return tok;
-    const mapped = kind === "fg" ? fg(c) : kind === "shadow" ? shadow(c) : surface(c, p);
-    if (mapped !== tok) changed = true;
-    return mapped;
+    return kind === "fg" ? fg(c) : kind === "shadow" ? shadow(c) : surface(c, p);
   });
-  return changed ? next : null;
 }
 
 // ---- a small CSS walker -------------------------------------------------------

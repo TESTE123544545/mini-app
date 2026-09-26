@@ -24,12 +24,13 @@ import {
   Orbit,
   Sun,
   Zap,
-  Layers
+  Layers,
+  Radio
 } from "lucide-react";
 import { toast } from "sonner";
 import { FortuneWheel } from "./FortuneWheel";
 import { TarotDraw } from "./TarotDraw";
-import { LiveSkyCard, SignDayCard } from "./LiveSky";
+import { LiveTodayTab } from "./LiveSky";
 import { SIGNS, getSignByName, getDailySignReading, type ElementType, type SignData } from "@/lib/signs";
 import { localDayKey } from "@/lib/daily";
 import {
@@ -51,6 +52,8 @@ interface SignsViewProps {
   };
   isPremium: boolean;
   openPaywall: (reason: string) => void;
+  /** Opens the AI chat and sends this question right away. */
+  askSintonia: (prompt: string) => void;
   navigate: (view: AppView) => void;
 }
 
@@ -82,10 +85,11 @@ const elementConfig: Record<ElementType, { label: string; icon: typeof Flame; co
 };
 
 type ContentSection = "financas" | "carreira" | "pontos_cegos" | "parcerias" | "ritual";
-type MainTab = "signos" | "astrologia";
+type MainTab = "hoje" | "signos" | "astrologia";
 
-export function SignsView({ profile, isPremium, openPaywall, navigate }: SignsViewProps) {
-  const [mainTab, setMainTab] = useState<MainTab>("signos");
+export function SignsView({ profile, isPremium, openPaywall, navigate, askSintonia }: SignsViewProps) {
+  // "Hoje ao vivo" opens first: the live horoscope is the reason most people open this tab.
+  const [mainTab, setMainTab] = useState<MainTab>("hoje");
   const [selectedSignName, setSelectedSignName] = useState<string>(() => profile.sign || "Capricórnio");
   const [activeSection, setActiveSection] = useState<ContentSection>("financas");
   const [selectedPlanetId, setSelectedPlanetId] = useState<string>("jupiter");
@@ -177,6 +181,16 @@ export function SignsView({ profile, isPremium, openPaywall, navigate }: SignsVi
         <button
           type="button"
           role="tab"
+          aria-selected={mainTab === "hoje"}
+          className={`signs-top-tab signs-top-tab--live ${mainTab === "hoje" ? "active" : ""}`}
+          onClick={() => setMainTab("hoje")}
+        >
+          <Radio size={16} />
+          <span>Hoje ao vivo</span>
+        </button>
+        <button
+          type="button"
+          role="tab"
           aria-selected={mainTab === "signos"}
           className={`signs-top-tab ${mainTab === "signos" ? "active" : ""}`}
           onClick={() => setMainTab("signos")}
@@ -195,6 +209,8 @@ export function SignsView({ profile, isPremium, openPaywall, navigate }: SignsVi
           <span>Astrologia & Céu</span>
         </button>
       </div>
+
+      {mainTab === "hoje" && <LiveTodayTab userSign={userNativeSign.name} askSintonia={askSintonia} />}
 
       {mainTab === "signos" && (
         <>
@@ -230,8 +246,6 @@ export function SignsView({ profile, isPremium, openPaywall, navigate }: SignsVi
               </button>
             </div>
           </section>
-
-          <SignDayCard sign={selectedSign.name} />
 
           <TarotDraw isPremium={isPremium} openPaywall={openPaywall} sign={userNativeSign.name} />
 
@@ -556,7 +570,6 @@ export function SignsView({ profile, isPremium, openPaywall, navigate }: SignsVi
         <>
           <FortuneWheel isPremium={isPremium} openPaywall={openPaywall} />
 
-          <LiveSkyCard />
 
           {/* Moon Phase Real-time Card */}
           <section className="surface-card moon-phase-card animate-fade-in">

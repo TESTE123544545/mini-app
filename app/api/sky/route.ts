@@ -1,20 +1,27 @@
-import { getSignDaily, getSkyToday, signSlugFromName } from "@/lib/sky";
+import { getSignDaily, getSignMonthly, getSignWeekly, getSkyToday, signSlugFromName } from "@/lib/sky";
 import { enforceRateLimit, secureErrorResponse } from "@/lib/security";
 
 /**
- * GET /api/sky?sign=Leão — today's live sky and that sign's day, in Portuguese.
- * Either half can be missing (source or AI unavailable); the app then keeps its own content.
+ * GET /api/sky?sign=Leão — today's live sky plus that sign's day, week and month, in Portuguese.
+ * Any part can be missing (source or AI unavailable); the app then shows what it has.
  */
 export async function GET(request: Request) {
   try {
-    await enforceRateLimit(request, "sky", "read", 120, 3600);
+    await enforceRateLimit(request, "sky", "read", 240, 3600);
     const signParam = new URL(request.url).searchParams.get("sign") ?? "";
     const slug = signParam ? signSlugFromName(signParam) : null;
-    const [sky, sign] = await Promise.allSettled([getSkyToday(), slug ? getSignDaily(slug) : Promise.resolve(null)]);
-    if (sky.status === "rejected") console.error("sky_today_failed", sky.reason);
-    if (sign.status === "rejected") console.error("sign_daily_failed", sign.reason);
+    const [sky, sign, week, month] = await Promise.allSettled([
+      getSkyToday(),
+      slug ? getSignDaily(slug) : Promise.resolve(null),
+      slug ? getSignWeekly(slug) : Promise.resolve(null),
+      slug ? getSignMonthly(slug) : Promise.resolve(null),
+    ]);
+    for (const [name, part] of [["sky", sky], ["sign", sign], ["week", week], ["month", month]] as const) {
+      if (part.status === "rejected") console.error(`sky_${name}_failed`, part.reason);
+    }
+    const value = <T,>(part: PromiseSettledResult<T>) => (part.status === "fulfilled" ? part.value : null);
     return Response.json(
-      { sky: sky.status === "fulfilled" ? sky.value : null, sign: sign.status === "fulfilled" ? sign.value : null },
+      { sky: value(sky), sign: value(sign), week: value(week), month: value(month) },
       { headers: { "cache-control": "public, max-age=600" } },
     );
   } catch (error) {

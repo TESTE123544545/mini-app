@@ -134,3 +134,41 @@ body .topbar-actions{gap:8px}
 body .bottom-nav button{position:relative}
 body .bottom-nav button.is-locked{color:var(--studio-ink-3);opacity:.75}
 body .bottom-nav .nav-lock{position:absolute;top:0;left:calc(50% + 6px);width:11px!important;height:11px!important;padding:1px;border-radius:50%;background:var(--card);color:#b37a1c}
+
+/* Signs tab: "Hoje ao vivo" first — pick a sign, read its day/week/month, ask the AI, see the sky. */
+body .signs-top-tablist{grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;border-radius:999px}
+body .signs-top-tab{min-width:0;padding:10px 8px;border-radius:999px;font-size:.78rem;line-height:1.15;text-align:center}
+body .signs-top-tab span{min-width:0;overflow-wrap:anywhere}
+body .signs-top-tab.active{color:var(--studio-ink)}
+.signs-top-tab--live svg{color:#c0392b}
+@media (max-width:400px){body .signs-top-tab svg{display:none}}
+.live-date{margin:4px 0 0;color:var(--studio-ink-3);font-size:.84rem;font-weight:700}
+.live-date::first-letter{text-transform:uppercase}
+.live-signs{display:flex;gap:6px;margin:16px -4px 0;padding:2px 4px 6px;overflow-x:auto;scrollbar-width:none;scroll-snap-type:x proximity}
+.live-signs::-webkit-scrollbar{display:none}
+.live-signs button{flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 14px;border:1px solid var(--input);border-radius:999px;background:transparent;color:var(--studio-ink);font:inherit;font-size:.84rem;font-weight:700;cursor:pointer;scroll-snap-align:start}
+.live-signs button span{font-family:"Segoe UI Symbol","Noto Sans Symbols","Apple Symbols",sans-serif;font-variant-emoji:text;color:#b37a1c}
+.live-signs button.is-own{border-color:#d99a2b}
+.live-signs button[aria-selected=true]{background:var(--studio-ink);border-color:var(--studio-ink);color:#faf8f3}
+.live-signs button[aria-selected=true] span{color:#f0c566}
+.live-periods{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;margin-top:10px;padding:4px;border-radius:999px;background:rgba(20,20,20,.06)}
+.live-periods button{min-height:38px;border:0;border-radius:999px;background:transparent;color:var(--studio-ink-2);font:inherit;font-size:.84rem;font-weight:700;cursor:pointer}
+.live-periods button[aria-selected=true]{background:var(--card);color:var(--studio-ink);box-shadow:0 4px 12px -6px rgba(40,34,26,.35)}
+.live-sign-title{margin:20px 0 0;font-size:1.15rem}
+.live-phrase div{display:grid;gap:4px}
+.live-phrase div span{color:#8f5f0f;font-size:.68rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.live-tip{margin:10px 0 0;color:var(--studio-ink);line-height:1.55}
+.live-ask{text-align:center}
+.live-ask__icon{width:48px;height:48px;margin:0 auto 12px;display:grid;place-items:center;border-radius:14px;background:rgba(217,154,43,.14);color:#8f5f0f}
+.live-ask__icon svg{width:22px;height:22px}
+.live-ask h2{margin:0 0 6px}
+.live-ask p{margin:0 auto;max-width:36ch;color:var(--studio-ink-2);line-height:1.5}
+.live-ask__prompts{display:grid;gap:8px;margin-top:16px}
+.live-ask__prompts button{min-height:48px;padding:0 18px;border:0;border-radius:999px;background:var(--studio-ink);color:#faf8f3;font:inherit;font-size:.9rem;font-weight:700;cursor:pointer}
+.live-ask__prompts button+button{background:transparent;color:var(--studio-ink);border:1px solid var(--studio-ink)}
+.live-more{display:flex;align-items:center;justify-content:center;gap:8px;margin:4px 0 0;font-size:.86rem}
+.live-more svg{width:16px;height:16px;color:#b37a1c}
+.live-more a{color:var(--studio-ink);font-weight:700;text-underline-offset:4px}
+/* Scrollable rows must not widen the column they sit in. */
+.signs-view-container>*,.live-hero,.live-ask{min-width:0;max-width:100%}
+.live-signs{position:relative}

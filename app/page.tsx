@@ -161,6 +161,8 @@ export default function HomePage() {
   const [stageUnlocked, setStageUnlocked] = useState<{ name: string; note: string } | null>(null);
   const [activeTrail, setActiveTrail] = useState<TrailProgress | null>(null);
   const [paywall, setPaywall] = useState<string | null>(null);
+  /** A question handed over from the Signs tab; the chat sends it as soon as it opens. */
+  const [chatPrompt, setChatPrompt] = useState<string | null>(null);
   const treeStageBaseline = useRef<number | null>(null);
   const lastDay = useRef(dayKey);
   const [goals, setGoals] = useState<Goal[]>([]);
@@ -597,13 +599,13 @@ export default function HomePage() {
           {view === "home" && <HomeView profile={profile} plan={plan} week={week} part={part} xp={xp} level={level} stage={stage} streak={streak} fruits={goals.filter((goal) => goal.progress === 100).length} missionDone={missionDone} ritualDone={ritualDone} treeCelebrating={treeCelebrating} completeMission={completeMission} openRitual={() => { haptic(8); setRitualOpen(true); }} oracleOpen={oracleOpen} setOracleOpen={setOracleOpen} mainGoal={mainGoal} advanceGoal={advanceGoal} openGoals={() => navigate(mainGoal ? "goal" : "profile")} navigate={navigate} isPremium={isPremium} openPaywall={openPaywall} diagnostic={diagnostics[0]} openTree={(source) => openTree(source)} />}
           {view === "premium" && <PremiumView isPremium={isPremium} />}
           {view === "diagnostic" && <DiagnosticView results={diagnostics} profileSign={profile.sign || undefined} xp={xp} onComplete={(result) => setDiagnostics((current) => saveDiagnostic(account?.email, result, current))} onOpenTree={() => openTree("diagnostic_result")} lockedResult={isPremium ? undefined : <PremiumOffer reason="diagnostic_result"/>} />}
-          {view === "signs" && <SignsView profile={profile} isPremium={isPremium} openPaywall={openPaywall} navigate={navigate} />}
+          {view === "signs" && <SignsView profile={profile} isPremium={isPremium} openPaywall={openPaywall} navigate={navigate} askSintonia={(prompt) => { setChatPrompt(prompt); navigate("chat"); }} />}
           {view === "tree" && <TreeView xp={xp} level={level} stage={stage} streak={streak} mapScores={mapScores} goals={goals} diagnostic={diagnostics[0]} openDiagnostic={() => navigate("diagnostic")} snapshot={snapshot} cares={{ missionDone, ritualDone, journaledToday }} navigate={navigate} openRitual={() => { haptic(8); setRitualOpen(true); }} />}
           {view === "missions" && <JourneyView profile={profile} plan={plan} snapshot={snapshot} week={week} missionDone={missionDone} ritualDone={ritualDone} completeMission={completeMission} openRitual={() => { haptic(8); setRitualOpen(true); }} activeTrail={activeTrail} startTrail={startTrail} completeTrailDay={completeTrailDay} abandonTrail={abandonTrail} isPremium={isPremium} openPaywall={openPaywall} />}
           {view === "journal" && <JournalView plan={plan} answers={answers} setAnswers={setAnswers} save={saveJournal} entries={entries} isPremium={isPremium} openPaywall={openPaywall} />}
           {view === "profile" && <ProfileView profile={profile} setProfile={setProfile} account={account} guide={guide} goals={goals} advanceGoal={advanceGoal} goalDialog={goalDialog} setGoalDialog={setGoalDialog} goalTitle={goalTitle} setGoalTitle={setGoalTitle} goalCategory={goalCategory} setGoalCategory={setGoalCategory} addGoal={() => addGoal()} syncStatus={syncStatus} avatarVersion={avatarVersion} setAvatarVersion={setAvatarVersion} logout={logout} isPremium={isPremium} openPaywall={openPaywall} navigate={navigate} />}
           {view === "goal" && <GoalDetailView goal={mainGoal} advanceGoal={advanceGoal} addGoalAmount={addGoalAmount} navigate={navigate} isPremium={isPremium} openPaywall={openPaywall} />}
-          {view === "chat" && <ChatView profile={profile} isPremium={isPremium} navigate={navigate} openPaywall={openPaywall} onSessionExpired={handleSessionExpired} />}
+          {view === "chat" && <ChatView profile={profile} isPremium={isPremium} navigate={navigate} openPaywall={openPaywall} onSessionExpired={handleSessionExpired} initialPrompt={chatPrompt} onPromptUsed={() => setChatPrompt(null)} />}
           </>}
         </div>
 
@@ -1539,7 +1541,7 @@ const CHAT_ASSISTANT_NAME = "Sintonia";
 /** One-tap openers that use today's live sky (the chat receives it as context). */
 const CHAT_STARTERS = ["Como vai ser meu dia hoje?", "O que o céu de hoje pede de mim?", "Me dá uma frase para hoje"];
 
-function ChatView({ profile, isPremium, navigate, openPaywall, onSessionExpired }: { profile: Profile; isPremium: boolean; navigate: (v: View) => void; openPaywall: (reason: string) => void; onSessionExpired: () => void }) {
+function ChatView({ profile, isPremium, navigate, openPaywall, onSessionExpired, initialPrompt = null, onPromptUsed }: { profile: Profile; isPremium: boolean; navigate: (v: View) => void; openPaywall: (reason: string) => void; onSessionExpired: () => void; initialPrompt?: string | null; onPromptUsed?: () => void }) {
   const greeting = useMemo<ChatTurn>(() => ({ role: "assistant", content: `Oi, sou a ${CHAT_ASSISTANT_NAME}. Esse é um espaço pra você pensar em voz alta, desabafar ou só conversar sobre a sua jornada, ${profile.name.split(" ")[0]}. Como você está agora?` }), [profile.name]);
   const [messages, setMessages] = useState<ChatTurn[]>([greeting]);
   const [threadId, setThreadId] = useState<number | null>(null);
@@ -1555,6 +1557,15 @@ function ChatView({ profile, isPremium, navigate, openPaywall, onSessionExpired 
     fetch("/api/chat/threads").then((response) => (response.ok ? response.json() as Promise<{ threads?: ChatThreadSummary[] }> : null))
       .then((data) => { if (Array.isArray(data?.threads)) setThreads(data.threads); }).catch(() => {});
   }, [isPremium]);
+
+  // A question picked in the Signs tab is sent once, as soon as the chat opens.
+  const sendRef = useRef<(preset?: string) => Promise<void>>(async () => {});
+  useEffect(() => {
+    if (!isPremium || !initialPrompt) return;
+    onPromptUsed?.();
+    void sendRef.current(initialPrompt);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs once per handed-over question
+  }, [initialPrompt, isPremium]);
 
   if (!isPremium) {
     return <div className="view-stack">
@@ -1634,6 +1645,8 @@ function ChatView({ profile, isPremium, navigate, openPaywall, onSessionExpired 
       setSending(false);
     }
   }
+
+  sendRef.current = send;
 
   return <div className="view-stack chat-view">
     <button type="button" className="auth-back" onClick={() => navigate("home")}><ArrowLeft size={16}/> Voltar</button>
