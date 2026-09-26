@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { CalendarDays, MessageCircle, Moon, Orbit, Sparkles } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, MessageCircle, Moon, Orbit, Sparkles } from "lucide-react";
 import type { SignDaily, SignPeriod, SkyToday } from "@/lib/sky";
 import { SIGNS } from "@/lib/signs";
 
@@ -125,22 +125,43 @@ export function LiveTodayTab({ userSign, askSintonia }: { userSign: string; askS
   const data = useSky(sign);
   const isOwn = sign === userSign;
   const signRow = useRef<HTMLDivElement>(null);
+  const [edges, setEdges] = useState({ start: true, end: false });
+
+  function updateEdges() {
+    const row = signRow.current;
+    if (!row) return;
+    setEdges({ start: row.scrollLeft <= 2, end: row.scrollLeft + row.clientWidth >= row.scrollWidth - 2 });
+  }
+
+  function scrollSigns(direction: 1 | -1) {
+    const row = signRow.current;
+    if (!row) return;
+    const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    row.scrollBy({ left: direction * row.clientWidth * 0.7, behavior: reduceMotion ? "auto" : "smooth" });
+  }
 
   // Open the sign row on the person's own sign, without scrolling the page.
   useEffect(() => {
     const row = signRow.current;
     const chip = row?.querySelector<HTMLElement>("[aria-selected=true]");
     if (row && chip) row.scrollLeft = chip.offsetLeft - (row.clientWidth - chip.offsetWidth) / 2;
+    updateEdges();
+    window.addEventListener("resize", updateEdges);
+    return () => window.removeEventListener("resize", updateEdges);
   }, []);
 
   return <>
     <section className="surface-card live-hero">
       <div className="live-head"><h2>Horóscopo de hoje</h2><LivePill/></div>
       <p className="live-date">{todayLabel()}</p>
-      <div className="live-signs" ref={signRow} role="tablist" aria-label="Escolha o signo">
+      <div className={`live-signs-carousel ${edges.start ? "at-start" : ""} ${edges.end ? "at-end" : ""}`}>
+      <button type="button" className="live-signs-arrow is-prev" onClick={() => scrollSigns(-1)} disabled={edges.start} aria-label="Ver signos anteriores"><ChevronLeft aria-hidden="true"/></button>
+      <div className="live-signs" ref={signRow} role="tablist" aria-label="Escolha o signo" onScroll={updateEdges}>
         {SIGNS.map((item) => <button type="button" role="tab" key={item.id} aria-selected={item.name === sign} className={item.name === userSign ? "is-own" : ""} onClick={() => setSign(item.name)}>
           <span aria-hidden="true">{`${item.glyph}︎`}</span>{item.name}
         </button>)}
+      </div>
+      <button type="button" className="live-signs-arrow is-next" onClick={() => scrollSigns(1)} disabled={edges.end} aria-label="Ver próximos signos"><ChevronRight aria-hidden="true"/></button>
       </div>
       <div className="live-periods" role="tablist" aria-label="Período">
         {([["dia", "Hoje"], ["semana", "Semana"], ["mes", "Mês"]] as [Period, string][]).map(([value, label]) => <button type="button" role="tab" key={value} aria-selected={period === value} onClick={() => setPeriod(value)}>{label}</button>)}

@@ -172,3 +172,15 @@ body .signs-top-tab.active{color:var(--studio-ink)}
 /* Scrollable rows must not widen the column they sit in. */
 .signs-view-container>*,.live-hero,.live-ask{min-width:0;max-width:100%}
 .live-signs{position:relative}
+
+/* Arrows on the live sign row, like the 12 Signos carousel: fade the edge, hide at the ends. */
+.live-signs-carousel{position:relative;min-width:0;--fade-start:40px;--fade-end:40px}
+.live-signs-carousel.at-start{--fade-start:0px}
+.live-signs-carousel.at-end{--fade-end:0px}
+.live-signs-carousel .live-signs{-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 var(--fade-start),#000 calc(100% - var(--fade-end)),transparent 100%);mask-image:linear-gradient(90deg,transparent 0,#000 var(--fade-start),#000 calc(100% - var(--fade-end)),transparent 100%)}
+.live-signs-arrow{position:absolute;z-index:2;top:calc(50% - 2px);translate:0 -50%;width:34px;height:34px;display:grid;place-items:center;padding:0;border:1px solid var(--input);border-radius:50%;background:var(--card);color:var(--studio-ink);box-shadow:0 6px 16px -8px rgba(40,34,26,.45);cursor:pointer;transition:opacity .2s}
+.live-signs-arrow svg{width:18px;height:18px}
+.live-signs-arrow.is-prev{left:-6px}
+.live-signs-arrow.is-next{right:-6px}
+.live-signs-arrow:hover{border-color:var(--studio-ink)}
+.live-signs-arrow:disabled{opacity:0;pointer-events:none}

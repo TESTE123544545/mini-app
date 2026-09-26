@@ -776,6 +776,8 @@ html[data-mode=dark],:root[data-mode=dark] body{background:#131311;color:var(--s
 :root[data-mode=dark] .live-ask__prompts button+button{background:transparent;color:var(--studio-ink);border:1px solid var(--studio-ink)}
 :root[data-mode=dark] .live-more svg{color:#e8b75a}
 :root[data-mode=dark] .live-more a{color:var(--studio-ink)}
+:root[data-mode=dark] .live-signs-arrow{border:1px solid var(--input);border-radius:50%;background:var(--card);color:var(--studio-ink);box-shadow:0 6px 16px -8px rgba(0,0,0,0.6)}
+:root[data-mode=dark] .live-signs-arrow:hover{border-color:var(--studio-ink)}
 
 /* from app/entry.css */
 :root[data-mode=dark] .entry{color:var(--entry-ink);background:radial-gradient(120% 70% at 50% -12%,var(--entry-ground-hi) 0,var(--entry-ground) 48%,var(--entry-ground-lo) 100%);caret-color:var(--entry-ink)}
