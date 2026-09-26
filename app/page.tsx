@@ -15,7 +15,6 @@ import { findTrail, trailStatus, trails, type Trail, type TrailProgress } from "
 import { TREE_PART_HOTSPOTS, TREE_STAGES, treeStageFor, type TreePartHotspot } from "@/lib/treeStages";
 import { ProsperityTree } from "@/components/ProsperityTree";
 import { SignsView } from "@/components/views/SignsView";
-import { ZodiacBackdrop } from "@/components/ZodiacBackdrop";
 import { DiagnosticView } from "@/components/diagnostic/DiagnosticView";
 import { DiagnosticHomeCards, DiagnosticTreeFocus } from "@/components/diagnostic/DiagnosticEntryPoints";
 import { track } from "@/lib/analytics";
@@ -581,7 +580,6 @@ export default function HomePage() {
 
   return (
     <main className="app-shell" data-theme={profile.theme} data-daypart={part}>
-      <ZodiacBackdrop step={view} sign={profile.sign} />
       <div className="cosmos" aria-hidden="true" />
       <section className="app-frame" data-navigated={navigated || undefined}>
         <header className="topbar">

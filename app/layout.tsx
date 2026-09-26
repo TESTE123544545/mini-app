@@ -3,6 +3,7 @@ import type { Viewport } from "next";
 import "./globals.css";
 import "./premium.css";
 import "./diagnostic.css";
+import "./studio.css";
 import "./entry.css";
 import { PwaRegister } from "./pwa-register";
 
@@ -99,7 +100,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#071326",
+  themeColor: "#e9e7e3",
 };
 
 export default function RootLayout({

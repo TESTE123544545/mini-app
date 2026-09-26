@@ -1,0 +1,52 @@
+/* The light studio world for the whole app: warm gray ground, white surfaces, ink text, amber as the one accent.
+   Loaded after the older stylesheets, whose colours were re-lit into this palette. */
+:root{
+  --background:#e9e7e3;--foreground:#141414;
+  --card:#ffffff;--card-foreground:#141414;
+  --popover:#ffffff;--popover-foreground:#141414;
+  --primary:#141414;--primary-foreground:#faf8f3;
+  --secondary:#f1efeb;--secondary-foreground:#141414;
+  --muted:#efede9;--muted-foreground:#5c5750;
+  --accent:#d99a2b;--accent-foreground:#141414;
+  --destructive:#b3261e;
+  --border:rgba(20,20,20,.1);--input:rgba(20,20,20,.16);--ring:#d99a2b;
+  --gold:#8f5f0f;--gold-soft:#7a510c;--gold-deep:#6b4608;
+  --studio-ground:#e9e7e3;--studio-ink:#141414;--studio-ink-2:#4f4b45;--studio-ink-3:#6b665e;
+  --studio-amber:#d99a2b;--studio-amber-soft:rgba(217,154,43,.28);
+  --font-display:"Archivo","Manrope",system-ui,sans-serif;
+  color-scheme:light;
+}
+html,body{background:#e9e7e3;color:var(--studio-ink)}
+body{background:radial-gradient(120% 60% at 50% -10%,#faf9f7 0,#e9e7e3 50%,#dcd9d3 100%) fixed}
+::selection{background:var(--studio-amber-soft);color:var(--studio-ink)}
+.app-shell,.onboarding{color:var(--studio-ink);caret-color:var(--studio-ink)}
+.app-shell{background:none}
+.cosmos,.stars,.zodiac-backdrop{display:none!important}
+.app-shell :focus-visible,.onboarding :focus-visible{outline:2px solid var(--studio-amber);outline-offset:3px}
+
+/* Type: the wide grotesk carries the headings, Manrope the reading. */
+body h1,body h2,body h3,body .level-medal span,body .zodiac-medallion strong,body .onboarding-card h1,body .breathing-orb span,body .ritual-action h3,body .ritual-dialog [data-slot=dialog-title],body .levelup h2,body .xp-float{font-family:var(--font-display);font-stretch:108%;font-weight:700;letter-spacing:-.02em;color:var(--studio-ink)}
+body .topbar h1{font-stretch:118%;font-weight:800;font-size:1.5rem;letter-spacing:-.025em;text-transform:uppercase}
+body .topbar h1 span{color:var(--studio-amber)}
+body .onboarding-card h1{font-stretch:112%;font-weight:800;font-size:clamp(1.45rem,6vw,2rem);line-height:1.1}
+
+/* Primary action: the black pill. */
+body .gold-button{border-radius:999px;background:var(--studio-ink);color:#faf8f3;box-shadow:0 12px 24px -14px rgba(20,20,20,.7);font-weight:700}
+body .gold-button svg{color:currentColor}
+body .gold-button:not(:disabled):hover{background:#000;filter:none;box-shadow:0 14px 28px -12px rgba(20,20,20,.75),0 0 0 4px var(--studio-amber-soft)}
+body .gold-button::after{background:linear-gradient(105deg,transparent 35%,rgba(255,255,255,.18) 50%,transparent 65%)}
+body .gold-button:disabled{opacity:.45}
+body .ghost-button{border-radius:999px;border:1px solid var(--studio-ink);background:transparent;color:var(--studio-ink)}
+body .ghost-button:hover{background:rgba(20,20,20,.06)}
+
+/* Bottom navigation: a white pill with the active tab inked. */
+body .bottom-nav{background:rgba(255,255,255,.92);border:1px solid rgba(20,20,20,.08);box-shadow:0 18px 40px -20px rgba(60,52,40,.45);border-radius:999px;padding-left:6px;padding-right:6px}
+body .bottom-nav button{color:var(--studio-ink-3);border-radius:999px}
+body .bottom-nav button:hover{color:var(--studio-ink)}
+body .bottom-nav .active{color:var(--studio-ink);background:rgba(20,20,20,.07)}
+body .bottom-nav .active svg{filter:none;color:var(--studio-amber)}
+
+/* Headings and card titles read in ink; amber stays for small accents and numbers. */
+.app-shell h1,.app-shell h2,.app-shell h3,.onboarding h1,.chat-entry strong,.diag-entry__copy strong,.diag-entry__copy h2,.diag-entry__copy h3{color:var(--studio-ink)}
+body .premium-pill{color:var(--studio-ink)}
+body .premium-pill svg{color:currentColor}

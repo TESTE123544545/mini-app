@@ -7,11 +7,11 @@ import {
   OctagonXIcon,
   TriangleAlertIcon,
 } from "lucide-react"
-import { useTheme } from "next-themes"
 import { Toaster as Sonner, type ToasterProps } from "sonner"
 
 const Toaster = ({ ...props }: ToasterProps) => {
-  const { theme = "system" } = useTheme()
+  // The app is light-only now; following the OS setting painted dark toasts on a light page.
+  const theme = "light"
 
   return (
     <Sonner
