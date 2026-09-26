@@ -184,3 +184,9 @@ body .signs-top-tab.active{color:var(--studio-ink)}
 .live-signs-arrow.is-next{right:-6px}
 .live-signs-arrow:hover{border-color:var(--studio-ink)}
 .live-signs-arrow:disabled{opacity:0;pointer-events:none}
+
+/* Tree card: the drawing keeps to its own box — no bleeding into the XP bar below. */
+body .tree-stage{margin:-6px 0 6px}
+body .prosperity-tree-svg{max-width:100%;filter:none}
+/* Tap targets share the drawing's own box (300×420), so their percentages land on the tree. */
+body .tree-parts{inset:0 auto;left:50%;translate:-50% 0;height:100%;aspect-ratio:300/420}

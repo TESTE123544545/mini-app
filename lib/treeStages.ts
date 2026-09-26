@@ -44,13 +44,13 @@ export function rangeProgress(xp: number, fromId: string, toId: string) {
 
 export type TreePartHotspot = { key: string; name: string; note: string; unlockedAt: number; x: number; y: number };
 
-/** Tap targets overlaid on the tree — position as a percentage of the tree stage box. */
+/** Tap targets overlaid on the tree — position as a percentage of the drawing's 300×420 box. */
 export const TREE_PART_HOTSPOTS: readonly TreePartHotspot[] = [
-  { key: "raizes", name: "Raízes", unlockedAt: stageMinXP("roots"), x: 50, y: 90, note: "Seus hábitos e aquilo que você cuida mesmo sem plateia. Crescem a cada ritual concluído." },
-  { key: "tronco", name: "Tronco", unlockedAt: stageMinXP("trunk"), x: 50, y: 64, note: "Sua constância. É o que segura o peso das metas quando a motivação não aparece." },
-  { key: "galhos", name: "Galhos", unlockedAt: stageMinXP("branches"), x: 50, y: 44, note: "As missões que você concluiu. Cada uma abriu espaço para um galho novo." },
-  { key: "folhas", name: "Folhas", unlockedAt: stageMinXP("leaves"), x: 32, y: 34, note: "Sua presença diária. Aparecem quando você volta, mesmo fazendo pouco." },
-  { key: "flores", name: "Flores", unlockedAt: stageMinXP("flowers"), x: 66, y: 26, note: "Suas sequências de dias seguidos. Um sinal raro de constância." },
-  { key: "frutos", name: "Frutos", unlockedAt: stageMinXP("fruits"), x: 50, y: 20, note: "Metas concluídas. Ficam na árvore para sempre, como registro do que você terminou." },
-  { key: "copa", name: "Copa Dourada", unlockedAt: stageMinXP("golden"), x: 50, y: 5, note: "O estágio em que a jornada já não depende de empolgação. É o topo da sua evolução visível." },
+  { key: "raizes", name: "Raízes", unlockedAt: stageMinXP("roots"), x: 50, y: 82, note: "Seus hábitos e aquilo que você cuida mesmo sem plateia. Crescem a cada ritual concluído." },
+  { key: "tronco", name: "Tronco", unlockedAt: stageMinXP("trunk"), x: 49, y: 67, note: "Sua constância. É o que segura o peso das metas quando a motivação não aparece." },
+  { key: "galhos", name: "Galhos", unlockedAt: stageMinXP("branches"), x: 32, y: 44, note: "As missões que você concluiu. Cada uma abriu espaço para um galho novo." },
+  { key: "folhas", name: "Folhas", unlockedAt: stageMinXP("leaves"), x: 30, y: 30, note: "Sua presença diária. Aparecem quando você volta, mesmo fazendo pouco." },
+  { key: "flores", name: "Flores", unlockedAt: stageMinXP("flowers"), x: 70, y: 29, note: "Suas sequências de dias seguidos. Um sinal raro de constância." },
+  { key: "frutos", name: "Frutos", unlockedAt: stageMinXP("fruits"), x: 62, y: 49, note: "Metas concluídas. Ficam na árvore para sempre, como registro do que você terminou." },
+  { key: "copa", name: "Copa Dourada", unlockedAt: stageMinXP("golden"), x: 51, y: 17, note: "O estágio em que a jornada já não depende de empolgação. É o topo da sua evolução visível." },
 ];
