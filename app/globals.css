@@ -16,18 +16,7 @@
 @media(min-width:800px){.app-frame{padding-top:42px}.app-shell::before{content:"";position:fixed;inset:0;background:linear-gradient(90deg,#02071fe6,transparent 30%,transparent 70%,#02071fe6);pointer-events:none}.onboarding-card{padding:28px}.tree-stage{height:350px}}
 @media(max-width:370px){.app-frame{padding-left:14px;padding-right:14px}.welcome-copy{align-items:flex-start;flex-direction:column}.tree-stage{height:290px}.stats-row span{display:none}.oracle-card{align-items:flex-start;flex-direction:column}.choice-grid{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important}}
-.welcome-portal-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1}.welcome-portal-overlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.2),rgba(0,0,0,.4));z-index:2}.welcome-portal-content{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:3;display:flex;flex-direction:column;justify-content:center;align-items:center;width:calc(100% - 40px);max-width:500px;gap:12px}.welcome-portal-content .gold-button,.welcome-portal-content .liquid-glass{width:100%}.welcome-nav{position:relative;z-index:4}.onboarding-tree{height:280px;margin:-6px auto 18px}.step-count{position:relative;z-index:2}
-.intro-overlay{position:fixed;inset:0;z-index:999;background:#000;overflow:hidden;animation:intro-darken .45s ease-out both}
-.intro-video{width:100%;height:100%;object-fit:cover}
-.intro-flash{position:absolute;inset:0;pointer-events:none;opacity:0;background:radial-gradient(circle at 50% 50%,#fff8e1 0,#f6e3ac 30%,#e1b85a 62%,#b6862c 100%)}
-.intro-overlay.is-flash{animation:intro-out .85s ease-in .25s forwards}
-.intro-overlay.is-flash .intro-flash{animation:intro-flash .25s ease-out forwards}
-.intro-skip{position:absolute;right:max(16px,env(safe-area-inset-right));bottom:max(22px,env(safe-area-inset-bottom));min-height:40px;padding:0 16px;border:1px solid #ffffff38;border-radius:999px;background:#02071f80;color:#f3ead0;font-size:.8rem;font-weight:700;letter-spacing:.06em;backdrop-filter:blur(8px);animation:intro-video-in .6s ease-out 1.2s both}
-.intro-skip:focus-visible{outline:2px solid #e9cd7b;outline-offset:2px}
-@keyframes intro-darken{from{background:#00000000}}
-@keyframes intro-video-in{from{opacity:0}}
-@keyframes intro-flash{to{opacity:1}}
-@keyframes intro-out{to{opacity:0;visibility:hidden}}
+.welcome-portal-image{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1}.welcome-portal-overlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.2),rgba(0,0,0,.4));z-index:2}.welcome-portal-content{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:3;display:flex;flex-direction:column;justify-content:center;align-items:center;width:calc(100% - 40px);max-width:500px;gap:12px}.welcome-portal-content .gold-button,.welcome-portal-content .liquid-glass{width:100%}.welcome-nav{position:relative;z-index:4}.onboarding-tree{height:280px;margin:-6px auto 18px}.step-count{position:relative;z-index:2}
 .onboarding-chrome{display:grid;gap:10px;margin-bottom:16px;text-align:left}.onboarding-chrome .auth-back{margin:0}
 .onboarding-progress-bar{height:4px;border-radius:99px;background:#ffffff14;overflow:hidden}.onboarding-progress-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#c7922e,#f2dc8a);transition:width .35s var(--ease,ease)}
 .form-stack textarea{min-height:96px;border:1px solid #ffffff1c;border-radius:13px;background:#06123a;color:#fff;padding:11px 13px;outline:none;resize:vertical;font:inherit}.form-stack textarea:focus{border-color:#e6ca7380}

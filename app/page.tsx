@@ -15,7 +15,6 @@ import { findTrail, trailStatus, trails, type Trail, type TrailProgress } from "
 import { TREE_PART_HOTSPOTS, TREE_STAGES, treeStageFor, type TreePartHotspot } from "@/lib/treeStages";
 import { ProsperityTree } from "@/components/ProsperityTree";
 import { SignsView } from "@/components/views/SignsView";
-import { IntroExperience, introModeFor, type IntroMode } from "@/components/IntroExperience";
 import { ZodiacBackdrop } from "@/components/ZodiacBackdrop";
 import { DiagnosticView } from "@/components/diagnostic/DiagnosticView";
 import { DiagnosticHomeCards, DiagnosticTreeFocus } from "@/components/diagnostic/DiagnosticEntryPoints";
@@ -181,7 +180,6 @@ export default function HomePage() {
   const [syncStatus, setSyncStatus] = useState<"loading" | "saved" | "offline">("loading");
   const [avatarVersion, setAvatarVersion] = useState(0);
   const [unlockedAchievements, setUnlockedAchievements] = useState<string[]>([]);
-  const [intro, setIntro] = useState<IntroMode | null>(null);
   const notifiedAchievements = useRef<Set<string> | null>(null);
 
   useEffect(() => {
@@ -199,7 +197,6 @@ export default function HomePage() {
         const signedIn: Account | null = user ?? await signInWithSavedLogin();
         setAccount(signedIn);
         if (!signedIn) return null;
-        setIntro(user ? introModeFor(signedIn.email) : "full");
         return loadCloudState(signedIn, id);
       })
       .catch(() => toast.error("Não foi possível verificar sua conta."))
@@ -246,9 +243,6 @@ export default function HomePage() {
   }
 
   async function handleAuthenticated(user: Account) {
-    // Every login or sign-up plays the full journey (signos → portal); reopening an app that is
-    // already signed in gets the short portal crossing instead (see the auth check on mount).
-    setIntro("full");
     setAccount(user);
     const currentId = localStorage.getItem("vds-device-id") || crypto.randomUUID();
     await loadCloudState(user, currentId);
@@ -259,7 +253,7 @@ export default function HomePage() {
     stopSilentLogin();
     localStorage.removeItem("vds-state");
     localStorage.setItem("vds-device-id", crypto.randomUUID());
-    setAccount(null); setProfile(emptyProfile); setXp(0); setMissionDone(false); setRitualDone(false); setStreak(0); setGoals([]); setEntries([]); setActiveTrail(null); setOnboarding(0); setView("home"); setSyncReady(false); setUnlockedAchievements([]); setWelcomeAuthMode(null); setIntro(null);
+    setAccount(null); setProfile(emptyProfile); setXp(0); setMissionDone(false); setRitualDone(false); setStreak(0); setGoals([]); setEntries([]); setActiveTrail(null); setOnboarding(0); setView("home"); setSyncReady(false); setUnlockedAchievements([]); setWelcomeAuthMode(null);
     treeStageBaseline.current = null;
     notifiedAchievements.current = null;
     toast.success("Você saiu da sua conta.");
@@ -620,7 +614,6 @@ export default function HomePage() {
       <PaywallDialog reason={paywall} onOpenChange={(open) => { if (!open) setPaywall(null); }} />
       {xpBurst && <div className="xp-float" key={xpBurst.id} aria-hidden="true">+{xpBurst.amount} XP</div>}
       {stageUnlocked && <TreeStageUnlockedOverlay name={stageUnlocked.name} note={stageUnlocked.note} />}
-      {intro && <IntroExperience mode={intro} accountKey={account?.email} onComplete={() => setIntro(null)} />}
       <Toaster richColors position="top-center" />
     </main>
   );
@@ -800,9 +793,8 @@ function TreeStageUnlockedOverlay({ name, note }: { name: string; note: string }
 
 function WelcomeHero({ onStart, onLogin }: { onStart: () => void; onLogin: () => void }) {
   return <main className="welcome-hero">
-    <video className="welcome-portal-video" autoPlay muted loop playsInline preload="auto" poster="/portal-poster.webp" aria-hidden="true">
-      <source src="/portal-v3.mp4" type="video/mp4" />
-    </video>
+    {/* eslint-disable-next-line @next/next/no-img-element -- a single pre-sized WebP hero, loaded eagerly */}
+    <img className="welcome-portal-image" src="/portal-hero.webp" alt="" aria-hidden="true" fetchPriority="high" />
     <div className="welcome-portal-overlay" />
     <header className="welcome-nav">
       <div className="welcome-brand"><Leaf size={20} strokeWidth={1.6} /><span>Veias da Sintonia</span></div>
