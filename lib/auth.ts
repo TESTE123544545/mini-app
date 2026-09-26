@@ -1,3 +1,4 @@
+import { env } from "cloudflare:workers";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/db";
 import { sessions, users } from "@/db/schema";
@@ -124,7 +125,9 @@ export async function deleteSession(request: Request) {
 
 /** Team accounts (comma-separated ADMIN_EMAILS) that may grant exclusive achievements. */
 export function isAdminEmail(email: string) {
-  const admins = (process.env.ADMIN_EMAILS ?? "").split(",").map((item) => normalizeEmail(item)).filter(Boolean);
+  // Worker secrets are read from the Cloudflare env binding, with process.env as a fallback for other runtimes.
+  const configured = (env as unknown as { ADMIN_EMAILS?: string }).ADMIN_EMAILS ?? process.env.ADMIN_EMAILS ?? "";
+  const admins = configured.split(",").map((item) => normalizeEmail(item)).filter(Boolean);
   return admins.includes(normalizeEmail(email));
 }
 
