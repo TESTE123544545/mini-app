@@ -20,7 +20,7 @@ Astrology used as a practical self-knowledge ritual tied to real actions and a g
 
 ## Operating Context
 
-Daily cycle: sign + objective → guidance of the day → mission and 3-minute ritual → XP and tree growth → journal reflection → weekly report. Premium (Stripe: monthly R$ 29,99 or lifetime) unlocks trails, library guides, AI chat, tarot card of the day and the Wheel of Fortune.
+Daily cycle: sign + objective → guidance of the day → mission and 3-minute ritual → XP and tree growth → journal reflection → weekly report. Free accounts can only take the diagnostic; Premium (Stripe: monthly R$ 29,99 or lifetime) unlocks the diagnostic result and everything else in the app.
 
 ## Capabilities and Constraints
 
@@ -44,5 +44,5 @@ Daily cycle: sign + objective → guidance of the day → mission and 3-minute r
 ## Product Principles
 
 - Every feature feeds the daily cycle rather than adding screens for their own sake.
-- Premium appears after value was experienced, with no false countdowns and easy cancellation.
+- Monetization (owner decision, September 2026): the free plan is only taking the diagnostic. Its result and every other screen are Premium. No false countdowns, and cancellation stays easy.
 - Calm confidence over hype.

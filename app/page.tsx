@@ -225,7 +225,7 @@ export default function HomePage() {
       setAccount({ ...user, deviceId: cloudDeviceId });
       if (state) {
         const nextProfile = { ...emptyProfile, ...state.profile };
-        setProfile(nextProfile); setXp(state.xp ?? 0); setMissionDone(state.missionDone ?? false); setRitualDone(state.ritualDone ?? false); setStreak(state.streak ?? 0);
+        setProfile(nextProfile); if (nextProfile.plan !== "premium") setView("diagnostic"); setXp(state.xp ?? 0); setMissionDone(state.missionDone ?? false); setRitualDone(state.ritualDone ?? false); setStreak(state.streak ?? 0);
         setGoals(state.goals ?? []); setEntries(state.entries ?? []); setActiveTrail(state.trail ?? null); setOnboarding(TOTAL_ONBOARDING_STEPS);
         setUnlockedAchievements(state.unlockedAchievements ?? []);
         notifiedAchievements.current = new Set(state.unlockedAchievements ?? []);
@@ -350,7 +350,7 @@ export default function HomePage() {
   const snapshot = useMemo<JourneySnapshot>(() => ({ xp, level, streak, entries, goals, trailDays: activeTrail?.completedDays.length ?? 0, unlockedKeys: unlockedAchievements }), [xp, level, streak, entries, goals, activeTrail, unlockedAchievements]);
 
   useEffect(() => {
-    if (!syncReady || !notifiedAchievements.current) return;
+    if (!syncReady || !notifiedAchievements.current || !isPremium) return;
     const known = notifiedAchievements.current;
     const newlyReached = achievementState(snapshot).resolved.filter((item) => item.unlocked && !known.has(item.key));
     if (!newlyReached.length) return;
@@ -364,7 +364,7 @@ export default function HomePage() {
     } else {
       for (const item of newlyReached) toast.success(item.xpBonus ? `🏆 Conquista desbloqueada: ${item.name} · +${item.xpBonus} XP` : `🏆 Conquista desbloqueada: ${item.name}`);
     }
-  }, [syncReady, snapshot]);
+  }, [syncReady, snapshot, isPremium]);
 
   useEffect(() => {
     if (!syncReady) return;
@@ -413,7 +413,7 @@ export default function HomePage() {
     };
     setProfile({ ...profile, sign });
     setGoals((current) => [primaryGoal, ...current]);
-    setXp(30); setOnboarding(TOTAL_ONBOARDING_STEPS);
+    setXp(30); setOnboarding(TOTAL_ONBOARDING_STEPS); setView("diagnostic");
     setGoalTitle(""); setObGoalKind(""); setObGoalAmount(""); setObGoalStage(""); setObGoalBlocker(""); setObGoalDailyMinutes(""); setObGoalMotivation("");
     track("signup"); track("onboarding_completed", { sign, objective: profile.objective, goalKind: kind });
     track("first_tree_created"); track("goal_created", { category: profile.objective, primary: true });
@@ -593,9 +593,10 @@ export default function HomePage() {
         </header>
 
         <div className="view-swap" key={view}>
+          {!isPremium && !FREE_VIEWS.includes(view) ? <LockedView view={view} hasDiagnostic={diagnostics.length > 0} onDiagnostic={() => navigate("diagnostic")}/> : <>
           {view === "home" && <HomeView profile={profile} plan={plan} week={week} part={part} xp={xp} level={level} stage={stage} streak={streak} fruits={goals.filter((goal) => goal.progress === 100).length} missionDone={missionDone} ritualDone={ritualDone} treeCelebrating={treeCelebrating} completeMission={completeMission} openRitual={() => { haptic(8); setRitualOpen(true); }} oracleOpen={oracleOpen} setOracleOpen={setOracleOpen} mainGoal={mainGoal} advanceGoal={advanceGoal} openGoals={() => navigate(mainGoal ? "goal" : "profile")} navigate={navigate} isPremium={isPremium} openPaywall={openPaywall} diagnostic={diagnostics[0]} openTree={(source) => openTree(source)} />}
           {view === "premium" && <PremiumView isPremium={isPremium} />}
-          {view === "diagnostic" && <DiagnosticView results={diagnostics} profileSign={profile.sign || undefined} xp={xp} onComplete={(result) => setDiagnostics((current) => saveDiagnostic(account?.email, result, current))} onOpenTree={() => openTree("diagnostic_result")} />}
+          {view === "diagnostic" && <DiagnosticView results={diagnostics} profileSign={profile.sign || undefined} xp={xp} onComplete={(result) => setDiagnostics((current) => saveDiagnostic(account?.email, result, current))} onOpenTree={() => openTree("diagnostic_result")} lockedResult={isPremium ? undefined : <PremiumOffer reason="diagnostic_result"/>} />}
           {view === "signs" && <SignsView profile={profile} isPremium={isPremium} openPaywall={openPaywall} navigate={navigate} />}
           {view === "tree" && <TreeView xp={xp} level={level} stage={stage} streak={streak} mapScores={mapScores} goals={goals} diagnostic={diagnostics[0]} openDiagnostic={() => navigate("diagnostic")} snapshot={snapshot} cares={{ missionDone, ritualDone, journaledToday }} navigate={navigate} openRitual={() => { haptic(8); setRitualOpen(true); }} />}
           {view === "missions" && <JourneyView profile={profile} plan={plan} snapshot={snapshot} week={week} missionDone={missionDone} ritualDone={ritualDone} completeMission={completeMission} openRitual={() => { haptic(8); setRitualOpen(true); }} activeTrail={activeTrail} startTrail={startTrail} completeTrailDay={completeTrailDay} abandonTrail={abandonTrail} isPremium={isPremium} openPaywall={openPaywall} />}
@@ -603,11 +604,12 @@ export default function HomePage() {
           {view === "profile" && <ProfileView profile={profile} setProfile={setProfile} account={account} guide={guide} goals={goals} advanceGoal={advanceGoal} goalDialog={goalDialog} setGoalDialog={setGoalDialog} goalTitle={goalTitle} setGoalTitle={setGoalTitle} goalCategory={goalCategory} setGoalCategory={setGoalCategory} addGoal={() => addGoal()} syncStatus={syncStatus} avatarVersion={avatarVersion} setAvatarVersion={setAvatarVersion} logout={logout} isPremium={isPremium} openPaywall={openPaywall} navigate={navigate} />}
           {view === "goal" && <GoalDetailView goal={mainGoal} advanceGoal={advanceGoal} addGoalAmount={addGoalAmount} navigate={navigate} isPremium={isPremium} openPaywall={openPaywall} />}
           {view === "chat" && <ChatView profile={profile} isPremium={isPremium} navigate={navigate} openPaywall={openPaywall} onSessionExpired={handleSessionExpired} />}
+          </>}
         </div>
 
         <nav className="bottom-nav" aria-label="Navegação principal" style={{ "--tab-index": Math.max(tabOrder.indexOf(view), 0), "--tab-count": navTabs.length } as React.CSSProperties}>
           <span className={`nav-indicator ${tabOrder.includes(view) ? "" : "is-hidden"}`} aria-hidden="true" />
-          {navTabs.map(({ view: tab, label, icon }) => <NavButton key={tab} active={view === tab} onClick={() => navigate(tab)} icon={icon} label={label} />)}
+          {navTabs.map(({ view: tab, label, icon }) => <NavButton key={tab} active={view === tab} onClick={() => navigate(tab)} icon={icon} label={label} locked={!isPremium && !FREE_VIEWS.includes(tab)} />)}
         </nav>
       </section>
       <DailyRitual open={ritualOpen} onOpenChange={setRitualOpen} profile={profile} plan={plan} done={ritualDone} onComplete={completeRitual} />
@@ -630,6 +632,34 @@ const navTabs: { view: View; label: string; icon: React.ReactNode }[] = [
   { view: "profile", label: "Perfil", icon: <UserRound/> },
 ];
 const tabOrder = navTabs.map((tab) => tab.view);
+/** A free account can take the diagnostic, see the offer and manage its account — nothing else. */
+const FREE_VIEWS: View[] = ["diagnostic", "premium", "profile"];
+
+const lockedCopy: Partial<Record<View, { title: string; text: string }>> = {
+  home: { title: "Seu dia completo", text: "A leitura diária do seu signo, a missão do dia, o ritual de 3 minutos, o oráculo e o céu ao vivo." },
+  signs: { title: "Signos & Astrologia", text: "O dia do seu signo com a frase do dia, o céu ao vivo, a carta de tarô do dia e a Roda da Fortuna." },
+  tree: { title: "Sua Árvore da Prosperidade", text: "Uma árvore que cresce com as suas ações, com cuidados diários, etapas e conquistas." },
+  missions: { title: "Sua Jornada", text: "Missões diárias, trilhas guiadas de 7 e 21 dias e o relatório semanal lido pela IA." },
+  journal: { title: "Seu Diário", text: "Uma reflexão guiada por dia e o histórico completo da sua evolução." },
+  goal: { title: "Seu Objetivo", text: "Metas sem limite, com passos personalizados pela IA para o seu objetivo." },
+  chat: { title: "Conversar com a IA", text: "A Sintonia conversa com você sobre o seu dia, com o céu de hoje e o seu signo como contexto." },
+};
+
+function LockedView({ view, hasDiagnostic, onDiagnostic }: { view: View; hasDiagnostic: boolean; onDiagnostic: () => void }) {
+  const copy = lockedCopy[view] ?? { title: "Essa área", text: "Todos os recursos do Veias da Sintonia." };
+  useEffect(() => { track("paywall_viewed", { from: `locked_${view}` }); }, [view]);
+  return <div className="view-stack locked-view">
+    <section className="surface-card locked-view__hero">
+      <span className="locked-view__icon"><LockKeyhole aria-hidden="true"/></span>
+      <h2>{copy.title} é Premium</h2>
+      <p>{copy.text}</p>
+      {!hasDiagnostic && <button type="button" className="ghost-button" onClick={onDiagnostic}>Fazer meu diagnóstico grátis</button>}
+    </section>
+    <section className="surface-card premium-view__offer paywall-dialog">
+      <PremiumOffer reason={`locked_${view}`}/>
+    </section>
+  </div>;
+}
 let activeNavTransition: ViewTransition | null = null;
 const viewLabels: Record<View, string> = { home: "Início", premium: "Premium", diagnostic: "Meu Diagnóstico", signs: "Signos & Astrologia", tree: "Sua Árvore", missions: "Sua Jornada", journal: "Seu Diário", profile: "Seu Caminho", goal: "Meu Objetivo", chat: "Conversar" };
 
@@ -638,6 +668,7 @@ function AppSplash() {
 }
 
 const paywallHeadline: Record<string, string> = {
+  diagnostic_result: "Seu diagnóstico está pronto",
   goal_limit: `Você atingiu o limite de ${FREE_GOAL_LIMIT} metas do plano grátis`,
   journal_history: "Seu histórico completo tem mais reflexões esperando",
   weekly_report: "A leitura completa do seu relatório está pronta",
@@ -653,11 +684,13 @@ const paywallHeadline: Record<string, string> = {
 };
 
 const comparisonRows: [string, string, string][] = [
-  ["Metas ativas", `Até ${FREE_GOAL_LIMIT}`, "Ilimitadas"],
-  ["Histórico do diário", `Últimos ${FREE_JOURNAL_HISTORY} registros`, "Completo"],
-  ["Relatório semanal", "Só os números", "Leitura e recomendação completas"],
-  ["Trilhas guiadas", "1 introdutória (7 dias)", "Todas, incluindo 21 dias de constância"],
-  ["Temas da árvore", "Sol dourado", "Sol dourado, Lua azul e Aurora"],
+  ["Meu Diagnóstico", "Fazer o teste", "Resultado completo"],
+  ["Leitura diária do signo", "—", "Todo dia, com o céu ao vivo"],
+  ["Árvore, missões e rituais", "—", "Tudo liberado"],
+  ["Diário e metas", "—", "Sem limite"],
+  ["Trilhas guiadas", "—", "Todas, incluindo 21 dias"],
+  ["Conversa com a IA", "—", "Liberada"],
+  ["Tarô e Roda da Fortuna", "—", "Todo dia"],
 ];
 
 type PremiumPrice = { id: string; amount: number; currency: string; nickname: string | null; interval: "day" | "week" | "month" | "year" | null; intervalCount: number };
@@ -1412,19 +1445,25 @@ function ProfileView({ profile, setProfile, account, guide, goals, advanceGoal, 
   }
 
   return <div className="view-stack"><section className="profile-identity"><div className={`profile-photo ${profile.hasAvatar ? "has-photo" : ""}`}>{profile.hasAvatar ? <Image unoptimized src={`/api/profile/avatar?v=${avatarVersion}`} alt={`Foto de ${profile.name}`} width={86} height={86}/> : <UserRound/>}<button onClick={() => setCameraOpen(true)} aria-label="Tirar foto"><Camera/></button></div><div><p className="eyebrow">Meu perfil</p><h2>{profile.name}</h2><span>{account.email}</span></div></section>{account.isAdmin && <AdminAchievements/>}
+    {isPremium && <>
     <section className="surface-card photo-card"><div className="section-heading"><div><p className="eyebrow">Sua imagem</p><h2>Foto de perfil</h2></div><button className="privacy-link" onClick={() => setPrivacyOpen(true)}><ShieldCheck/> Privacidade</button></div><p>Você decide quando usar a câmera e quais fotos compartilhar.</p><div className="photo-actions"><button disabled={photoLoading} onClick={() => setCameraOpen(true)}><Camera/> {photoLoading ? "Enviando…" : "Abrir câmera"}</button><button disabled={photoLoading} onClick={() => setGalleryOpen(true)}><ImagePlus/> Escolher foto</button>{profile.hasAvatar && <button className="danger-button" disabled={photoLoading} onClick={removePhoto}>Remover</button>}</div><input ref={cameraInput} className="file-input" type="file" accept="image/*" capture="user" onChange={(event) => uploadPhoto(event.target.files?.[0])}/><input ref={galleryInput} className="file-input" type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => { uploadPhoto(event.target.files?.[0]); event.target.value = ""; }}/></section>
     <Dialog open={cameraOpen} onOpenChange={(open) => { setCameraOpen(open); if (!open) stopCamera(); }}><DialogContent className="goal-dialog permission-dialog"><DialogHeader><DialogTitle>Usar a câmera</DialogTitle><DialogDescription>A câmera só será ligada agora, com sua autorização. O Android mostrará as opções disponíveis para este aparelho.</DialogDescription></DialogHeader><div className="permission-visual"><span className={cameraPermission}><Camera/></span><div><strong>{cameraPermission === "granted" ? "Câmera permitida" : cameraPermission === "denied" ? "Câmera bloqueada" : "Você está no controle"}</strong><small>{cameraPermission === "denied" ? "Libere a câmera nas configurações do aplicativo ou use o seletor do sistema." : "Apenas a foto capturada será enviada ao seu perfil."}</small></div></div>{cameraActive ? <><video className="camera-preview" ref={(element) => { cameraVideo.current = element; if (element && cameraStream.current) element.srcObject = cameraStream.current; }} autoPlay playsInline muted/><button className="gold-button" onClick={capturePhoto}><Camera/> Usar esta foto</button></> : <div className="permission-actions"><button className="gold-button" onClick={startCamera}><ShieldCheck/> Solicitar acesso à câmera</button><button className="ghost-button" onClick={() => cameraInput.current?.click()}><Camera/> Abrir câmera do sistema</button></div>}</DialogContent></Dialog>
     <Dialog open={galleryOpen} onOpenChange={setGalleryOpen}><DialogContent className="goal-dialog permission-dialog"><DialogHeader><DialogTitle>Escolher uma foto</DialogTitle><DialogDescription>O seletor privado do Android permite compartilhar somente a imagem escolhida. O aplicativo não poderá navegar pela sua galeria.</DialogDescription></DialogHeader><div className="permission-visual"><span className="granted"><ImagePlus/></span><div><strong>Acesso limitado por padrão</strong><small>Você pode cancelar sem compartilhar nenhuma foto.</small></div></div><button className="gold-button" onClick={chooseFromGallery}><ImagePlus/> Continuar para a galeria</button></DialogContent></Dialog>
     <Dialog open={privacyOpen} onOpenChange={setPrivacyOpen}><DialogContent className="goal-dialog permission-dialog"><DialogHeader><DialogTitle>Central de Privacidade</DialogTitle><DialogDescription>Revise como o aplicativo usa os recursos do seu celular.</DialogDescription></DialogHeader><div className="permission-list"><div><span>{cameraPermission === "denied" ? <CameraOff/> : <Camera/>}</span><div><strong>Câmera</strong><small>{cameraPermission === "granted" ? "Permitida durante o uso." : cameraPermission === "denied" ? "Bloqueada nas configurações." : "Será perguntado somente quando você usar."}</small></div><b>{cameraPermission === "granted" ? "Permitida" : cameraPermission === "denied" ? "Bloqueada" : "Perguntar"}</b></div><div><span><ImagePlus/></span><div><strong>Fotos e galeria</strong><small>Somente as imagens que você escolher.</small></div><b>Limitado</b></div><div><span><Cloud/></span><div><strong>Armazenamento</strong><small>Sua foto e jornada ficam vinculadas à sua conta.</small></div><b>Privado</b></div></div><p className="permission-note"><Settings2/> Você pode alterar permissões a qualquer momento em Configurações do Android › Aplicativos › Seu Signo › Permissões.</p></DialogContent></Dialog>
     <section className="surface-card edit-profile"><div className="section-heading"><div><p className="eyebrow">Personalização</p><h2>Deixe o app com a sua cara</h2></div><button onClick={() => { if (editing) { setDraft(profile); setEditing(false); } else setEditing(true); }}>{editing ? "Cancelar" : <><Pencil/> Editar</>}</button></div>{editing ? <div className="profile-form"><label>Seu nome<input value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })}/></label><label>Data de nascimento<input type="date" value={draft.birthDate} onChange={(event) => setDraft({ ...draft, birthDate: event.target.value })}/></label><label>Objetivo principal<select value={draft.objective} onChange={(event) => setDraft({ ...draft, objective: event.target.value })}>{objectives.map((objective) => <option key={objective}>{objective}</option>)}</select></label><label>Minha intenção<textarea rows={3} maxLength={280} value={draft.intention} onChange={(event) => setDraft({ ...draft, intention: event.target.value })} placeholder="O que você quer cultivar nesta fase?"/></label><fieldset><legend>Cor da minha jornada</legend><div className="theme-picker">{([['dourado','Sol dourado'],['lua','Lua azul'],['aurora','Aurora']] as [Theme,string][]).map(([value,label]) => { const locked = !isPremium && !FREE_THEMES.includes(value); return <button type="button" key={value} data-color={value} className={`${draft.theme === value ? "selected" : ""} ${locked ? "locked" : ""}`} onClick={() => { if (locked) { openPaywall("theme_lock"); return; } setDraft({ ...draft, theme: value }); }}><i/>{label}{locked && <LockKeyhole size={12}/>}</button>; })}</div></fieldset><button className="gold-button" onClick={saveProfile}><Save/> Salvar alterações</button></div> : <div className="profile-summary"><div><span>Objetivo</span><strong>{profile.objective}</strong></div><div><span>Signo</span><strong>{profile.sign}</strong></div><div><span>Intenção</span><strong>{profile.intention || "Adicione uma intenção para sua jornada."}</strong></div></div>}</section>
+    </>}
     <section className="surface-card appearance-card"><h2>Aparência</h2><p>Escolha o tema claro, o escuro, ou deixe o app seguir o seu celular.</p><ColorModePicker/></section>
+    {isPremium && <>
     <section className="sign-profile"><div className="zodiac-medallion"><Sparkles/><strong>{profile.sign.slice(0,2).toUpperCase()}</strong></div><p className="eyebrow">Meu signo para prosperar</p><h2>{profile.sign}</h2><p>{guide.style}</p><div className="insight-grid"><div><span>Forças</span>{guide.strengths.map((x) => <b key={x}>{x}</b>)}</div><div><span>Pontos de atenção</span>{guide.care.map((x) => <b key={x}>{x}</b>)}</div></div>{navigate && <button type="button" className="gold-button mt-4 w-full" onClick={() => navigate("signs")}><Sparkles size={16}/> Ver Mapa Cósmico de {profile.sign}</button>}</section>
     <section className="surface-card goals-card"><div className="section-heading"><div><p className="eyebrow">Minhas metas {!isPremium && `· ${goals.length}/${FREE_GOAL_LIMIT}`}</p><h2>Frutos em construção</h2></div>{!isPremium && goals.length >= FREE_GOAL_LIMIT ? <button className="round-button" aria-label="Limite de metas atingido" onClick={() => openPaywall("goal_limit")}><LockKeyhole/></button> : <Dialog open={goalDialog} onOpenChange={setGoalDialog}><DialogTrigger asChild><button className="round-button" aria-label="Adicionar meta"><Plus/></button></DialogTrigger><DialogContent className="goal-dialog"><DialogHeader><DialogTitle>Plante uma nova meta</DialogTitle><DialogDescription>Defina algo que possa ser acompanhado por pequenas ações.</DialogDescription></DialogHeader><label>Nome da meta<input value={goalTitle} onChange={(e) => setGoalTitle(e.target.value)} placeholder="Ex.: criar minha reserva"/></label><label>Categoria<select value={goalCategory} onChange={(e) => setGoalCategory(e.target.value)}>{["Financeiro","Carreira","Negócios","Conhecimento","Relacionamentos","Desenvolvimento pessoal"].map((x) => <option key={x}>{x}</option>)}</select></label><button className="gold-button" onClick={addGoal}>Criar meta · +15 XP</button></DialogContent></Dialog>}</div>{goals.length ? goals.map((g) => <article className="goal-item" key={g.id}><div><strong>{g.title}</strong><span>{g.category} · {g.progress}%</span></div><Progress value={g.progress}/><button onClick={() => advanceGoal(g.id)} disabled={g.progress === 100}>{g.progress === 100 ? "Fruto conquistado" : "Avançar +25%"}</button></article>) : <div className="empty-state"><Target/><p>Crie uma meta para começar a cultivar seu primeiro fruto.</p></div>}{!isPremium && goals.length >= FREE_GOAL_LIMIT && <p className="disclaimer">Limite do plano grátis: {FREE_GOAL_LIMIT} metas ativas.</p>}</section>
     <section className={`sync-card ${syncStatus}`}><span><Cloud/></span><div><strong>{syncStatus === "saved" ? "Jornada salva na sua conta" : syncStatus === "loading" ? "Salvando sua evolução…" : "Modo offline ativo"}</strong><small>{syncStatus === "saved" ? "Entre em outro celular com o mesmo e-mail para continuar." : syncStatus === "offline" ? "Suas mudanças continuam salvas neste dispositivo e serão sincronizadas depois." : "Aguarde um instante."}</small></div><i aria-hidden="true"/></section>
+    </>}
     {isPremium ? <section className="premium-card is-active"><div className="premium-icon"><Gem/></div><p className="eyebrow">Central da Prosperidade</p><h2>Sua jornada está completa.</h2><p>Trilhas ilimitadas, histórico completo, metas sem limite e todos os temas já estão liberados na sua conta.</p><button type="button" className="ghost-button" onClick={openBillingPortal}>Gerenciar assinatura</button></section>
-      : <section className="premium-card"><div className="premium-icon"><Gem/></div><p className="eyebrow">Central da Prosperidade</p><h2>Você já descobriu seu signo.<br/>Agora destrave a jornada completa.</h2><p>Hoje seu plano grátis tem 1 trilha, {FREE_GOAL_LIMIT} metas e {FREE_JOURNAL_HISTORY} registros de histórico. O Premium remove esses limites.</p><ul><li><Check/> Trilhas de 21 dias e temas por objetivo</li><li><Check/> Metas e histórico do diário sem limite</li><li><Check/> Relatório semanal completo e temas da árvore</li></ul><button className="gold-button" onClick={() => openPaywall("premium_card")}>Desbloquear minha jornada</button><small>Sem promessas financeiras. Uma experiência de autoconhecimento, hábitos e metas.</small></section>}
+      : <section className="premium-card"><div className="premium-icon"><Gem/></div><p className="eyebrow">Central da Prosperidade</p><h2>Seu diagnóstico é grátis.<br/>O resto da jornada é Premium.</h2><p>Com o Premium você vê o resultado completo do seu diagnóstico e libera tudo o que o Veias da Sintonia tem.</p><ul><li><Check/> Resultado completo do diagnóstico</li><li><Check/> Leitura diária do seu signo e o céu ao vivo</li><li><Check/> Árvore, missões, diário, trilhas e conversa com a IA</li></ul><button className="gold-button" onClick={() => openPaywall("premium_card")}>Desbloquear minha jornada</button><small>Sem promessas financeiras. Uma experiência de autoconhecimento, hábitos e metas.</small></section>}
+    {isPremium && <>
     <section className="content-list"><div className="section-heading"><div><p className="eyebrow">Conteúdo</p><h2>Sua biblioteca</h2></div></div>{GUIDES.map((guide) => { const Icon = guideIcon[guide.id]; const locked = guide.premium && !isPremium; return <button key={guide.id} onClick={() => { if (locked) { openPaywall("content_library"); return; } track("guide_opened", { guide: guide.id }); setOpenGuide(guide.id); }}><span className="content-icon"><Icon/></span><span><strong>{guide.title}</strong><small>{locked ? "Premium" : guide.premium ? "Incluído no seu Premium" : guide.subtitle}</small></span>{locked ? <LockKeyhole size={16}/> : <ChevronRight/>}</button>; })}</section>
     <LibraryReader guideId={openGuide} sign={profile.sign} onClose={() => setOpenGuide(null)}/>
+    </>}
     <section className="account-card"><div><Mail/><span><small>Conta conectada</small><strong>{account.email}</strong></span></div><button onClick={logout}><LogOut/> Sair da conta</button></section>
   </div>;
 }
@@ -1626,4 +1665,4 @@ function ChatView({ profile, isPremium, navigate, openPaywall, onSessionExpired 
   </div>;
 }
 
-function NavButton({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string }) { return <button className={active ? "active" : ""} onClick={onClick} aria-current={active ? "page" : undefined}>{icon}<span>{label}</span></button>; }
+function NavButton({ active, onClick, icon, label, locked = false }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string; locked?: boolean }) { return <button className={`${active ? "active" : ""} ${locked ? "is-locked" : ""}`} onClick={onClick} aria-current={active ? "page" : undefined} aria-label={locked ? `${label} (Premium)` : undefined}>{icon}{locked && <LockKeyhole className="nav-lock" aria-hidden="true"/>}<span>{label}</span></button>; }

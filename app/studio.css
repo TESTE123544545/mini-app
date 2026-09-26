@@ -117,3 +117,20 @@ body .topbar-actions{gap:8px}
   body .premium-pill span{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
   body .premium-pill{padding-left:11px;padding-right:11px}
 }
+
+/* Free plan: locked screens, the locked diagnostic result and padlocks in the bottom bar. */
+.locked-view__hero,.diag-locked{text-align:center}
+.locked-view__icon{width:52px;height:52px;margin:0 auto 14px;display:grid;place-items:center;border-radius:16px;background:rgba(217,154,43,.14);color:#8f5f0f}
+.locked-view__icon svg{width:22px;height:22px}
+.locked-view__hero h2,.diag-locked h2{margin:0 0 8px}
+.locked-view__hero p,.diag-locked>p{margin:0 auto;max-width:36ch;color:var(--studio-ink-2);line-height:1.55}
+.locked-view__hero .ghost-button{margin-top:18px;min-height:46px;padding:0 20px;font-weight:700}
+.diag-locked__parts{display:grid;gap:8px;margin:18px 0 0;padding:0;list-style:none;text-align:left}
+.diag-locked__parts li{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;background:rgba(20,20,20,.04);color:var(--studio-ink);font-size:.9rem;font-weight:600}
+.diag-locked__parts svg{width:15px;height:15px;flex:0 0 auto;color:#b37a1c}
+.diag-locked__preview{display:grid;gap:8px;margin-top:16px;filter:blur(3px);opacity:.7}
+.diag-locked__preview span{height:10px;border-radius:5px;background:linear-gradient(90deg,#d99a2b var(--w,60%),rgba(20,20,20,.08) 0)}
+.diag-locked__preview span:nth-child(1){--w:72%}.diag-locked__preview span:nth-child(2){--w:48%}.diag-locked__preview span:nth-child(3){--w:84%}.diag-locked__preview span:nth-child(4){--w:35%}.diag-locked__preview span:nth-child(5){--w:61%}
+body .bottom-nav button{position:relative}
+body .bottom-nav button.is-locked{color:var(--studio-ink-3);opacity:.75}
+body .bottom-nav .nav-lock{position:absolute;top:0;left:calc(50% + 6px);width:11px!important;height:11px!important;padding:1px;border-radius:50%;background:var(--card);color:#b37a1c}

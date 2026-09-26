@@ -646,6 +646,13 @@ html[data-mode=dark],:root[data-mode=dark] body{background:#131311;color:var(--s
 :root[data-mode=dark] .live-skeleton span{background:rgba(255,255,255,0.07)}
 :root[data-mode=dark] .chat-starters button{border:1px solid var(--input);background:var(--card);color:var(--studio-ink)}
 :root[data-mode=dark] .chat-starters button:hover{border-color:var(--studio-ink)}
+:root[data-mode=dark] .locked-view__icon{background:rgba(217,154,43,0.14);color:#e8b75a}
+:root[data-mode=dark] .locked-view__hero p,:root[data-mode=dark] .diag-locked>p{color:var(--studio-ink-2)}
+:root[data-mode=dark] .diag-locked__parts li{background:rgba(255,255,255,0.04);color:var(--studio-ink)}
+:root[data-mode=dark] .diag-locked__parts svg{color:#e8b75a}
+:root[data-mode=dark] .diag-locked__preview span{background:linear-gradient(90deg,#d99a2b var(--w,60%),rgba(20,20,20,.08) 0)}
+:root[data-mode=dark] body .bottom-nav button.is-locked{color:var(--studio-ink-3)}
+:root[data-mode=dark] body .bottom-nav .nav-lock{background:var(--card);color:#e8b75a}
 
 /* from app/entry.css */
 :root[data-mode=dark] .entry{color:var(--entry-ink);background:radial-gradient(120% 70% at 50% -12%,var(--entry-ground-hi) 0,var(--entry-ground) 48%,var(--entry-ground-lo) 100%);caret-color:var(--entry-ink)}

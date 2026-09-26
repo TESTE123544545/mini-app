@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Clock3, History, Sparkles } from "lucide-react";
+import { useEffect, useState, type ReactNode } from "react";
+import { Clock3, History, LockKeyhole, RotateCcw, Sparkles } from "lucide-react";
 import { track } from "@/lib/analytics";
 import { DIAGNOSTIC_QUESTIONS, PROFILES, buildResult, type Answers, type DiagnosticResult as Result } from "@/lib/diagnostic";
 import { DiagnosticQuestion } from "./DiagnosticQuestion";
@@ -17,6 +17,8 @@ type Props = {
   xp: number;
   onComplete: (result: Result) => void;
   onOpenTree: () => void;
+  /** Set for free accounts: the finished result stays behind this offer. */
+  lockedResult?: ReactNode;
 };
 
 export function DiagnosticHome({ onStart }: { onStart: () => void }) {
@@ -46,7 +48,7 @@ export function DiagnosticHistory({ results }: { results: Result[] }) {
   </section>;
 }
 
-export function DiagnosticView({ results, profileSign, xp, onComplete, onOpenTree }: Props) {
+export function DiagnosticView({ results, profileSign, xp, onComplete, onOpenTree, lockedResult }: Props) {
   const latest = results[0];
   // null = "resting": show the saved result if there is one, otherwise the intro. Derived rather than
   // stored so a result that loads after mount (storage is read in an effect) still shows up.
@@ -138,6 +140,8 @@ export function DiagnosticView({ results, profileSign, xp, onComplete, onOpenTre
     />;
   }
 
+  if (stage === "result" && latest && lockedResult) return <DiagnosticLockedResult offer={lockedResult} onRestart={start}/>;
+
   if (stage === "result" && latest) {
     return <div className="view-stack diag-stack">
       <DiagnosticResult result={latest} xp={xp} onOpenTree={onOpenTree} onRestart={start}/>
@@ -146,4 +150,22 @@ export function DiagnosticView({ results, profileSign, xp, onComplete, onOpenTre
   }
 
   return <DiagnosticHome onStart={start}/>;
+}
+
+const LOCKED_PARTS = ["Seu perfil de prosperidade", "Suas cinco dimensões, com a pontuação de cada uma", "A interpretação do seu momento", "Seu próximo passo, ligado à sua árvore"];
+
+/** What a free account sees after finishing: the result exists, and what it holds — behind the offer. */
+function DiagnosticLockedResult({ offer, onRestart }: { offer: ReactNode; onRestart: () => void }) {
+  useEffect(() => { track("paywall_viewed", { from: "diagnostic_result" }); }, []);
+  return <div className="view-stack diag-stack">
+    <section className="surface-card diag-locked">
+      <span className="locked-view__icon"><LockKeyhole aria-hidden="true"/></span>
+      <h2>Seu diagnóstico está pronto</h2>
+      <p>Suas respostas já foram lidas. Assine o Premium para ver o resultado completo:</p>
+      <ul className="diag-locked__parts">{LOCKED_PARTS.map((part) => <li key={part}><LockKeyhole aria-hidden="true"/>{part}</li>)}</ul>
+      <div className="diag-locked__preview" aria-hidden="true"><span/><span/><span/><span/><span/></div>
+    </section>
+    <section className="surface-card premium-view__offer paywall-dialog">{offer}</section>
+    <button type="button" className="ghost-button diag-restart" onClick={onRestart}><RotateCcw size={15}/> Refazer diagnóstico</button>
+  </div>;
 }
