@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { index, integer, primaryKey, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 export const profiles = sqliteTable("profiles", {
   deviceId: text("device_id").primaryKey(),
@@ -158,3 +158,11 @@ export const analyticsEvents = sqliteTable("analytics_events", {
   payloadJson: text("payload_json").notNull().default("{}"),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 }, (table) => [index("analytics_events_device_id_idx").on(table.deviceId), index("analytics_events_name_idx").on(table.eventName)]);
+
+/** Live sky and daily horoscope content (CosmyDay), adapted to Portuguese once per day and shared by everyone. */
+export const skyDaily = sqliteTable("sky_daily", {
+  day: text("day").notNull(),
+  key: text("key").notNull(),
+  payloadJson: text("payload_json").notNull(),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [primaryKey({ columns: [table.day, table.key] })]);

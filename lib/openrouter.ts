@@ -157,21 +157,58 @@ Regras inegociáveis:
 - Nunca prometa dinheiro, retorno financeiro, cura ou resultado garantido. Trate astrologia como camada simbólica de autoconhecimento, nunca como previsão determinista.
 - Se a pessoa descrever risco real (ideação suicida, automutilação, abuso, crise aguda), acolha com empatia em 1 frase e, com gentileza, oriente a buscar ajuda humana imediata (CVV 188, ligar 192 ou procurar alguém de confiança agora) — isso vem antes de qualquer outra coisa na resposta.
 - Nunca culpe a pessoa por dias sem ação ou por sentimentos difíceis.
+- Quando houver "Céu de hoje" no contexto, são dados reais do dia: use-os para responder perguntas como "como vai ser meu dia", ligando a leitura do signo ao objetivo e à intenção da pessoa e terminando com uma ação pequena para hoje. Trate como clima simbólico, nunca como destino certo.
 - Respostas curtas (2 a 5 frases), em português do Brasil, linguagem natural de conversa, sem markdown, sem listas, sem emojis em excesso.
 Responda só com texto corrido, como uma fala direta para a pessoa — sem JSON, sem formatação.`;
 
 export type ChatMessage = { role: "user" | "assistant"; content: string };
 
-export async function generateChatReply(context: { sign: string; objective: string; intention: string }, history: ChatMessage[]): Promise<string> {
+export async function generateChatReply(context: { sign: string; objective: string; intention: string; sky?: string | null }, history: ChatMessage[]): Promise<string> {
   const contextLine: ChatTurn = {
     role: "system",
     content: `Contexto da pessoa — signo: ${context.sign}; objetivo: ${context.objective}; intenção pessoal: ${context.intention || "não informada"}.`,
   };
   const trimmedHistory = history.slice(-20).map((turn): ChatTurn => ({ role: turn.role, content: turn.content.slice(0, 2000) }));
   const raw = await callOpenRouterRaw(
-    [{ role: "system", content: CHAT_SYSTEM_PROMPT }, contextLine, ...trimmedHistory],
+    [{ role: "system", content: CHAT_SYSTEM_PROMPT }, contextLine, ...(context.sky ? [{ role: "system" as const, content: context.sky }] : []), ...trimmedHistory],
     350,
     false,
   );
   return raw.trim().slice(0, 1200);
+}
+
+const SKY_ADAPT_RULES = `Você adapta textos de astrologia do inglês para o português do Brasil para o app de autoconhecimento e hábitos "Veias da Sintonia".
+Tom: cósmico, elegante, calmo e acolhedor. Fale com a pessoa ("você").
+Regras inegociáveis:
+- Preserve o sentido astrológico do original (planetas, signos, fases), mas reescreva com naturalidade, sem tradução literal.
+- Troque qualquer tom determinista ou assustador por linguagem de possibilidade e escolha ("pode", "convida", "é um bom momento para").
+- Nunca prometa dinheiro, retorno financeiro, sorte garantida ou resultado certo. Nada de previsões sobre saúde.
+- Sem markdown, sem emojis, sem aspas decorativas.`;
+
+function cleanField(value: unknown, max: number) {
+  return typeof value === "string" ? value.replace(/\s+/g, " ").trim().slice(0, max) : "";
+}
+
+export type AdaptedSignDaily = { overview: string; work: string; relationships: string; energy: string; tip: string };
+
+/** One sign's daily horoscope (CosmyDay, English) → five short Portuguese fields. */
+export async function adaptSignDaily(signName: string, englishText: string): Promise<AdaptedSignDaily> {
+  const system = `${SKY_ADAPT_RULES}
+Responda só com um JSON {"overview": string, "work": string, "relationships": string, "energy": string, "tip": string}:
+overview = visão geral do dia (2 frases); work = trabalho e metas (1 a 2 frases); relationships = relações (1 a 2 frases); energy = energia e humor (1 frase); tip = a dica do dia como uma frase curta e marcante, no imperativo, que funcione sozinha como "frase do dia".`;
+  const parsed = await callOpenRouterJson(system, `Signo: ${signName}\nTexto original:\n${englishText.slice(0, 4000)}`, 700) as Record<string, unknown>;
+  const result = { overview: cleanField(parsed.overview, 420), work: cleanField(parsed.work, 320), relationships: cleanField(parsed.relationships, 320), energy: cleanField(parsed.energy, 240), tip: cleanField(parsed.tip, 180) };
+  if (!result.overview || !result.tip) throw new OpenRouterError("A adaptação do horóscopo veio incompleta.");
+  return result;
+}
+
+/** Today's Moon and transit articles (CosmyDay, English) → short Portuguese texts. */
+export async function adaptSkyArticles(input: { moon: string; transit: string }): Promise<{ moon: string; transitTitle: string; transit: string }> {
+  const system = `${SKY_ADAPT_RULES}
+Responda só com um JSON {"moon": string, "transitTitle": string, "transit": string}:
+moon = o artigo da Lua de hoje em 2 a 3 frases; transitTitle = um título curto (até 7 palavras) para o clima do céu de hoje; transit = o artigo de trânsitos em 3 a 4 frases.`;
+  const parsed = await callOpenRouterJson(system, `Artigo da Lua:\n${input.moon.slice(0, 2500)}\n\nArtigo de trânsitos:\n${input.transit.slice(0, 3500)}`, 700) as Record<string, unknown>;
+  const result = { moon: cleanField(parsed.moon, 520), transitTitle: cleanField(parsed.transitTitle, 80), transit: cleanField(parsed.transit, 700) };
+  if (!result.moon || !result.transit) throw new OpenRouterError("A adaptação do céu de hoje veio incompleta.");
+  return result;
 }

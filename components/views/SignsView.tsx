@@ -29,6 +29,7 @@ import {
 import { toast } from "sonner";
 import { FortuneWheel } from "./FortuneWheel";
 import { TarotDraw } from "./TarotDraw";
+import { LiveSkyCard, SignDayCard } from "./LiveSky";
 import { SIGNS, getSignByName, getDailySignReading, type ElementType, type SignData } from "@/lib/signs";
 import { localDayKey } from "@/lib/daily";
 import {
@@ -229,6 +230,8 @@ export function SignsView({ profile, isPremium, openPaywall, navigate }: SignsVi
               </button>
             </div>
           </section>
+
+          <SignDayCard sign={selectedSign.name} />
 
           <TarotDraw isPremium={isPremium} openPaywall={openPaywall} sign={userNativeSign.name} />
 
@@ -552,6 +555,8 @@ export function SignsView({ profile, isPremium, openPaywall, navigate }: SignsVi
       {mainTab === "astrologia" && (
         <>
           <FortuneWheel isPremium={isPremium} openPaywall={openPaywall} />
+
+          <LiveSkyCard />
 
           {/* Moon Phase Real-time Card */}
           <section className="surface-card moon-phase-card animate-fade-in">

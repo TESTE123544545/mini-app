@@ -5,6 +5,7 @@ import { chatThreads, profiles } from "@/db/schema";
 import { getSessionUser } from "@/lib/auth";
 import { containsAbusiveLanguage } from "@/lib/moderation";
 import { generateChatReply, OpenRouterError } from "@/lib/openrouter";
+import { skyContextForChat } from "@/lib/sky";
 import { enforceRateLimit, readJsonBody, RequestError, secureErrorResponse, suspendFor } from "@/lib/security";
 
 const ABUSE_SUSPENSION_SECONDS = 4 * 60;
@@ -53,7 +54,7 @@ export async function POST(request: Request) {
 
     const history: StoredMessage[] = thread ? JSON.parse(thread.messagesJson) : [];
     const reply = await generateChatReply(
-      { sign: profile.sign, objective: profile.objective, intention: profile.intention },
+      { sign: profile.sign, objective: profile.objective, intention: profile.intention, sky: await skyContextForChat(profile.sign) },
       [...history, { role: "user", content: parsed.data.message }],
     );
 

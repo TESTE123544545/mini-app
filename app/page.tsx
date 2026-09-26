@@ -1497,6 +1497,9 @@ type ChatThreadSummary = { id: number; title: string; updatedAt: string };
 
 const CHAT_ASSISTANT_NAME = "Sintonia";
 
+/** One-tap openers that use today's live sky (the chat receives it as context). */
+const CHAT_STARTERS = ["Como vai ser meu dia hoje?", "O que o céu de hoje pede de mim?", "Me dá uma frase para hoje"];
+
 function ChatView({ profile, isPremium, navigate, openPaywall, onSessionExpired }: { profile: Profile; isPremium: boolean; navigate: (v: View) => void; openPaywall: (reason: string) => void; onSessionExpired: () => void }) {
   const greeting = useMemo<ChatTurn>(() => ({ role: "assistant", content: `Oi, sou a ${CHAT_ASSISTANT_NAME}. Esse é um espaço pra você pensar em voz alta, desabafar ou só conversar sobre a sua jornada, ${profile.name.split(" ")[0]}. Como você está agora?` }), [profile.name]);
   const [messages, setMessages] = useState<ChatTurn[]>([greeting]);
@@ -1557,8 +1560,8 @@ function ChatView({ profile, isPremium, navigate, openPaywall, onSessionExpired 
     }
   }
 
-  async function send() {
-    const text = input.trim();
+  async function send(preset?: string) {
+    const text = (preset ?? input).trim();
     if (!text || sending) return;
     setMessages((current) => [...current, { role: "user", content: text }]);
     setInput("");
@@ -1606,6 +1609,9 @@ function ChatView({ profile, isPremium, navigate, openPaywall, onSessionExpired 
       {messages.map((turn, index) => <div key={index} className={`chat-turn ${turn.role}`}>{turn.role === "assistant" && <span className="chat-turn-name">{CHAT_ASSISTANT_NAME}</span>}{turn.content}</div>)}
       {sending && <div className="chat-turn assistant typing"><span/><span/><span/></div>}
     </div>
+    {messages.length === 1 && !sending && <div className="chat-starters" aria-label="Sugestões para começar">
+      {CHAT_STARTERS.map((starter) => <button type="button" key={starter} onClick={() => send(starter)}>{starter}</button>)}
+    </div>}
     <div className="chat-composer">
       <textarea
         rows={1}
@@ -1614,7 +1620,7 @@ function ChatView({ profile, isPremium, navigate, openPaywall, onSessionExpired 
         onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); send(); } }}
         placeholder="Escreva o que você está sentindo…"
       />
-      <button type="button" className="chat-send" disabled={!input.trim() || sending} onClick={send} aria-label="Enviar"><Send size={18}/></button>
+      <button type="button" className="chat-send" disabled={!input.trim() || sending} onClick={() => send()} aria-label="Enviar"><Send size={18}/></button>
     </div>
     <p className="paywall-fine-print">A IA não substitui ajuda profissional. Em emergência, ligue 188 (CVV) ou 192.</p>
   </div>;

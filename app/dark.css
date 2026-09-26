@@ -621,6 +621,31 @@ html[data-mode=dark],:root[data-mode=dark] body{background:#131311;color:var(--s
 :root[data-mode=dark] .mode-picker{background:rgba(255,255,255,0.06)}
 :root[data-mode=dark] .mode-picker button{color:var(--studio-ink-2)}
 :root[data-mode=dark] .mode-picker button[aria-checked=true]{background:var(--card);color:var(--studio-ink);box-shadow:0 4px 12px -6px rgba(0,0,0,0.6)}
+:root[data-mode=dark] .live-pill{background:rgba(217,154,43,0.14);color:#e8b75a}
+:root[data-mode=dark] .live-pill i{box-shadow:0 0 0 3px rgba(217,154,43,0.25)}
+:root[data-mode=dark] .live-phrase{background:rgba(217,154,43,0.1)}
+:root[data-mode=dark] .live-phrase svg{color:#e8b75a}
+:root[data-mode=dark] .live-phrase p{color:var(--studio-ink)}
+:root[data-mode=dark] .live-lead{color:var(--studio-ink)}
+:root[data-mode=dark] .live-body{color:var(--studio-ink-2)}
+:root[data-mode=dark] .live-areas div{border-top:1px solid rgba(255,255,255,0.08)}
+:root[data-mode=dark] .live-areas dt{color:var(--studio-ink-3)}
+:root[data-mode=dark] .live-areas dd{color:var(--studio-ink-2)}
+:root[data-mode=dark] .live-source{color:var(--studio-ink-3)}
+:root[data-mode=dark] .live-moon>svg{background:rgba(217,154,43,0.12);color:#e8b75a}
+:root[data-mode=dark] .live-moon strong{color:var(--studio-ink)}
+:root[data-mode=dark] .live-moon span{color:var(--studio-ink-3)}
+:root[data-mode=dark] .live-subtitle svg{color:#e8b75a}
+:root[data-mode=dark] .live-planets li{background:rgba(255,255,255,0.04)}
+:root[data-mode=dark] .live-planets span{color:var(--studio-ink-3)}
+:root[data-mode=dark] .live-planets strong{color:var(--studio-ink)}
+:root[data-mode=dark] .live-planets em{color:#f09994}
+:root[data-mode=dark] .live-events time{background:rgba(255,255,255,0.05);color:var(--studio-ink)}
+:root[data-mode=dark] .live-events strong{color:var(--studio-ink)}
+:root[data-mode=dark] .live-events span{color:var(--studio-ink-2)}
+:root[data-mode=dark] .live-skeleton span{background:rgba(255,255,255,0.07)}
+:root[data-mode=dark] .chat-starters button{border:1px solid var(--input);background:var(--card);color:var(--studio-ink)}
+:root[data-mode=dark] .chat-starters button:hover{border-color:var(--studio-ink)}
 
 /* from app/entry.css */
 :root[data-mode=dark] .entry{color:var(--entry-ink);background:radial-gradient(120% 70% at 50% -12%,var(--entry-ground-hi) 0,var(--entry-ground) 48%,var(--entry-ground-lo) 100%);caret-color:var(--entry-ink)}

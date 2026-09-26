@@ -63,3 +63,57 @@ body .premium-pill svg{color:currentColor}
 .mode-picker button{min-width:0;min-height:42px;display:inline-flex;align-items:center;justify-content:center;gap:6px;border:0;border-radius:999px;background:transparent;color:var(--studio-ink-2);font:inherit;font-size:.82rem;font-weight:700;cursor:pointer}
 .mode-picker button svg{width:15px;height:15px;flex:0 0 auto}
 .mode-picker button[aria-checked=true]{background:var(--card);color:var(--studio-ink);box-shadow:0 4px 12px -6px rgba(40,34,26,.35)}
+
+/* Live sky (CosmyDay): the sign's day, the phrase of the day, and the sky right now. */
+.live-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.live-head h2{margin:0}
+.live-pill{display:inline-flex;align-items:center;gap:6px;flex:0 0 auto;padding:5px 10px;border-radius:999px;background:rgba(217,154,43,.14);color:#8f5f0f;font-size:.7rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
+.live-pill i{width:7px;height:7px;border-radius:50%;background:#d99a2b;box-shadow:0 0 0 3px rgba(217,154,43,.25);animation:live-beat 2.4s ease-in-out infinite}
+@keyframes live-beat{50%{box-shadow:0 0 0 6px rgba(217,154,43,0)}}
+.live-phrase{display:flex;gap:10px;align-items:flex-start;margin:16px 0 0;padding:14px 16px;border-radius:14px;background:rgba(217,154,43,.1)}
+.live-phrase svg{width:18px;height:18px;flex:0 0 auto;margin-top:3px;color:#b37a1c}
+.live-phrase p{margin:0;font-family:var(--font-display);font-stretch:106%;font-weight:700;font-size:1.05rem;line-height:1.35;color:var(--studio-ink);text-wrap:pretty}
+.live-lead{margin:14px 0 0;color:var(--studio-ink);line-height:1.55}
+.live-body{margin:6px 0 0;color:var(--studio-ink-2);line-height:1.55}
+.live-areas{display:grid;gap:12px;margin:16px 0 0}
+.live-areas div{padding-top:12px;border-top:1px solid rgba(20,20,20,.08)}
+.live-areas dt{font-size:.72rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--studio-ink-3)}
+.live-areas dd{margin:4px 0 0;color:var(--studio-ink-2);line-height:1.5}
+.live-source{margin:16px 0 0;color:var(--studio-ink-3);font-size:.72rem;line-height:1.45}
+.live-moon{display:flex;align-items:center;gap:12px;margin-top:16px}
+.live-moon>svg{width:38px;height:38px;padding:9px;border-radius:12px;background:rgba(217,154,43,.12);color:#b37a1c;flex:0 0 auto}
+.live-moon div{display:grid;gap:2px}
+.live-moon strong{font-size:1rem;color:var(--studio-ink)}
+.live-moon span{font-size:.8rem;color:var(--studio-ink-3)}
+.live-subtitle{display:flex;align-items:center;gap:8px;margin:20px 0 0;font-size:1rem}
+.live-subtitle svg{width:16px;height:16px;color:#b37a1c}
+.live-planets{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:14px 0 0;padding:0;list-style:none}
+.live-planets li{display:flex;align-items:baseline;gap:6px;min-width:0;padding:8px 10px;border-radius:12px;background:rgba(20,20,20,.04);font-size:.8rem}
+.live-planets span{color:var(--studio-ink-3)}
+.live-planets strong{color:var(--studio-ink);font-variant-numeric:tabular-nums;white-space:nowrap}
+.live-planets em{margin-left:auto;font-style:normal;font-size:.68rem;font-weight:800;color:#b3261e}
+.live-events{display:grid;gap:10px;margin:12px 0 0;padding:0;list-style:none}
+.live-events li{display:grid;grid-template-columns:48px minmax(0,1fr);gap:10px;align-items:start}
+.live-events time{padding:6px 0;border-radius:10px;background:rgba(20,20,20,.05);text-align:center;font-size:.78rem;font-weight:800;font-variant-numeric:tabular-nums;color:var(--studio-ink)}
+.live-events strong{display:block;font-size:.88rem;color:var(--studio-ink)}
+.live-events span{display:block;margin-top:2px;font-size:.8rem;line-height:1.45;color:var(--studio-ink-2)}
+.live-skeleton{display:grid;gap:10px;margin-top:16px}
+.live-skeleton span{height:12px;border-radius:6px;background:rgba(20,20,20,.07);animation:live-shimmer 1.4s ease-in-out infinite}
+.live-skeleton span:nth-child(2){width:86%}.live-skeleton span:nth-child(3){width:64%}
+@keyframes live-shimmer{50%{opacity:.45}}
+@media (prefers-reduced-motion:reduce){.live-pill i,.live-skeleton span{animation:none}}
+
+/* Chat openers that use today's sky. */
+.chat-starters{display:flex;flex-wrap:wrap;gap:8px}
+.chat-starters button{padding:9px 14px;border:1px solid var(--input);border-radius:999px;background:var(--card);color:var(--studio-ink);font:inherit;font-size:.84rem;font-weight:600;cursor:pointer}
+.chat-starters button:hover{border-color:var(--studio-ink)}
+
+/* Topbar on phones: title shrinks before the actions do; Premium keeps only its gem. */
+body .topbar{gap:10px}
+body .topbar>div:first-child{min-width:0;flex:1 1 auto}
+body .topbar h1{font-size:clamp(1.05rem,5.2vw,1.5rem);overflow-wrap:anywhere}
+body .topbar-actions{gap:8px}
+@media (max-width:440px){
+  body .premium-pill span{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+  body .premium-pill{padding-left:11px;padding-right:11px}
+}

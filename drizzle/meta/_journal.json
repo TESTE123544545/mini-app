@@ -92,6 +92,13 @@
       "when": 1790087927100,
       "tag": "0012_material_speedball",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "6",
+      "when": 1790394225840,
+      "tag": "0013_rich_lady_deathstrike",
+      "breakpoints": true
     }
   ]
 }
