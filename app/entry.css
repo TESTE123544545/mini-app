@@ -161,3 +161,4 @@ html:has(.entry),body:has(.entry){background:#e9e7e3}
   .entry-video{animation:none}
   .entry-pill,.entry-pill svg,.entry-back svg{transition:none}
 }
+.entry-back{white-space:nowrap}

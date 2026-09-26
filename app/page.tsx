@@ -150,6 +150,8 @@ export default function HomePage() {
   const [ready, setReady] = useState(false);
   const [account, setAccount] = useState<Account | null>(null);
   const [welcomeAuthMode, setWelcomeAuthMode] = useState<"register" | "login" | null>(null);
+  /** Token from a "Crie uma nova senha" e-mail link (?reset=…); while set, that screen wins over everything. */
+  const [resetLink, setResetLink] = useState<string | null>(null);
   const [onboarding, setOnboarding] = useState(0);
   const [profile, setProfile] = useState<Profile>(emptyProfile);
   const [xp, setXp] = useState(0);
@@ -195,12 +197,17 @@ export default function HomePage() {
     // Initial browser state is intentionally hydrated once after mount.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setDeviceId(id);
+    const resetToken = new URLSearchParams(window.location.search).get("reset");
+    if (resetToken) {
+      setResetLink(resetToken);
+      window.history.replaceState({}, "", window.location.pathname);
+    }
     fetch("/api/auth")
       .then((response) => response.ok ? response.json() as Promise<{ user: Account | null }> : Promise.reject(new Error("auth unavailable")))
       .then(async ({ user }) => {
         // No session (expired, or the browser's history/cookies were cleared): try the password the
         // browser saved for this site before showing the welcome screen, so the account is recognised.
-        const signedIn: Account | null = user ?? await signInWithSavedLogin();
+        const signedIn: Account | null = user ?? (resetToken ? null : await signInWithSavedLogin());
         setAccount(signedIn);
         if (!signedIn) return null;
         return loadCloudState(signedIn, id);
@@ -543,6 +550,9 @@ export default function HomePage() {
   }, [onboarding, missionDone]);
 
   if (!ready) return <AppSplash />;
+  if (resetLink) {
+    return <AuthScreen resetToken={resetLink} onAuthenticated={async (user) => { setResetLink(null); await handleAuthenticated(user); }} onBack={() => setResetLink(null)} />;
+  }
   if (!account) {
     if (!welcomeAuthMode) return <WelcomeHero onStart={() => setWelcomeAuthMode("register")} onLogin={() => setWelcomeAuthMode("login")} />;
     return <AuthScreen onAuthenticated={handleAuthenticated} initialMode={welcomeAuthMode} onBack={() => setWelcomeAuthMode(null)} />;
@@ -879,25 +889,17 @@ function WelcomeHero({ onStart, onLogin }: { onStart: () => void; onLogin: () =>
 
 type AuthMode = "register" | "login" | "recover" | "reset";
 
-function AuthScreen({ onAuthenticated, initialMode, onBack }: { onAuthenticated: (user: Account, mode: "register" | "login") => Promise<void>; initialMode?: "register" | "login"; onBack?: () => void }) {
-  const [mode, setMode] = useState<AuthMode>(initialMode ?? "register");
+function AuthScreen({ onAuthenticated, initialMode, onBack, resetToken: linkToken }: { onAuthenticated: (user: Account, mode: "register" | "login") => Promise<void>; initialMode?: "register" | "login"; onBack?: () => void; resetToken?: string }) {
+  const [mode, setMode] = useState<AuthMode>(linkToken ? "reset" : initialMode ?? "register");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
-  const [resetToken, setResetToken] = useState("");
+  const [resetToken, setResetToken] = useState(linkToken ?? "");
   const [visible, setVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
-  useEffect(() => {
-    const token = new URLSearchParams(window.location.search).get("reset");
-    if (token) queueMicrotask(() => {
-      setResetToken(token);
-      setMode("reset");
-      window.history.replaceState({}, "", window.location.pathname);
-    });
-  }, []);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
