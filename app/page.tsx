@@ -4,13 +4,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { Anchor, Apple, ArrowLeft, BookOpen, BriefcaseBusiness, CalendarDays, Camera, CameraOff, Check, ChevronRight, CircleDollarSign, Cloud, Compass, Crown, Eye, EyeOff, Flame, Flower2, Gem, Home, ImagePlus, Leaf, LockKeyhole, LogOut, Mail, MoonStar, Orbit, Pencil, Play, Plus, Rocket, Route, Save, Send, Settings2, ShieldCheck, Sparkles, Sprout, Sun, Sunrise, Sunset, Target, Telescope, TreeDeciduous, Trophy, UserRound, Wind, X } from "lucide-react";
+import { Anchor, Apple, ArrowLeft, Star, BookOpen, BriefcaseBusiness, CalendarDays, Camera, CameraOff, Check, ChevronRight, CircleDollarSign, Cloud, Compass, Crown, Eye, EyeOff, Flame, Flower2, Gem, Home, ImagePlus, Leaf, LockKeyhole, LogOut, Mail, MoonStar, Orbit, Pencil, Play, Plus, Rocket, Route, Save, Send, Settings2, ShieldCheck, Sparkles, Sprout, Sun, Sunrise, Sunset, Target, Telescope, TreeDeciduous, Trophy, UserRound, Wind, X } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import { dailyPlan, dayPart, dayPartLabel, greetingLabel, journalAnchors, localDayKey, weekPlan, type DailyPlan, type DayPart } from "@/lib/daily";
-import { achievementState, weeklyReport, type Achievement, type JourneySnapshot } from "@/lib/journey";
+import { ACHIEVEMENT_CATEGORIES, achievementState, weeklyReport, type Achievement, type JourneySnapshot } from "@/lib/journey";
 import { findTrail, trailStatus, trails, type Trail, type TrailProgress } from "@/lib/trails";
 import { TREE_PART_HOTSPOTS, TREE_STAGES, treeStageFor, type TreePartHotspot } from "@/lib/treeStages";
 import { ProsperityTree } from "@/components/ProsperityTree";
@@ -22,6 +22,7 @@ import { DiagnosticHomeCards, DiagnosticTreeFocus } from "@/components/diagnosti
 import { track } from "@/lib/analytics";
 import { GUIDES, type GuideId } from "@/lib/library";
 import { LibraryReader } from "@/components/LibraryReader";
+import { AdminAchievements } from "@/components/AdminAchievements";
 import { recallLogin, rememberLogin, stopSilentLogin } from "@/lib/savedLogin";
 import { loadDiagnostics, saveDiagnostic, type DiagnosticResult } from "@/lib/diagnostic";
 
@@ -42,10 +43,14 @@ type ApiMessage = { error?: string; message?: string };
 type Theme = "dourado" | "lua" | "aurora";
 type Plan = "free" | "premium";
 type Profile = { name: string; birthDate: string; objective: string; sign: string; intention: string; theme: Theme; hasAvatar?: boolean; plan?: Plan };
-type Account = { email: string; deviceId: string | null };
+type Account = { email: string; deviceId: string | null; isAdmin?: boolean };
 
 const emptyProfile: Profile = { name: "", birthDate: "", objective: "", sign: "Capricórnio", intention: "", theme: "dourado", hasAvatar: false, plan: "free" };
 const FREE_GOAL_LIMIT = 3;
+/** Extra XP for finishing the three daily cares (mission, ritual, reflection) on the same day. */
+const DAY_COMPLETE_BONUS = 20;
+/** Journal entries are dated "dd/mm/aaaa" (pt-BR); the app's day key is "aaaa-mm-dd". */
+const dayKeyToBr = (key: string) => key.split("-").reverse().join("/");
 const TOTAL_ONBOARDING_STEPS = 10;
 const FREE_JOURNAL_HISTORY = 7;
 const FREE_THEMES: readonly Theme[] = ["dourado"];
@@ -91,7 +96,7 @@ const stageLabelByKey = Object.fromEntries(stageOptions) as Record<string, strin
 const blockerLabelByKey = Object.fromEntries(blockerOptions) as Record<string, string>;
 
 const dayPartIcon: Record<DayPart, React.ReactNode> = { dawn: <Sunrise />, day: <Sun />, dusk: <Sunset />, night: <MoonStar /> };
-const achievementIcon: Record<Achievement["icon"], React.ReactNode> = { sprout: <Sprout />, anchor: <Anchor />, flame: <Flame />, apple: <Apple />, shield: <ShieldCheck />, orbit: <Orbit />, crown: <Crown /> };
+const achievementIcon: Record<Achievement["icon"], React.ReactNode> = { sprout: <Sprout />, anchor: <Anchor />, flame: <Flame />, apple: <Apple />, shield: <ShieldCheck />, orbit: <Orbit />, crown: <Crown />, gem: <Gem />, star: <Star />, trophy: <Trophy />, book: <BookOpen />, route: <Route /> };
 const treePartIcon: Record<string, React.ReactNode> = { raizes: <Anchor />, tronco: <TreeDeciduous />, galhos: <Target />, folhas: <Leaf />, flores: <Flower2 />, frutos: <Apple />, copa: <Crown /> };
 
 /** Short, non-intrusive haptic confirmation. Silently ignored where unsupported. */
@@ -324,6 +329,16 @@ export default function HomePage() {
       .catch(() => toast("Pagamento recebido. O Premium é liberado em instantes."));
   }, [account, syncReady]);
 
+  const journaledToday = entries.some((entry) => entry.date === dayKeyToBr(dayKey));
+  useEffect(() => {
+    if (!syncReady || !account || !missionDone || !ritualDone || !journaledToday) return;
+    const key = `vds-daybonus:${account.email}`;
+    try { if (localStorage.getItem(key) === dayKey) return; localStorage.setItem(key, dayKey); } catch { return; }
+    awardXp(DAY_COMPLETE_BONUS);
+    toast.success(`🌳 Dia completo! Missão, ritual e reflexão · +${DAY_COMPLETE_BONUS} XP`);
+    track("day_completed");
+  }, [syncReady, account, missionDone, ritualDone, journaledToday, dayKey]);
+
   // The diagnostic lives on this device, per account (see lib/diagnostic.ts).
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -338,7 +353,7 @@ export default function HomePage() {
   const mainGoal = goals[0];
   const plan = useMemo(() => dailyPlan({ dayKey, sign: profile.sign, objective: profile.objective }), [dayKey, profile.sign, profile.objective]);
   const week = useMemo(() => weekPlan(profile.sign, 7, new Date(`${dayKey}T00:00:00`)), [profile.sign, dayKey]);
-  const snapshot = useMemo<JourneySnapshot>(() => ({ xp, level, streak, entries, goals }), [xp, level, streak, entries, goals]);
+  const snapshot = useMemo<JourneySnapshot>(() => ({ xp, level, streak, entries, goals, trailDays: activeTrail?.completedDays.length ?? 0, unlockedKeys: unlockedAchievements }), [xp, level, streak, entries, goals, activeTrail, unlockedAchievements]);
 
   useEffect(() => {
     if (!syncReady || !notifiedAchievements.current) return;
@@ -347,9 +362,13 @@ export default function HomePage() {
     if (!newlyReached.length) return;
     for (const item of newlyReached) known.add(item.key);
     setUnlockedAchievements((current) => [...current, ...newlyReached.map((item) => item.key)]);
-    for (const item of newlyReached) {
-      if (item.xpBonus) awardXp(item.xpBonus);
-      toast.success(item.xpBonus ? `🏆 Conquista desbloqueada: ${item.name} · +${item.xpBonus} XP` : `🏆 Conquista desbloqueada: ${item.name}`);
+    const bonus = newlyReached.reduce((sum, item) => sum + (item.xpBonus ?? 0), 0);
+    if (bonus) awardXp(bonus);
+    // Several at once (e.g. existing progress meeting new achievements) become one summary, not a toast storm.
+    if (newlyReached.length > 2) {
+      toast.success(`🏆 ${newlyReached.length} conquistas desbloqueadas${bonus ? ` · +${bonus} XP` : ""}`, { description: newlyReached.map((item) => item.name).join(" · ") });
+    } else {
+      for (const item of newlyReached) toast.success(item.xpBonus ? `🏆 Conquista desbloqueada: ${item.name} · +${item.xpBonus} XP` : `🏆 Conquista desbloqueada: ${item.name}`);
     }
   }, [syncReady, snapshot]);
 
@@ -584,7 +603,7 @@ export default function HomePage() {
           {view === "premium" && <PremiumView isPremium={isPremium} />}
           {view === "diagnostic" && <DiagnosticView results={diagnostics} profileSign={profile.sign || undefined} xp={xp} onComplete={(result) => setDiagnostics((current) => saveDiagnostic(account?.email, result, current))} onOpenTree={() => openTree("diagnostic_result")} />}
           {view === "signs" && <SignsView profile={profile} isPremium={isPremium} openPaywall={openPaywall} navigate={navigate} />}
-          {view === "tree" && <TreeView xp={xp} level={level} stage={stage} streak={streak} mapScores={mapScores} goals={goals} diagnostic={diagnostics[0]} openDiagnostic={() => navigate("diagnostic")} />}
+          {view === "tree" && <TreeView xp={xp} level={level} stage={stage} streak={streak} mapScores={mapScores} goals={goals} diagnostic={diagnostics[0]} openDiagnostic={() => navigate("diagnostic")} snapshot={snapshot} cares={{ missionDone, ritualDone, journaledToday }} navigate={navigate} openRitual={() => { haptic(8); setRitualOpen(true); }} />}
           {view === "missions" && <JourneyView profile={profile} plan={plan} snapshot={snapshot} week={week} missionDone={missionDone} ritualDone={ritualDone} completeMission={completeMission} openRitual={() => { haptic(8); setRitualOpen(true); }} activeTrail={activeTrail} startTrail={startTrail} completeTrailDay={completeTrailDay} abandonTrail={abandonTrail} isPremium={isPremium} openPaywall={openPaywall} />}
           {view === "journal" && <JournalView plan={plan} answers={answers} setAnswers={setAnswers} save={saveJournal} entries={entries} isPremium={isPremium} openPaywall={openPaywall} />}
           {view === "profile" && <ProfileView profile={profile} setProfile={setProfile} account={account} guide={guide} goals={goals} advanceGoal={advanceGoal} goalDialog={goalDialog} setGoalDialog={setGoalDialog} goalTitle={goalTitle} setGoalTitle={setGoalTitle} goalCategory={goalCategory} setGoalCategory={setGoalCategory} addGoal={() => addGoal()} syncStatus={syncStatus} avatarVersion={avatarVersion} setAvatarVersion={setAvatarVersion} logout={logout} isPremium={isPremium} openPaywall={openPaywall} navigate={navigate} />}
@@ -1023,7 +1042,9 @@ function TreeCard({ xp, level, stage, streak, fruits = 0, celebrating = false, g
   return <section className={`tree-card ${celebrating ? "is-growing" : ""}`}><div className="tree-card__heading"><div><p className="eyebrow">Sua árvore viva</p><h2>{stage}</h2></div><div className="level-medal"><span>{level}</span><small>NÍVEL</small></div></div><div className="tree-stage"><ProsperityTree xp={xp} celebrating={celebrating} goalProgress={goalProgress}/>{onSelectPart && <div className="tree-parts">{TREE_PART_HOTSPOTS.map((part) => { const locked = xp < part.unlockedAt; return <button key={part.key} className={locked ? "locked" : ""} style={{ left: `${part.x}%`, top: `${part.y}%` }} onClick={() => { haptic(8); onSelectPart(part); }} aria-label={`${part.name}${locked ? " (bloqueado)" : ""}`}>{locked ? <LockKeyhole/> : treePartIcon[part.key] ?? <Sparkles/>}</button>; })}</div>}</div><div className="xp-row"><div><span><Odometer value={xp}/> XP</span><small>{next ? `Próxima evolução: ${next.name} · faltam ${next.minXP - xp} XP` : "sua árvore alcançou o estágio máximo"}</small></div><strong>{progressPct}%</strong></div><Progress value={progressPct}/><div className="stats-row"><div><Flame/><strong><Odometer value={streak}/></strong><span>{streak === 1 ? "dia" : "dias"}</span></div><div><Apple/><strong><Odometer value={fruits}/></strong><span>{fruits === 1 ? "fruto" : "frutos"}</span></div><div><Sparkles/><strong><Odometer value={xp}/></strong><span>pontos</span></div></div></section>;
 }
 
-function TreeView({ xp, level, stage, streak, mapScores, goals, diagnostic, openDiagnostic }: { xp: number; level: number; stage: string; streak: number; mapScores: [string, number][]; goals: Goal[]; diagnostic?: DiagnosticResult; openDiagnostic: () => void }) {
+function TreeView({ xp, level, stage, streak, mapScores, goals, diagnostic, openDiagnostic, snapshot, cares, navigate, openRitual }: { xp: number; level: number; stage: string; streak: number; mapScores: [string, number][]; goals: Goal[]; diagnostic?: DiagnosticResult; openDiagnostic: () => void; snapshot: JourneySnapshot; cares: { missionDone: boolean; ritualDone: boolean; journaledToday: boolean }; navigate: (view: View) => void; openRitual: () => void }) {
+  const { upcoming } = useMemo(() => achievementState(snapshot), [snapshot]);
+  const caresDone = [cares.missionDone, cares.ritualDone, cares.journaledToday].filter(Boolean).length;
   const [selected, setSelected] = useState<TreePartHotspot | null>(null);
   const fruits = goals.filter((goal) => goal.progress === 100).length;
   const goalProgress = goals[0]?.progress;
@@ -1031,6 +1052,29 @@ function TreeView({ xp, level, stage, streak, mapScores, goals, diagnostic, open
   return <div className="view-stack">
     <p className="view-intro">Toque nas partes da árvore para entender o que cada uma representa na sua jornada.</p>
     <DiagnosticTreeFocus result={diagnostic} onOpenDiagnostic={openDiagnostic}/>
+    <section className="surface-card tree-cares">
+      <div className="section-heading"><div><p className="eyebrow">Cuidados de hoje · {caresDone}/3</p><h2>{caresDone === 3 ? "Dia completo — sua árvore agradece" : "Nutra sua árvore hoje"}</h2></div><Leaf/></div>
+      <div className="tree-cares__list">
+        {([
+          ["Missão do dia", "+20 XP", cares.missionDone, () => navigate("home")],
+          ["Ritual de 3 minutos", "+10 XP", cares.ritualDone, openRitual],
+          ["Reflexão no diário", "+10 XP", cares.journaledToday, () => navigate("journal")],
+        ] as [string, string, boolean, () => void][]).map(([label, reward, done, go]) => <button type="button" key={label} className={done ? "is-done" : ""} onClick={go} disabled={done}>
+          <span className="tree-cares__check" aria-hidden="true">{done ? <Check/> : null}</span>
+          <span><strong>{label}</strong><small>{done ? "Feito hoje" : reward}</small></span>
+          {!done && <ChevronRight aria-hidden="true"/>}
+        </button>)}
+      </div>
+      <p className="disclaimer">Complete os três no mesmo dia e ganhe +{DAY_COMPLETE_BONUS} XP de bônus.</p>
+    </section>
+    {upcoming.length > 0 && <section className="surface-card tree-next">
+      <div className="section-heading"><div><p className="eyebrow">Próximas conquistas</p><h2>O que falta para crescer</h2></div><Trophy/></div>
+      <div className="tree-next__list">{upcoming.map((item) => <div key={item.key} className={`tree-next__item tier-${item.tier}`}>
+        <div><strong>{item.name}</strong><small>{item.hint} · {item.current.toLocaleString("pt-BR")}/{item.target.toLocaleString("pt-BR")}</small></div>
+        <Progress value={Math.round((item.current / item.target) * 100)}/>
+      </div>)}</div>
+      <button type="button" className="ghost-button" onClick={() => navigate("missions")}>Ver todas as conquistas</button>
+    </section>}
     <TreeCard xp={xp} level={level} stage={stage} streak={streak} fruits={fruits} goalProgress={goalProgress} onSelectPart={setSelected}/>
     <Dialog open={selected !== null} onOpenChange={(open) => { if (!open) setSelected(null); }}>
       <DialogContent className="goal-dialog permission-dialog">
@@ -1151,7 +1195,10 @@ function JourneyView({ profile, plan, snapshot, week, missionDone, ritualDone, c
 
     <section className="surface-card">
       <div className="section-heading"><div><p className="eyebrow">Conquistas</p><h2>{unlockedCount} de {total} desbloqueadas</h2></div><Trophy/></div>
-      <div className="achievement-grid">{resolved.map((item) => <button key={item.key} className={item.unlocked ? "unlocked" : ""} onClick={() => { haptic(8); setOpenAchievement(item.key); }}><span>{item.unlocked ? achievementIcon[item.icon] : <LockKeyhole/>}</span><small>{item.name}</small></button>)}</div>
+      {ACHIEVEMENT_CATEGORIES.map((category) => { const items = resolved.filter((item) => item.category === category.id); if (!items.length) return null; return <div key={category.id} className={`achievement-group ${category.id === "exclusivas" ? "is-exclusive" : ""}`}>
+        <p className="achievement-group__title">{category.label} <span>{items.filter((item) => item.unlocked).length}/{items.length}</span></p>
+        <div className="achievement-grid">{items.map((item) => <button key={item.key} className={`${item.unlocked ? "unlocked" : ""} tier-${item.tier}`} onClick={() => { haptic(8); setOpenAchievement(item.key); }}><span>{item.unlocked ? achievementIcon[item.icon] : <LockKeyhole/>}</span><small>{item.name}</small><em className="achievement-tier">{item.tier === "exclusiva" ? "exclusiva" : item.tier}</em></button>)}</div>
+      </div>; })}
       {next && <p className="disclaimer">Próxima: {next.name} — {next.hint.toLowerCase()} ({next.current}/{next.target}).</p>}
     </section>
 
@@ -1345,6 +1392,7 @@ function ProfileView({ profile, setProfile, account, guide, goals, advanceGoal, 
     <section className={`sync-card ${syncStatus}`}><span><Cloud/></span><div><strong>{syncStatus === "saved" ? "Jornada salva na sua conta" : syncStatus === "loading" ? "Salvando sua evolução…" : "Modo offline ativo"}</strong><small>{syncStatus === "saved" ? "Entre em outro celular com o mesmo e-mail para continuar." : syncStatus === "offline" ? "Suas mudanças continuam salvas neste dispositivo e serão sincronizadas depois." : "Aguarde um instante."}</small></div><i aria-hidden="true"/></section>
     {isPremium ? <section className="premium-card is-active"><div className="premium-icon"><Gem/></div><p className="eyebrow">Central da Prosperidade</p><h2>Sua jornada está completa.</h2><p>Trilhas ilimitadas, histórico completo, metas sem limite e todos os temas já estão liberados na sua conta.</p><button type="button" className="ghost-button" onClick={openBillingPortal}>Gerenciar assinatura</button></section>
       : <section className="premium-card"><div className="premium-icon"><Gem/></div><p className="eyebrow">Central da Prosperidade</p><h2>Você já descobriu seu signo.<br/>Agora destrave a jornada completa.</h2><p>Hoje seu plano grátis tem 1 trilha, {FREE_GOAL_LIMIT} metas e {FREE_JOURNAL_HISTORY} registros de histórico. O Premium remove esses limites.</p><ul><li><Check/> Trilhas de 21 dias e temas por objetivo</li><li><Check/> Metas e histórico do diário sem limite</li><li><Check/> Relatório semanal completo e temas da árvore</li></ul><button className="gold-button" onClick={() => openPaywall("premium_card")}>Desbloquear minha jornada</button><small>Sem promessas financeiras. Uma experiência de autoconhecimento, hábitos e metas.</small></section>}
+    {account.isAdmin && <AdminAchievements/>}
     <section className="content-list"><div className="section-heading"><div><p className="eyebrow">Conteúdo</p><h2>Sua biblioteca</h2></div></div>{GUIDES.map((guide) => { const Icon = guideIcon[guide.id]; const locked = guide.premium && !isPremium; return <button key={guide.id} onClick={() => { if (locked) { openPaywall("content_library"); return; } track("guide_opened", { guide: guide.id }); setOpenGuide(guide.id); }}><span className="content-icon"><Icon/></span><span><strong>{guide.title}</strong><small>{locked ? "Premium" : guide.premium ? "Incluído no seu Premium" : guide.subtitle}</small></span>{locked ? <LockKeyhole size={16}/> : <ChevronRight/>}</button>; })}</section>
     <LibraryReader guideId={openGuide} sign={profile.sign} onClose={() => setOpenGuide(null)}/>
     <section className="account-card"><div><Mail/><span><small>Conta conectada</small><strong>{account.email}</strong></span></div><button onClick={logout}><LogOut/> Sair da conta</button></section>

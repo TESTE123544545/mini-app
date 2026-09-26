@@ -539,3 +539,48 @@ body .sign-hero-card{position:relative;overflow:hidden;isolation:isolate}
 .moon-disc{flex:0 0 auto;width:54px;height:54px;filter:drop-shadow(0 0 12px #f6e3ac55)}
 
 @media(prefers-reduced-motion:reduce){.fortune-wheel__disc,.tarot-card__inner{transition:none!important}}
+
+/* --- Tree: daily cares and the next achievements -------------------------- */
+.tree-cares__list{display:grid;gap:8px}
+.tree-cares__list button{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;width:100%;min-height:54px;padding:10px 12px;border:1px solid #ffffff18;border-radius:14px;background:#07143daa;color:#e4e9f6;text-align:left}
+.tree-cares__list button:disabled{opacity:1;cursor:default}
+.tree-cares__list button>span:nth-child(2){display:grid;gap:2px}
+.tree-cares__list strong{font-size:.9rem}
+.tree-cares__list small{color:#dcc16f;font-size:.74rem;font-weight:700}
+.tree-cares__list svg{width:18px;color:#9aa8ca}
+.tree-cares__check{width:24px;height:24px;display:grid;place-items:center;border:1.5px solid #ffffff40;border-radius:50%}
+.tree-cares__check svg{width:14px!important;color:#07143e!important}
+.tree-cares__list button.is-done{border-color:#79d5a744;background:#0b334488}
+.tree-cares__list button.is-done .tree-cares__check{border-color:transparent;background:linear-gradient(135deg,#6fcf9d,#b7f0d0)}
+.tree-cares__list button.is-done small{color:#8ce0b4}
+.tree-next__list{display:grid;gap:14px;margin-bottom:14px}
+.tree-next__item{display:grid;gap:7px}
+.tree-next__item>div{display:grid;gap:2px}
+.tree-next__item strong{color:#eef2fb;font-size:.9rem}
+.tree-next__item small{color:#8e9cc0;font-size:.74rem}
+
+/* --- Achievements grouped by category, with tiers ------------------------------ */
+.achievement-group{margin-top:18px}
+.achievement-group__title{display:flex;justify-content:space-between;margin:0 0 8px;color:#dcc16f;font-size:.72rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+.achievement-group__title span{color:#8e9cc0;letter-spacing:.04em}
+.achievement-group .achievement-grid{margin-top:0}
+.achievement-tier{font-style:normal;font-size:.56rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;padding:2px 7px;border-radius:99px;background:#ffffff0d;color:#7d8bae}
+.achievement-grid button.unlocked.tier-bronze .achievement-tier{background:#c9824a26;color:#e5a877}
+.achievement-grid button.unlocked.tier-prata .achievement-tier{background:#c9d3ea26;color:#e3e9f6}
+.achievement-grid button.unlocked.tier-ouro .achievement-tier{background:#e9cd7b2e;color:#f6e3ac}
+.achievement-grid button.unlocked.tier-ouro{border-color:#e9cd7b88;box-shadow:0 0 0 1px #e9cd7b33,0 10px 26px -12px #01050f}
+.achievement-group.is-exclusive{padding:12px;border:1px solid #e9cd7b44;border-radius:18px;background:radial-gradient(circle at 50% 0,#e9cd7b14,transparent 70%)}
+.achievement-grid button.tier-exclusiva .achievement-tier{background:linear-gradient(120deg,#c7922e,#f2dc8a);color:#07143e}
+.achievement-grid button.tier-exclusiva:not(.unlocked){opacity:.7}
+
+/* --- Admin: exclusive achievements --------------------------------------- */
+.admin-achievements{border-color:#e9cd7b66!important}
+.admin-achievements__search{display:flex;gap:8px;margin:12px 0}
+.admin-achievements__search input{flex:1;min-width:0;min-height:44px;padding:0 12px;border:1px solid #ffffff22;border-radius:12px;background:#06133d;color:#f5f7ff}
+.admin-achievements__target>p{margin:0 0 10px;color:#c9d2ea;font-size:.88rem}
+.admin-achievements__target>p span{color:#8e9cc0}
+.admin-achievements__list{display:grid;gap:8px}
+.admin-achievements__list>div{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;border:1px solid #ffffff14;border-radius:12px}
+.admin-achievements__list>div.is-granted{border-color:#e9cd7b66;background:#e9cd7b10}
+.admin-achievements__list span{color:#eef2fb;font-size:.88rem}
+.admin-achievements__list button{min-height:36px;padding:0 12px;width:auto;font-size:.78rem}

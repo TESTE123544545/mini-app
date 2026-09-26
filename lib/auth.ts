@@ -122,8 +122,14 @@ export async function deleteSession(request: Request) {
   return `${SESSION_COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0`;
 }
 
+/** Team accounts (comma-separated ADMIN_EMAILS) that may grant exclusive achievements. */
+export function isAdminEmail(email: string) {
+  const admins = (process.env.ADMIN_EMAILS ?? "").split(",").map((item) => normalizeEmail(item)).filter(Boolean);
+  return admins.includes(normalizeEmail(email));
+}
+
 export function publicUser(user: { email: string; primaryDeviceId: string | null }) {
-  return { email: user.email, deviceId: user.primaryDeviceId };
+  return { email: user.email, deviceId: user.primaryDeviceId, isAdmin: isAdminEmail(user.email) };
 }
 
 export function createSecureToken() {

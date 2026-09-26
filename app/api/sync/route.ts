@@ -113,6 +113,7 @@ export async function POST(request: Request) {
     const deviceId = user.primaryDeviceId ?? requestedDeviceId;
     if (!validDeviceId(deviceId)) return Response.json({ error: "deviceId inválido" }, { status: 400 });
     const profile = payload.profile;
+    const earnedAchievements = payload.unlockedAchievements.filter((key) => !key.startsWith("exclusiva-"));
     const db = getDb();
     const now = new Date().toISOString();
     if (!user.primaryDeviceId) {
@@ -154,8 +155,9 @@ export async function POST(request: Request) {
       ...(payload.trail
         ? [db.insert(trailProgress).values({ deviceId, trailId: payload.trail.trailId, startedAt: payload.trail.startedAt, completedDaysJson: JSON.stringify(payload.trail.completedDays), updatedAt: now }).onConflictDoUpdate({ target: trailProgress.deviceId, set: { trailId: payload.trail.trailId, startedAt: payload.trail.startedAt, completedDaysJson: JSON.stringify(payload.trail.completedDays), updatedAt: now } })]
         : [db.delete(trailProgress).where(eq(trailProgress.deviceId, deviceId))]),
-      ...(payload.unlockedAchievements.length
-        ? [db.insert(achievements).values(payload.unlockedAchievements.map((key) => ({ deviceId, achievementKey: key }))).onConflictDoNothing()]
+      // Exclusive achievements are granted only by the team (app/api/admin/achievements); a client never adds them.
+      ...(earnedAchievements.length
+        ? [db.insert(achievements).values(earnedAchievements.map((key) => ({ deviceId, achievementKey: key }))).onConflictDoNothing()]
         : []),
     ];
     await db.batch(operations as unknown as Parameters<typeof db.batch>[0]);
