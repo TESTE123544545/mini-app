@@ -3,6 +3,7 @@ import type { Viewport } from "next";
 import "./globals.css";
 import "./premium.css";
 import "./diagnostic.css";
+import "./entry.css";
 import { PwaRegister } from "./pwa-register";
 
 export const metadata: Metadata = {

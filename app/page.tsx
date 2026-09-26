@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { Anchor, Apple, ArrowLeft, Star, BookOpen, BriefcaseBusiness, CalendarDays, Camera, CameraOff, Check, ChevronRight, CircleDollarSign, Cloud, Compass, Crown, Eye, EyeOff, Flame, Flower2, Gem, Home, ImagePlus, Leaf, LockKeyhole, LogOut, Mail, MoonStar, Orbit, Pencil, Play, Plus, Rocket, Route, Save, Send, Settings2, ShieldCheck, Sparkles, Sprout, Sun, Sunrise, Sunset, Target, Telescope, TreeDeciduous, Trophy, UserRound, Wind, X } from "lucide-react";
+import { Anchor, Apple, ArrowLeft, ArrowRight, Star, BookOpen, BriefcaseBusiness, CalendarDays, Camera, CameraOff, Check, ChevronRight, CircleDollarSign, Cloud, Compass, Crown, Eye, EyeOff, Flame, Flower2, Gem, Home, ImagePlus, Leaf, LockKeyhole, LogOut, Mail, MoonStar, Orbit, Pencil, Play, Plus, Rocket, Route, Save, Send, Settings2, ShieldCheck, Sparkles, Sprout, Sun, Sunrise, Sunset, Target, Telescope, TreeDeciduous, Trophy, UserRound, Wind, X } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { Toaster } from "@/components/ui/sonner";
@@ -791,21 +791,34 @@ function TreeStageUnlockedOverlay({ name, note }: { name: string; note: string }
   </div>;
 }
 
+function EntryBrand() {
+  return <span className="entry-brand"><Leaf size={16} strokeWidth={1.8} aria-hidden="true"/>Veias da Sintonia</span>;
+}
+
 function WelcomeHero({ onStart, onLogin }: { onStart: () => void; onLogin: () => void }) {
-  return <main className="welcome-hero">
-    {/* eslint-disable-next-line @next/next/no-img-element -- a single pre-sized WebP hero, loaded eagerly */}
-    <img className="welcome-portal-image" src="/portal-hero.webp" alt="" aria-hidden="true" fetchPriority="high" />
-    <div className="welcome-portal-overlay" />
-    <header className="welcome-nav">
-      <div className="welcome-brand"><Leaf size={20} strokeWidth={1.6} /><span>Veias da Sintonia</span></div>
-      <button type="button" className="liquid-glass welcome-login-pill" onClick={onLogin}>Entrar</button>
-    </header>
-    <div className="welcome-portal-content">
-      <div className="welcome-actions">
-        <button type="button" className="gold-button fx-pulse" onClick={onStart}>Começar minha jornada <ChevronRight/></button>
-        <button type="button" className="liquid-glass welcome-secondary" onClick={onLogin}>Já tenho conta</button>
+  return <main className="entry">
+    <div className="entry-frame entry-welcome">
+      <header className="entry-nav">
+        <EntryBrand/>
+        <nav className="entry-nav-links" aria-label="Acesso">
+          <Link href="/signos" className="entry-nav-link">12 signos</Link>
+          <button type="button" className="entry-pill entry-pill--line entry-pill--small" onClick={onLogin}>Entrar</button>
+        </nav>
+      </header>
+      <div className="entry-copy">
+        <h1 className="entry-title">Astrologia que vira ação</h1>
+        <p className="entry-lede">Ação que vira constância. Constância que faz sua árvore crescer.</p>
       </div>
-      <Link href="/signos" className="welcome-signs-link">Conheça os 12 signos do zodíaco</Link>
+      <figure className="entry-object">
+        {/* eslint-disable-next-line @next/next/no-img-element -- a single pre-sized WebP hero, loaded eagerly */}
+        <img src="/portal-hero.webp" alt="" aria-hidden="true" fetchPriority="high" width={720} height={1280}/>
+        <figcaption>Signo, objetivo e um ritual de 3 minutos por dia</figcaption>
+      </figure>
+      <div className="entry-actions">
+        <button type="button" className="entry-pill entry-pill--solid" onClick={onStart}>Começar minha jornada <ArrowRight aria-hidden="true"/></button>
+        <button type="button" className="entry-pill entry-pill--line" onClick={onLogin}>Já tenho conta</button>
+        <Link href="/signos" className="entry-link">Conheça os 12 signos do zodíaco</Link>
+      </div>
     </div>
   </main>;
 }
@@ -873,25 +886,35 @@ function AuthScreen({ onAuthenticated, initialMode, onBack }: { onAuthenticated:
   const titles: Record<AuthMode, string> = { register: "Crie sua conta", login: "Entre na sua conta", recover: "Recupere sua senha", reset: "Crie uma nova senha" };
   const descriptions: Record<AuthMode, string> = { register: "Salve sua árvore, metas e reflexões para acessar em qualquer celular.", login: "Continue sua evolução de onde parou.", recover: "Digite seu e-mail e enviaremos um link seguro para você.", reset: "Escolha uma senha nova com pelo menos 8 caracteres." };
 
-  return <main className="auth-screen"><div className="stars" aria-hidden="true"/><section className="auth-card">
-    <div className="auth-brand"><div className="brand-mark"><Leaf/></div><p className="brand-name">Veias da Sintonia</p></div>
-    {(mode === "recover" || mode === "reset") && <button className="auth-back" type="button" onClick={() => switchMode("login")}><ArrowLeft/> Voltar para entrar</button>}
-    {(mode === "register" || mode === "login") && onBack && <button className="auth-back" type="button" onClick={onBack}><ArrowLeft/> Voltar</button>}
-    <p className="eyebrow">Sua jornada, sempre com você</p>
-    <h1>{titles[mode]}</h1>
-    <p className="auth-copy">{descriptions[mode]}</p>
-    {(mode === "register" || mode === "login") && <div className="auth-tabs" role="tablist" aria-label="Acesso à conta"><button type="button" role="tab" aria-selected={mode === "register"} className={mode === "register" ? "active" : ""} onClick={() => switchMode("register")}>Criar conta</button><button type="button" role="tab" aria-selected={mode === "login"} className={mode === "login" ? "active" : ""} onClick={() => switchMode("login")}>Já tenho conta</button></div>}
-    <form className="auth-form" onSubmit={submit}>
-      {mode !== "reset" && <label>E-mail<div className="input-with-icon"><Mail/><input type="email" name="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="voce@email.com" required/></div></label>}
-      {mode !== "recover" && <label>{mode === "reset" ? "Nova senha" : "Senha"}<div className="input-with-icon"><LockKeyhole/><input type={visible ? "text" : "password"} autoComplete={mode === "login" ? "current-password" : "new-password"} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Mínimo de 8 caracteres" minLength={8} required/><button type="button" onClick={() => setVisible(!visible)} aria-label={visible ? "Ocultar senha" : "Mostrar senha"}>{visible ? <EyeOff/> : <Eye/>}</button></div></label>}
-      {(mode === "register" || mode === "reset") && <label>Confirme sua senha<div className="input-with-icon"><LockKeyhole/><input type={visible ? "text" : "password"} autoComplete="new-password" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} placeholder="Digite novamente" minLength={8} required/></div></label>}
-      {mode === "login" && <button className="forgot-button link-grow" type="button" onClick={() => switchMode("recover")}>Esqueci minha senha</button>}
-      {error && <p className="form-error" role="alert">{error}</p>}
-      {notice && <p className="form-success" role="status"><Check/> {notice}</p>}
-      {!(mode === "recover" && notice) && <button className="gold-button" disabled={loading}>{loading ? "Aguarde…" : mode === "register" ? "Criar minha conta" : mode === "login" ? "Entrar" : mode === "recover" ? "Enviar link de recuperação" : "Salvar nova senha"}<ChevronRight/></button>}
-    </form>
-    <p className="auth-security"><LockKeyhole/> Sua senha é protegida e sua jornada fica vinculada à sua conta.</p>
-  </section><Toaster richColors position="top-center"/></main>;
+  return <main className="entry">
+    <div className="entry-frame entry-auth">
+      <header className="entry-nav">
+        <EntryBrand/>
+        {(mode === "recover" || mode === "reset") && <button className="entry-back" type="button" onClick={() => switchMode("login")}><ArrowLeft aria-hidden="true"/> Voltar para entrar</button>}
+        {(mode === "register" || mode === "login") && onBack && <button className="entry-back" type="button" onClick={onBack}><ArrowLeft aria-hidden="true"/> Voltar</button>}
+      </header>
+      <figure className="entry-object entry-object--auth" aria-hidden="true">
+        {/* eslint-disable-next-line @next/next/no-img-element -- the same hero still, already cached from the welcome screen */}
+        <img src="/portal-hero.webp" alt="" width={720} height={1280}/>
+      </figure>
+      <section className="entry-panel" aria-labelledby="entry-auth-title">
+        <h1 className="entry-title entry-title--panel" id="entry-auth-title">{titles[mode]}</h1>
+        <p className="entry-lede">{descriptions[mode]}</p>
+        {(mode === "register" || mode === "login") && <div className="entry-switch" role="tablist" aria-label="Acesso à conta"><button type="button" role="tab" aria-selected={mode === "register"} onClick={() => switchMode("register")}>Criar conta</button><button type="button" role="tab" aria-selected={mode === "login"} onClick={() => switchMode("login")}>Já tenho conta</button></div>}
+        <form className="entry-form" onSubmit={submit}>
+          {mode !== "reset" && <label className="entry-field">E-mail<span className="entry-input"><Mail aria-hidden="true"/><input type="email" name="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="voce@email.com" required/></span></label>}
+          {mode !== "recover" && <label className="entry-field">{mode === "reset" ? "Nova senha" : "Senha"}<span className="entry-input"><LockKeyhole aria-hidden="true"/><input type={visible ? "text" : "password"} autoComplete={mode === "login" ? "current-password" : "new-password"} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Mínimo de 8 caracteres" minLength={8} required/><button type="button" onClick={() => setVisible(!visible)} aria-label={visible ? "Ocultar senha" : "Mostrar senha"}>{visible ? <EyeOff/> : <Eye/>}</button></span></label>}
+          {(mode === "register" || mode === "reset") && <label className="entry-field">Confirme sua senha<span className="entry-input"><LockKeyhole aria-hidden="true"/><input type={visible ? "text" : "password"} autoComplete="new-password" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} placeholder="Digite novamente" minLength={8} required/></span></label>}
+          {mode === "login" && <button className="entry-forgot" type="button" onClick={() => switchMode("recover")}>Esqueci minha senha</button>}
+          {error && <p className="entry-message entry-message--error" role="alert">{error}</p>}
+          {notice && <p className="entry-message entry-message--ok" role="status"><Check aria-hidden="true"/> {notice}</p>}
+          {!(mode === "recover" && notice) && <button className="entry-pill entry-pill--solid entry-pill--wide" disabled={loading} aria-busy={loading}>{loading ? "Aguarde…" : mode === "register" ? "Criar minha conta" : mode === "login" ? "Entrar" : mode === "recover" ? "Enviar link de recuperação" : "Salvar nova senha"}{!loading && <ArrowRight aria-hidden="true"/>}</button>}
+        </form>
+        <p className="entry-security"><LockKeyhole aria-hidden="true"/> Sua senha é protegida e sua jornada fica vinculada à sua conta.</p>
+      </section>
+    </div>
+    <Toaster richColors position="top-center"/>
+  </main>;
 }
 
 type OnboardingProps = {
