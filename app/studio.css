@@ -205,3 +205,10 @@ body .tree-stage>.prosperity-tree-svg{position:absolute;inset:0;width:100%;heigh
 .admin-metrics__funnel i{display:block;height:8px;margin-top:6px;border-radius:4px;background:rgba(20,20,20,.07);overflow:hidden}
 .admin-metrics__funnel b{display:block;height:100%;border-radius:4px;background:#d99a2b}
 .admin-metrics__totals{margin:14px 0 0;color:var(--studio-ink-2);font-size:.86rem}
+.admin-reset__form{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;margin-top:14px}
+.admin-reset__form input{min-width:0;min-height:48px;padding:0 14px;border:1px solid var(--input);border-radius:14px;background:var(--card);color:var(--studio-ink);font:inherit}
+.admin-reset__form .gold-button{min-height:48px;padding:0 18px}
+.admin-reset__result{display:grid;gap:10px;margin-top:14px;padding:14px;border-radius:14px;background:rgba(217,154,43,.1)}
+.admin-reset__result p{margin:0;color:var(--studio-ink-2);font-size:.86rem}
+.admin-reset__result code{display:block;padding:10px;border-radius:10px;background:var(--card);color:var(--studio-ink);font-size:.74rem;word-break:break-all}
+.admin-reset__result .ghost-button{justify-self:start;display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 16px;font-weight:700}

@@ -1,8 +1,9 @@
 import { and, desc, eq, isNull } from "drizzle-orm";
 import { getDb } from "@/db";
 import { passwordResetTokens, sessions, users } from "@/db/schema";
-import { createPassword, createSecureToken, hashToken, normalizeEmail, validEmail, validPassword } from "@/lib/auth";
+import { createPassword, hashToken, normalizeEmail, validEmail, validPassword } from "@/lib/auth";
 import { emailIsConfigured, sendPasswordResetEmail } from "@/lib/email";
+import { issueResetLink } from "@/lib/passwordReset";
 import { enforceRateLimit, readJsonBody, secureErrorResponse } from "@/lib/security";
 
 const genericResult = { sent: true, message: "Se esse e-mail estiver cadastrado, você receberá um link para criar uma nova senha." };
@@ -11,7 +12,7 @@ export async function POST(request: Request) {
   try {
     const payload = await readJsonBody<{ email?: string }>(request, 2 * 1024);
     await enforceRateLimit(request, "password-recovery", "request", 5, 60 * 60);
-    if (!emailIsConfigured()) return Response.json({ error: "A recuperação por e-mail ainda precisa ser ativada." }, { status: 503 });
+    if (!emailIsConfigured()) return Response.json({ error: "O envio automático de e-mail ainda não está ativo. Peça à equipe do Veias da Sintonia um link para criar uma nova senha." }, { status: 503 });
     const email = normalizeEmail(payload.email ?? "");
     if (!validEmail(email)) return Response.json({ error: "Digite um e-mail válido." }, { status: 400 });
     const db = getDb();
@@ -22,12 +23,9 @@ export async function POST(request: Request) {
     const [recent] = await db.select().from(passwordResetTokens).where(and(eq(passwordResetTokens.userId, user.id), isNull(passwordResetTokens.usedAt))).orderBy(desc(passwordResetTokens.createdAt)).limit(1);
     if (recent && Date.now() - new Date(recent.createdAt).getTime() < 60_000) return Response.json(genericResult);
 
-    const token = createSecureToken();
-    const tokenHash = await hashToken(token);
-    await db.delete(passwordResetTokens).where(eq(passwordResetTokens.userId, user.id));
-    await db.insert(passwordResetTokens).values({ tokenHash, userId: user.id, expiresAt: new Date(Date.now() + 30 * 60 * 1000).toISOString() });
+    const { tokenHash, url } = await issueResetLink(user.id, 30);
     try {
-      await sendPasswordResetEmail(user.email, token);
+      await sendPasswordResetEmail(user.email, url);
     } catch (error) {
       await db.delete(passwordResetTokens).where(eq(passwordResetTokens.tokenHash, tokenHash));
       throw error;

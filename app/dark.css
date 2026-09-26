@@ -744,6 +744,10 @@ html[data-mode=dark],:root[data-mode=dark] body{background:#131311;color:var(--s
 :root[data-mode=dark] .admin-metrics__funnel i{border-radius:4px;background:rgba(255,255,255,0.07)}
 :root[data-mode=dark] .admin-metrics__funnel b{border-radius:4px;background:#d99a2b}
 :root[data-mode=dark] .admin-metrics__totals{color:var(--studio-ink-2)}
+:root[data-mode=dark] .admin-reset__form input{border:1px solid var(--input);border-radius:14px;background:var(--card);color:var(--studio-ink)}
+:root[data-mode=dark] .admin-reset__result{border-radius:14px;background:rgba(217,154,43,0.1)}
+:root[data-mode=dark] .admin-reset__result p{color:var(--studio-ink-2)}
+:root[data-mode=dark] .admin-reset__result code{border-radius:10px;background:var(--card);color:var(--studio-ink)}
 
 /* from app/entry.css */
 :root[data-mode=dark] .entry{color:var(--entry-ink);background:radial-gradient(120% 70% at 50% -12%,var(--entry-ground-hi) 0,var(--entry-ground) 48%,var(--entry-ground-lo) 100%);caret-color:var(--entry-ink)}
