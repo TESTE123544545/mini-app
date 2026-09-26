@@ -795,6 +795,21 @@ function EntryBrand() {
   return <span className="entry-brand"><Leaf size={16} strokeWidth={1.8} aria-hidden="true"/>Veias da Sintonia</span>;
 }
 
+/** The portal loop: a short ping-pong clip, paused when the system asks for reduced motion. */
+function PortalLoop() {
+  const ref = useRef<HTMLVideoElement>(null);
+  useEffect(() => {
+    const video = ref.current;
+    if (!video) return;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const apply = () => { if (reduce.matches) video.pause(); else void video.play().catch(() => {}); };
+    apply();
+    reduce.addEventListener("change", apply);
+    return () => reduce.removeEventListener("change", apply);
+  }, []);
+  return <video ref={ref} className="entry-video" src="/portal-loop.mp4" poster="/portal-loop-poster.webp" width={540} height={960} muted loop playsInline autoPlay preload="auto" aria-hidden="true"/>;
+}
+
 function WelcomeHero({ onStart, onLogin }: { onStart: () => void; onLogin: () => void }) {
   return <main className="entry">
     <div className="entry-frame entry-welcome">
@@ -810,8 +825,7 @@ function WelcomeHero({ onStart, onLogin }: { onStart: () => void; onLogin: () =>
         <p className="entry-lede">Ação que vira constância. Constância que faz sua árvore crescer.</p>
       </div>
       <figure className="entry-object">
-        {/* eslint-disable-next-line @next/next/no-img-element -- a single pre-sized WebP hero, loaded eagerly */}
-        <img src="/portal-hero.webp" alt="" aria-hidden="true" fetchPriority="high" width={720} height={1280}/>
+        <span className="entry-stage"><PortalLoop/></span>
         <figcaption>Signo, objetivo e um ritual de 3 minutos por dia</figcaption>
       </figure>
       <div className="entry-actions">
@@ -894,8 +908,7 @@ function AuthScreen({ onAuthenticated, initialMode, onBack }: { onAuthenticated:
         {(mode === "register" || mode === "login") && onBack && <button className="entry-back" type="button" onClick={onBack}><ArrowLeft aria-hidden="true"/> Voltar</button>}
       </header>
       <figure className="entry-object entry-object--auth" aria-hidden="true">
-        {/* eslint-disable-next-line @next/next/no-img-element -- the same hero still, already cached from the welcome screen */}
-        <img src="/portal-hero.webp" alt="" width={720} height={1280}/>
+        <span className="entry-stage"><PortalLoop/></span>
       </figure>
       <section className="entry-panel" aria-labelledby="entry-auth-title">
         <h1 className="entry-title entry-title--panel" id="entry-auth-title">{titles[mode]}</h1>
