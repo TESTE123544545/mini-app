@@ -5,7 +5,9 @@ import "./premium.css";
 import "./diagnostic.css";
 import "./studio.css";
 import "./entry.css";
+import "./dark.css";
 import { PwaRegister } from "./pwa-register";
+import { COLOR_MODE_BOOT } from "@/lib/colorModeBoot";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://veiasdasintonia.com.br"),
@@ -124,8 +126,10 @@ export default function RootLayout({
   };
 
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" data-mode="light" suppressHydrationWarning>
       <head>
+        {/* Applies the saved light/dark choice before the first paint. */}
+        <script dangerouslySetInnerHTML={{ __html: COLOR_MODE_BOOT }} />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -134,7 +138,7 @@ export default function RootLayout({
       <body className="antialiased">
         {/* React hoists these into <head>; the display face loads with the first paint. */}
         <link rel="preload" href="/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
-        <link rel="preload" href="/fonts/cormorant-garamond-latin.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+        <link rel="preload" href="/fonts/archivo-latin.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
         {children}
         <PwaRegister />
       </body>

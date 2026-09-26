@@ -50,3 +50,16 @@ body .bottom-nav .active svg{filter:none;color:var(--studio-amber)}
 .app-shell h1,.app-shell h2,.app-shell h3,.onboarding h1,.chat-entry strong,.diag-entry__copy strong,.diag-entry__copy h2,.diag-entry__copy h3{color:var(--studio-ink)}
 body .premium-pill{color:var(--studio-ink)}
 body .premium-pill svg{color:currentColor}
+
+/* Light/dark switch: a round icon button in headers, a three-way pill in Perfil. */
+.mode-toggle{width:38px;height:38px;flex:0 0 auto;display:grid;place-items:center;padding:0;border:1px solid var(--input);border-radius:999px;background:transparent;color:var(--studio-ink);cursor:pointer;transition:background-color .25s cubic-bezier(.16,1,.3,1)}
+.mode-toggle:hover{background:rgba(20,20,20,.06)}
+.mode-toggle svg{width:17px;height:17px}
+.mode-toggle--push{margin-left:auto}
+.entry-auth .entry-nav{justify-content:flex-start}
+.appearance-card h2{margin:0}
+.appearance-card p{margin:6px 0 16px;color:var(--studio-ink-2);line-height:1.5}
+.mode-picker{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;padding:4px;border-radius:999px;background:rgba(20,20,20,.06)}
+.mode-picker button{min-width:0;min-height:42px;display:inline-flex;align-items:center;justify-content:center;gap:6px;border:0;border-radius:999px;background:transparent;color:var(--studio-ink-2);font:inherit;font-size:.82rem;font-weight:700;cursor:pointer}
+.mode-picker button svg{width:15px;height:15px;flex:0 0 auto}
+.mode-picker button[aria-checked=true]{background:var(--card);color:var(--studio-ink);box-shadow:0 4px 12px -6px rgba(40,34,26,.35)}

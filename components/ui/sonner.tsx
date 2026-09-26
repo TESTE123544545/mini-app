@@ -8,10 +8,11 @@ import {
   TriangleAlertIcon,
 } from "lucide-react"
 import { Toaster as Sonner, type ToasterProps } from "sonner"
+import { useColorMode } from "@/lib/colorMode"
 
 const Toaster = ({ ...props }: ToasterProps) => {
-  // The app is light-only now; following the OS setting painted dark toasts on a light page.
-  const theme = "light"
+  // Follows the app's own light/dark choice rather than the OS setting.
+  const theme = useColorMode().resolved
 
   return (
     <Sonner
