@@ -14,13 +14,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     {
       url: `${BASE_URL}/signos`,
       lastModified: new Date(),
-      changeFrequency: "monthly",
+      changeFrequency: "daily",
       priority: 0.9,
     },
     ...ZODIAC_SIGNS.map((sign) => ({
       url: `${BASE_URL}/signos/${sign.slug}`,
       lastModified: new Date(),
-      changeFrequency: "monthly" as const,
+      changeFrequency: "daily" as const,
       priority: 0.8,
     })),
   ];

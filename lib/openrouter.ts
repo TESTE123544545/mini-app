@@ -212,3 +212,59 @@ moon = o artigo da Lua de hoje em 2 a 3 frases; transitTitle = um título curto 
   if (!result.moon || !result.transit) throw new OpenRouterError("A adaptação do céu de hoje veio incompleta.");
   return result;
 }
+
+export type AdaptedPeriod = { summary: string; focus: string; tip: string; keyDates: { date: string; title: string; text: string }[] };
+
+/** A sign's weekly or monthly horoscope (CosmyDay, English) → a short Portuguese reading plus its key dates. */
+export async function adaptSignPeriod(signName: string, periodLabel: "semana" | "mês", englishText: string, keyDates: { date: string; title: string; description: string }[]): Promise<AdaptedPeriod> {
+  const system = `${SKY_ADAPT_RULES}
+Responda só com um JSON {"summary": string, "focus": string, "tip": string, "keyDates": [{"date": string, "title": string, "text": string}]}:
+summary = o clima da ${periodLabel} para o signo em 3 a 4 frases; focus = onde vale colocar energia (2 frases); tip = um conselho prático curto, no imperativo;
+keyDates = as datas-chave recebidas, mantendo "date" exatamente como veio (AAAA-MM-DD), com "title" curto (até 5 palavras) e "text" de 1 frase, na mesma ordem.`;
+  const dates = keyDates.slice(0, 8).map((item) => `${item.date} | ${item.title} | ${item.description}`).join("\n");
+  const parsed = await callOpenRouterJson(system, `Signo: ${signName}\nTexto original:\n${englishText.slice(0, 5000)}\n\nDatas-chave:\n${dates || "nenhuma"}`, 1100) as Record<string, unknown>;
+  const rawDates = Array.isArray(parsed.keyDates) ? parsed.keyDates as Record<string, unknown>[] : [];
+  const result: AdaptedPeriod = {
+    summary: cleanField(parsed.summary, 900),
+    focus: cleanField(parsed.focus, 420),
+    tip: cleanField(parsed.tip, 200),
+    keyDates: rawDates.map((item) => ({ date: cleanField(item.date, 10), title: cleanField(item.title, 60), text: cleanField(item.text, 220) }))
+      .filter((item) => /^\d{4}-\d{2}-\d{2}$/.test(item.date) && item.title && item.text).slice(0, 8),
+  };
+  if (!result.summary) throw new OpenRouterError("A adaptação do período veio incompleta.");
+  return result;
+}
+
+export type GuideReference = { name: string; element: string; modality: string; rulingPlanet: string; dateRange: string; overview: string; love: string; career: string; growth: string; traits: string[]; compatibleSigns: string[] };
+
+/** Evergreen, crawlable extras for one sign page, grounded only in our own reference text. */
+export async function generateSignGuide(reference: GuideReference): Promise<{ faq: { q: string; a: string }[]; habits: string[]; rising: string; relating: string }> {
+  const system = `Você escreve conteúdo de referência sobre signos para o site do app de autoconhecimento e hábitos "Veias da Sintonia", em português do Brasil.
+Tom: elegante, claro e acolhedor; astrologia como linguagem simbólica de autoconhecimento, nunca como destino certo.
+Regras inegociáveis:
+- Baseie-se só nos dados fornecidos; não invente fatos astrológicos que contradigam elemento, modalidade, regente, datas ou compatibilidades informados.
+- Nunca prometa dinheiro, sorte, cura ou resultado garantido. Nada de previsões.
+- Sem markdown, sem emojis.
+Responda só com um JSON {"faq": [{"q": string, "a": string}], "habits": string[], "rising": string, "relating": string}:
+faq = 6 perguntas que as pessoas realmente buscam sobre o signo (datas, elemento e regente, personalidade, amor, trabalho e dinheiro, com quem combina), cada resposta com 2 a 3 frases;
+habits = 5 hábitos práticos e pequenos que ajudam alguém desse signo a transformar suas forças em constância (frases no imperativo);
+rising = um parágrafo de 3 frases sobre como esse signo aparece quando é o ascendente;
+relating = um parágrafo de 3 frases sobre como conviver bem com alguém desse signo.`;
+  const user = [
+    `Signo: ${reference.name} (${reference.dateRange})`,
+    `Elemento: ${reference.element}; modalidade: ${reference.modality}; regente: ${reference.rulingPlanet}`,
+    `Visão geral: ${reference.overview}`,
+    `Amor: ${reference.love}`,
+    `Carreira e dinheiro: ${reference.career}`,
+    `Crescimento: ${reference.growth}`,
+    `Características: ${reference.traits.join(", ")}`,
+    `Combina com: ${reference.compatibleSigns.join(", ")}`,
+  ].join("\n");
+  const parsed = await callOpenRouterJson(system, user, 1800) as Record<string, unknown>;
+  const faq = (Array.isArray(parsed.faq) ? parsed.faq as Record<string, unknown>[] : [])
+    .map((item) => ({ q: cleanField(item.q, 140), a: cleanField(item.a, 600) })).filter((item) => item.q && item.a).slice(0, 8);
+  const habits = (Array.isArray(parsed.habits) ? parsed.habits : []).map((item) => cleanField(item, 200)).filter(Boolean).slice(0, 6);
+  const result = { faq, habits, rising: cleanField(parsed.rising, 700), relating: cleanField(parsed.relating, 700) };
+  if (result.faq.length < 3 || result.habits.length < 3) throw new OpenRouterError("O guia do signo veio incompleto.");
+  return result;
+}

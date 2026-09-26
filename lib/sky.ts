@@ -1,7 +1,8 @@
+import { waitUntil } from "cloudflare:workers";
 import { and, eq } from "drizzle-orm";
 import { getDb } from "@/db";
 import { skyDaily } from "@/db/schema";
-import { adaptSignDaily, adaptSkyArticles } from "@/lib/openrouter";
+import { adaptSignDaily, adaptSignPeriod, adaptSkyArticles, generateSignGuide, type GuideReference } from "@/lib/openrouter";
 import { SIGNS } from "@/lib/signs";
 
 /**
@@ -14,7 +15,7 @@ const USER_AGENT = "VeiasDaSintonia/1.0 (+https://veiasdasintonia.com.br; contat
 export const SKY_SOURCE = "Céu calculado pela CosmyDay (Swiss Ephemeris) · texto adaptado pelo Veias da Sintonia";
 
 const SIGN_EN = ["aries", "taurus", "gemini", "cancer", "leo", "virgo", "libra", "scorpio", "sagittarius", "capricorn", "aquarius", "pisces"] as const;
-type SignEn = (typeof SIGN_EN)[number];
+export type SignEn = (typeof SIGN_EN)[number];
 const SIGN_PT: Record<SignEn, string> = Object.fromEntries(SIGN_EN.map((en, index) => [en, SIGNS[index].name])) as Record<SignEn, string>;
 
 const PLANET_PT: Record<string, string> = {
@@ -174,4 +175,62 @@ export async function skyContextForChat(signName: string): Promise<string | null
   } catch {
     return null;
   }
+}
+
+// ---- Week and month for one sign (public /signos pages) -----------------------------------------
+
+export type KeyDate = { date: string; title: string; text: string };
+export type SignPeriod = { period: string; sign: string; summary: string; focus: string; tip: string; keyDates: KeyDate[]; source: string };
+type PeriodResponse = { start_date?: string; year?: number; month?: number; content: string; key_dates?: { date: string; title: string; description: string }[] };
+
+/** Monday of the current Brazilian week, matching CosmyDay's Monday–Sunday weeks. */
+export function brazilWeekKey(date = new Date()) {
+  const [y, m, d] = brazilDayKey(date).split("-").map(Number);
+  const local = new Date(Date.UTC(y, m - 1, d));
+  local.setUTCDate(local.getUTCDate() - ((local.getUTCDay() + 6) % 7));
+  return local.toISOString().slice(0, 10);
+}
+export const brazilMonthKey = (date = new Date()) => brazilDayKey(date).slice(0, 7);
+
+function periodFetcher(path: string) {
+  return async () => {
+    const raw = await cosmyday<PeriodResponse>(path);
+    const date = raw.start_date ?? `${raw.year}-${String(raw.month).padStart(2, "0")}`;
+    return { ...raw, date };
+  };
+}
+
+export function getSignWeekly(slug: SignEn): Promise<SignPeriod> {
+  return cachedDaily(brazilWeekKey(), `week:${slug}`, periodFetcher(`/content/weekly/${slug}`), async (raw): Promise<SignPeriod> => {
+    const adapted = await adaptSignPeriod(SIGN_PT[slug], "semana", raw.content, raw.key_dates ?? []);
+    return { period: raw.date, sign: SIGN_PT[slug], ...adapted, source: SKY_SOURCE };
+  });
+}
+
+export function getSignMonthly(slug: SignEn): Promise<SignPeriod> {
+  return cachedDaily(brazilMonthKey(), `month:${slug}`, periodFetcher(`/content/monthly/${slug}`), async (raw): Promise<SignPeriod> => {
+    const adapted = await adaptSignPeriod(SIGN_PT[slug], "mês", raw.content, raw.key_dates ?? []);
+    return { period: raw.date, sign: SIGN_PT[slug], ...adapted, source: SKY_SOURCE };
+  });
+}
+
+// ---- Evergreen guide per sign, written once by the AI from our own reference text ----------------
+
+export type SignGuide = { faq: { q: string; a: string }[]; habits: string[]; rising: string; relating: string };
+
+export function getSignGuide(slug: SignEn, reference: GuideReference): Promise<SignGuide> {
+  return cachedDaily("evergreen", `guide:v1:${slug}`, async () => ({ date: "evergreen" }), () => generateSignGuide(reference));
+}
+
+/**
+ * Resolves to null instead of failing or hanging, so a page always renders its own content.
+ * The work keeps running after the response (waitUntil), so a slow first generation is cached
+ * for the next visitor instead of being thrown away.
+ */
+export function settleWithin<T>(promise: Promise<T>, ms: number): Promise<T | null> {
+  try { waitUntil(promise.catch(() => undefined)); } catch { /* outside a request context */ }
+  return Promise.race([
+    promise.catch((error) => { console.error("sky_page_part_failed", error); return null; }),
+    new Promise<null>((resolve) => setTimeout(() => resolve(null), ms)),
+  ]);
 }

@@ -4,7 +4,7 @@
 //   node scripts/build-dark-css.mjs
 import fs from "node:fs";
 
-const SOURCES = ["app/globals.css", "app/profile.css", "app/premium.css", "app/diagnostic.css", "app/studio.css", "app/entry.css"];
+const SOURCES = ["app/globals.css", "app/profile.css", "app/premium.css", "app/diagnostic.css", "app/studio.css", "app/entry.css", "app/signos/signos.css"];
 const OUT = "app/dark.css";
 const DARK = ":root[data-mode=dark]";
 
