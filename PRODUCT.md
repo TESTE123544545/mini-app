@@ -38,7 +38,7 @@ Daily cycle: sign + objective → guidance of the day → mission and 3-minute r
 
 ## Evidence on Hand
 
-- Zodiac sculpture stills in `public/zodiac/*.webp` and the portal image `public/portal-hero.webp` (placeholders; the owner will send new renders for the redesign).
+- Zodiac sculpture stills in `public/zodiac/*.webp` and the portal loop `public/portal-loop.mp4` with its poster (placeholders; the owner will send new renders for the redesign).
 - No testimonials, user counts or press exist — never fabricate them.
 
 ## Product Principles

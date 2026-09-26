@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, lt } from "drizzle-orm";
 import { getDb } from "@/db";
 import { rateLimits } from "@/db/schema";
 import { hashToken } from "@/lib/auth";
@@ -23,14 +23,10 @@ function refererOrigin(request: Request) {
   }
 }
 
-// Every Vercel deploy of the frontend gets a fresh, unique preview URL
-// (`miniapp-<hash>-awvp9531-*.vercel.app`) — there is no fixed list to maintain.
-// Only Vercel can mint a hostname under this project's own slug, so trusting the
-// pattern is as safe as trusting the one alias we hardcode above.
-const TRUSTED_VERCEL_PREVIEW = /^https:\/\/miniapp-[a-z0-9-]+\.vercel\.app$/i;
-
+// Only exact origins are trusted. A wildcard such as *.vercel.app would admit any stranger's
+// project on that shared platform domain, so there is deliberately no pattern here.
 function isTrustedOrigin(origin: string, expectedOrigins: Set<string>) {
-  return expectedOrigins.has(origin) || TRUSTED_VERCEL_PREVIEW.test(origin);
+  return expectedOrigins.has(origin);
 }
 
 export function assertTrustedMutation(request: Request, contentType: "json" | "multipart" | "none") {
@@ -45,7 +41,6 @@ export function assertTrustedMutation(request: Request, contentType: "json" | "m
     url.origin,
     "https://veiasdasintonia.com.br",
     "https://www.veiasdasintonia.com.br",
-    "https://miniapp-liard-chi.vercel.app",
   ]);
   const frontendOrigin = configuredFrontendOrigin();
   if (frontendOrigin) expectedOrigins.add(frontendOrigin);
@@ -92,6 +87,9 @@ export async function enforceRateLimit(request: Request, scope: string, identifi
   const key = await hashToken(rawKey);
   const db = getDb();
   const now = Date.now();
+  // Expired windows are never read again; roughly one call in a hundred sweeps them so the
+  // table stays the size of the active traffic instead of growing with every IP ever seen.
+  if (Math.random() < 0.01) await db.delete(rateLimits).where(lt(rateLimits.expiresAt, new Date(now).toISOString()));
   const [record] = await db.select().from(rateLimits).where(eq(rateLimits.key, key)).limit(1);
 
   if (!record || new Date(record.expiresAt).getTime() <= now) {

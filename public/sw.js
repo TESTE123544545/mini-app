@@ -1,15 +1,13 @@
-const CACHE_NAME = "veias-da-sintonia-v3";
+const CACHE_NAME = "veias-da-sintonia-v4";
 const APP_SHELL = [
   "/",
   "/manifest.webmanifest",
   "/favicon.svg",
   "/app-icon-192.png",
   "/app-icon-512.png",
-  "/prosperity-tree.png",
   "/fonts/manrope-latin.woff2",
   "/fonts/manrope-latin-ext.woff2",
-  "/fonts/cormorant-garamond-latin.woff2",
-  "/fonts/cormorant-garamond-latin-ext.woff2",
+  "/fonts/archivo-latin.woff2",
 ];
 
 self.addEventListener("install", (event) => {

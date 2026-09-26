@@ -21,7 +21,7 @@ body{background:radial-gradient(120% 60% at 50% -10%,#faf9f7 0,#e9e7e3 50%,#dcd9
 ::selection{background:var(--studio-amber-soft);color:var(--studio-ink)}
 .app-shell,.onboarding{color:var(--studio-ink);caret-color:var(--studio-ink)}
 .app-shell{background:none}
-.cosmos,.stars,.zodiac-backdrop{display:none!important}
+.cosmos,.stars{display:none!important}
 .app-shell :focus-visible,.onboarding :focus-visible{outline:2px solid var(--studio-amber);outline-offset:3px}
 
 /* Type: the wide grotesk carries the headings, Manrope the reading. */
@@ -193,3 +193,15 @@ body .tree-parts{inset:0 auto;left:50%;translate:-50% 0;height:100%;aspect-ratio
 /* The drawing always fits its stage box (it keeps its proportions inside): on wide screens a
    width-driven size made it taller than the box and the pot spilled over the XP bar. */
 body .tree-stage>.prosperity-tree-svg{position:absolute;inset:0;width:100%;height:100%;margin:0}
+
+/* Team-only funnel in Perfil. */
+.admin-metrics__sub{margin:4px 0 0;color:var(--studio-ink-3);font-size:.78rem}
+.admin-metrics__periods{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;margin:14px 0;padding:4px;border-radius:999px;background:rgba(20,20,20,.06)}
+.admin-metrics__periods button{min-height:36px;border:0;border-radius:999px;background:transparent;color:var(--studio-ink-2);font:inherit;font-size:.82rem;font-weight:700;cursor:pointer}
+.admin-metrics__periods button[aria-selected=true]{background:var(--card);color:var(--studio-ink);box-shadow:0 4px 12px -6px rgba(40,34,26,.35)}
+.admin-metrics__funnel{display:grid;gap:12px;margin:0;padding:0;list-style:none}
+.admin-metrics__funnel div{display:flex;justify-content:space-between;gap:12px;font-size:.86rem;color:var(--studio-ink-2)}
+.admin-metrics__funnel strong{color:var(--studio-ink);font-variant-numeric:tabular-nums}
+.admin-metrics__funnel i{display:block;height:8px;margin-top:6px;border-radius:4px;background:rgba(20,20,20,.07);overflow:hidden}
+.admin-metrics__funnel b{display:block;height:100%;border-radius:4px;background:#d99a2b}
+.admin-metrics__totals{margin:14px 0 0;color:var(--studio-ink-2);font-size:.86rem}
