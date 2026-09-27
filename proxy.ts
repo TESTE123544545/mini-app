@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { isLoopbackHost } from "@/lib/hosts";
 
 const CONTENT_SECURITY_POLICY = [
   "default-src 'self'",
@@ -22,7 +23,8 @@ export function proxy(request: NextRequest) {
   const forwardedProtocol = request.headers.get("x-forwarded-proto");
   const hostname = request.nextUrl.hostname.toLowerCase();
   const requestHost = (request.headers.get("host") ?? "").split(":")[0].toLowerCase();
-  const isLocal = !request.headers.has("cf-ray") || [hostname, requestHost].some((value) => value === "localhost" || value === "127.0.0.1");
+  // Only a loopback host may stay on plain HTTP; a missing proxy header is not proof of a local request.
+  const isLocal = isLoopbackHost(hostname) && isLoopbackHost(requestHost || hostname);
   if ((!isLocal && (forwardedProtocol === "http" || request.nextUrl.protocol === "http:")) || hostname === "www.veiasdasintonia.com.br") {
     const destination = request.nextUrl.clone();
     destination.protocol = "https:";

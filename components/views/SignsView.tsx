@@ -206,7 +206,7 @@ export function SignsView({ profile, isPremium, openPaywall, navigate, askSinton
           onClick={() => setMainTab("astrologia")}
         >
           <MoonStar size={16} />
-          <span>Astrologia & Céu</span>
+          <span>Astrologia {"&"} Céu</span>
         </button>
       </div>
 
@@ -386,7 +386,7 @@ export function SignsView({ profile, isPremium, openPaywall, navigate, askSinton
             <section className="surface-card prosperity-detail-card animate-fade-in">
               <div className="section-heading">
                 <div>
-                  <p className="eyebrow">Mentalidade & Fluxo</p>
+                  <p className="eyebrow">Mentalidade {"&"} Fluxo</p>
                   <h2>Como {selectedSign.name} Lida com Dinheiro</h2>
                 </div>
                 <Sparkles size={20} />
@@ -410,8 +410,8 @@ export function SignsView({ profile, isPremium, openPaywall, navigate, askSinton
             <section className="surface-card prosperity-detail-card animate-fade-in">
               <div className="section-heading">
                 <div>
-                  <p className="eyebrow">Trabalho & Negócios</p>
-                  <h2>Carreira & Posicionamento</h2>
+                  <p className="eyebrow">Trabalho {"&"} Negócios</p>
+                  <h2>Carreira {"&"} Posicionamento</h2>
                 </div>
                 <Briefcase size={20} />
               </div>
@@ -469,7 +469,7 @@ export function SignsView({ profile, isPremium, openPaywall, navigate, askSinton
             <section className="surface-card prosperity-detail-card animate-fade-in">
               <div className="section-heading">
                 <div>
-                  <p className="eyebrow">Sinergia & Sociedades</p>
+                  <p className="eyebrow">Sinergia {"&"} Sociedades</p>
                   <h2>Parcerias Lucrativas</h2>
                 </div>
                 <Users2 size={20} />
@@ -576,7 +576,7 @@ export function SignsView({ profile, isPremium, openPaywall, navigate, askSinton
             <div className="section-heading">
               <div>
                 <p className="eyebrow">Céu de Hoje em Tempo Real</p>
-                <h2>Ciclo Lunar & Prosperidade</h2>
+                <h2>Ciclo Lunar {"&"} Prosperidade</h2>
               </div>
               <MoonDisc illumination={moonPhase.illumination} waning={/Minguante/.test(moonPhase.name)} />
             </div>
@@ -649,7 +649,7 @@ export function SignsView({ profile, isPremium, openPaywall, navigate, askSinton
               </div>
 
               <div className="planet-meta-block">
-                <strong>Como Ativar no Trabalho & Negócios:</strong>
+                <strong>Como Ativar no Trabalho {"&"} Negócios:</strong>
                 <p>{selectedPlanet.howToActivate}</p>
               </div>
 

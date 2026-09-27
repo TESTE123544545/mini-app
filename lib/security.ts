@@ -2,6 +2,7 @@ import { eq, lt } from "drizzle-orm";
 import { getDb } from "@/db";
 import { rateLimits } from "@/db/schema";
 import { hashToken } from "@/lib/auth";
+import { isLoopbackHost } from "@/lib/hosts";
 
 export class RequestError extends Error {
   constructor(message: string, public status = 400, public retryAfter?: number) {
@@ -32,7 +33,8 @@ function isTrustedOrigin(origin: string, expectedOrigins: Set<string>) {
 export function assertTrustedMutation(request: Request, contentType: "json" | "multipart" | "none") {
   const url = new URL(request.url);
   const forwardedProtocol = request.headers.get("x-forwarded-proto");
-  const isLocal = !request.headers.has("cf-ray") || url.hostname === "localhost" || url.hostname === "127.0.0.1";
+  // Only a loopback host may skip HTTPS; a missing proxy header is not proof of a local request.
+  const isLocal = isLoopbackHost(url.hostname);
   if (!isLocal && (forwardedProtocol === "http" || url.protocol !== "https:")) {
     throw new RequestError("Use uma conexão HTTPS segura.", 426);
   }
@@ -78,8 +80,11 @@ export function assertMultipartRequest(request: Request, maxBytes: number) {
   if (declaredSize > maxBytes) throw new RequestError("O arquivo excede o tamanho permitido.", 413);
 }
 
+// Only Cloudflare's own header identifies the client: it is set at the edge and can't be forged.
+// Without it every caller shares one bucket, so a missing header makes limits stricter, never looser
+// (a client-sent X-Real-IP would let anyone pick a fresh bucket per request).
 function clientIp(request: Request) {
-  return request.headers.get("cf-connecting-ip") ?? request.headers.get("x-real-ip") ?? "unknown";
+  return request.headers.get("cf-connecting-ip") ?? "unknown";
 }
 
 export async function enforceRateLimit(request: Request, scope: string, identifier: string, limit: number, windowSeconds: number) {

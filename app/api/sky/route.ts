@@ -17,7 +17,7 @@ export async function GET(request: Request) {
       slug ? getSignMonthly(slug) : Promise.resolve(null),
     ]);
     for (const [name, part] of [["sky", sky], ["sign", sign], ["week", week], ["month", month]] as const) {
-      if (part.status === "rejected") console.error(`sky_${name}_failed`, part.reason);
+      if (part.status === "rejected") console.error("sky_%s_failed", name, part.reason);
     }
     const value = <T,>(part: PromiseSettledResult<T>) => (part.status === "fulfilled" ? part.value : null);
     return Response.json(
