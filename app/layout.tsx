@@ -8,6 +8,7 @@ import "./entry.css";
 import "./dark.css";
 import "./celestial.css";
 import { PwaRegister } from "./pwa-register";
+import { headers } from "next/headers";
 import { COLOR_MODE_BOOT } from "@/lib/colorModeBoot";
 
 export const metadata: Metadata = {
@@ -106,11 +107,13 @@ export const viewport: Viewport = {
   themeColor: "#070f24",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // The per-request CSP nonce set by proxy.ts; without it the inline script below would be blocked.
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebApplication",
@@ -130,7 +133,7 @@ export default function RootLayout({
     <html lang="pt-BR" data-mode="dark" suppressHydrationWarning>
       <head>
         {/* Applies the saved light/dark choice before the first paint. */}
-        <script dangerouslySetInnerHTML={{ __html: COLOR_MODE_BOOT }} />
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: COLOR_MODE_BOOT }} />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

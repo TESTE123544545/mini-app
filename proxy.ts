@@ -2,13 +2,16 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { isLoopbackHost } from "@/lib/hosts";
 
-const CONTENT_SECURITY_POLICY = [
+// Scripts run only from this origin or when they carry this request's nonce: no inline script
+// an attacker manages to inject can execute. vinext reads the nonce from this header and stamps
+// it on its own bootstrap scripts; the layout stamps it on the colour-mode script.
+const contentSecurityPolicy = (nonce: string) => [
   "default-src 'self'",
   "base-uri 'self'",
   "object-src 'none'",
   "frame-ancestors 'none'",
   "form-action 'self'",
-  "script-src 'self' 'unsafe-inline'",
+  `script-src 'self' 'nonce-${nonce}'`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self' data:",
@@ -32,8 +35,13 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(destination, 308);
   }
 
-  const response = NextResponse.next();
-  response.headers.set("Content-Security-Policy", CONTENT_SECURITY_POLICY);
+  const nonce = btoa(crypto.randomUUID());
+  const csp = contentSecurityPolicy(nonce);
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-nonce", nonce);
+  requestHeaders.set("content-security-policy", csp);
+  const response = NextResponse.next({ request: { headers: requestHeaders } });
+  response.headers.set("Content-Security-Policy", csp);
   response.headers.set("Strict-Transport-Security", "max-age=31536000");
   response.headers.set("X-Content-Type-Options", "nosniff");
   response.headers.set("X-Frame-Options", "DENY");
