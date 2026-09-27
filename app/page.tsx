@@ -26,6 +26,8 @@ import { AdminAchievements } from "@/components/AdminAchievements";
 import { AdminMetrics } from "@/components/AdminMetrics";
 import { AdminResetLink } from "@/components/AdminResetLink";
 import { ColorModePicker, ColorModeToggle } from "@/components/ColorModeToggle";
+import { BrandLockup, BrandOrnament } from "@/components/BrandLockup";
+import { PremiumFeatures } from "@/components/PremiumFeatures";
 import { recallLogin, rememberLogin, stopSilentLogin } from "@/lib/savedLogin";
 import { loadDiagnostics, saveDiagnostic, type DiagnosticResult } from "@/lib/diagnostic";
 
@@ -600,7 +602,7 @@ export default function HomePage() {
       <div className="cosmos" aria-hidden="true" />
       <section className="app-frame" data-navigated={navigated || undefined}>
         <header className="topbar">
-          <div><p className="eyebrow">Veias da Sintonia</p><h1>{view === "home" ? `Olá, ${profile.name.split(" ")[0]}` : viewLabels[view]}{" "}<span aria-hidden="true">✦</span></h1></div>
+          <div><BrandLockup className="topbar-brand"/><h1>{view === "home" ? `Olá, ${profile.name.split(" ")[0]}` : viewLabels[view]}{" "}<span aria-hidden="true">✦</span></h1></div>
           <div className="topbar-actions">
             <ColorModeToggle/>
             <button type="button" className={`premium-pill ${isPremium ? "is-active" : ""} ${view === "premium" ? "is-current" : ""}`} onClick={() => navigate("premium")} aria-current={view === "premium" ? "page" : undefined}><Gem aria-hidden="true"/><span>Premium</span></button>
@@ -670,6 +672,9 @@ function LockedView({ view, hasDiagnostic, onDiagnostic }: { view: View; hasDiag
       <h2>{copy.title} é Premium</h2>
       <p>{copy.text}</p>
       {!hasDiagnostic && <button type="button" className="ghost-button" onClick={onDiagnostic}>Fazer meu diagnóstico grátis</button>}
+    </section>
+    <section className="surface-card premium-view__hero">
+      <PremiumFeatures title="Tudo o que o Premium libera"/>
     </section>
     <section className="surface-card premium-view__offer paywall-dialog">
       <PremiumOffer reason={`locked_${view}`}/>
@@ -818,10 +823,7 @@ function PremiumView({ isPremium }: { isPremium: boolean }) {
   }
   return <div className="view-stack premium-view">
     <section className="surface-card premium-view__hero">
-      <div className="paywall-icon"><Gem/></div>
-      <p className="eyebrow">Veias da Sintonia Premium</p>
-      <h2>Destrave a jornada completa</h2>
-      <p>Sem promessas financeiras — uma experiência mais completa de autoconhecimento, hábitos e metas.</p>
+      <PremiumFeatures/>
     </section>
     <section className="surface-card premium-view__offer paywall-dialog">
       <PremiumOffer reason="premium_tab"/>
@@ -841,29 +843,20 @@ function TreeStageUnlockedOverlay({ name, note }: { name: string; note: string }
 }
 
 function EntryBrand() {
-  return <span className="entry-brand"><Leaf size={16} strokeWidth={1.8} aria-hidden="true"/>Veias da Sintonia</span>;
+  return <BrandLockup/>;
 }
 
-/** The portal loop: a short ping-pong clip, paused when the system asks for reduced motion. */
-function PortalLoop() {
-  const ref = useRef<HTMLVideoElement>(null);
-  useEffect(() => {
-    const video = ref.current;
-    if (!video) return;
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const apply = () => { if (reduce.matches) video.pause(); else void video.play().catch(() => {}); };
-    apply();
-    reduce.addEventListener("change", apply);
-    return () => reduce.removeEventListener("change", apply);
-  }, []);
-  return <video ref={ref} className="entry-video" src="/portal-loop.mp4" poster="/portal-loop-poster.webp" width={540} height={960} muted loop playsInline autoPlay preload="auto" aria-hidden="true"/>;
+/** The brand's Tree of Prosperity inside the zodiac ring (from the Veias da Sintonia brand pieces). */
+function BrandTree({ priority = false }: { priority?: boolean }) {
+  // eslint-disable-next-line @next/next/no-img-element -- a single pre-sized WebP illustration
+  return <img src="/brand/arvore-zodiaco.webp" alt="A Árvore da Prosperidade cercada pelos 12 signos do zodíaco" width={660} height={660} fetchPriority={priority ? "high" : "auto"}/>;
 }
 
 function WelcomeHero({ onStart, onLogin }: { onStart: () => void; onLogin: () => void }) {
   return <main className="entry">
     <div className="entry-frame entry-welcome">
+      <span className="entry-landscape" aria-hidden="true"/>
       <header className="entry-nav">
-        <EntryBrand/>
         <nav className="entry-nav-links" aria-label="Acesso">
           <Link href="/signos" className="entry-nav-link">12 signos</Link>
           <ColorModeToggle/>
@@ -871,15 +864,17 @@ function WelcomeHero({ onStart, onLogin }: { onStart: () => void; onLogin: () =>
         </nav>
       </header>
       <div className="entry-copy">
-        <h1 className="entry-title">Astrologia que vira ação</h1>
-        <p className="entry-lede">Ação que vira constância. Constância que faz sua árvore crescer.</p>
+        <BrandLockup stacked/>
+        <BrandOrnament/>
+        <span className="entry-beta">Versão beta disponível</span>
+        <h1 className="entry-title">Use seu signo para prosperar.</h1>
+        <p className="entry-lede">Faça seu diagnóstico <strong>gratuito</strong>. Conheça a versão beta. Depois, desbloqueie sua experiência Premium.</p>
       </div>
       <figure className="entry-object">
-        <span className="entry-stage"><PortalLoop/></span>
-        <figcaption>Signo, objetivo e um ritual de 3 minutos por dia</figcaption>
+        <BrandTree priority/>
       </figure>
       <div className="entry-actions">
-        <button type="button" className="entry-pill entry-pill--solid" onClick={onStart}>Fazer meu diagnóstico grátis <ArrowRight aria-hidden="true"/></button>
+        <button type="button" className="entry-pill entry-pill--solid" onClick={onStart}>Fazer diagnóstico gratuito <ArrowRight aria-hidden="true"/></button>
         <button type="button" className="entry-pill entry-pill--line" onClick={onLogin}>Já tenho conta</button>
         <Link href="/signos" className="entry-link">Conheça os 12 signos do zodíaco</Link>
       </div>
@@ -951,7 +946,10 @@ function AuthScreen({ onAuthenticated, initialMode, onBack, resetToken: linkToke
         {(mode === "register" || mode === "login") && onBack && <button className="entry-back" type="button" onClick={onBack}><ArrowLeft aria-hidden="true"/> Voltar</button>}
       </header>
       <figure className="entry-object entry-object--auth" aria-hidden="true">
-        <span className="entry-stage"><PortalLoop/></span>
+        <picture>
+          <source media="(min-width: 900px)" srcSet="/brand/arvore-zodiaco.webp"/>
+          <img src="/brand/paisagem.webp" alt="" width={719} height={380}/>
+        </picture>
       </figure>
       <section className="entry-panel" aria-labelledby="entry-auth-title">
         <h1 className="entry-title entry-title--panel" id="entry-auth-title">{titles[mode]}</h1>

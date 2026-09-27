@@ -31,14 +31,14 @@ Daily cycle: sign + objective → guidance of the day → mission and 3-minute r
 
 ## Brand Commitments
 
-- Name: Veias da Sintonia. Gold/amber is the brand accent.
+- Name: Veias da Sintonia. Brand world (owner brand kit, September 2026): warm cream ground, rose-gold accent, espresso ink, Cormorant Garamond serif headings, the interlocking-hearts mark, the Tree of Prosperity inside the zodiac ring, a misty lake landscape.
 - Never promise money, returns or guaranteed results; readings are symbolic and reflect only what the person records in the app.
 - No scary or deterministic horoscopes, no guilt-driven notifications, no casino look, no random prizes; the Wheel of Fortune and tarot are symbolic daily rituals without prizes.
 - Respect the system "reduce motion" setting.
 
 ## Evidence on Hand
 
-- Zodiac sculpture stills in `public/zodiac/*.webp` and the portal loop `public/portal-loop.mp4` with its poster (placeholders; the owner will send new renders for the redesign).
+- Brand pieces from the owner: `public/brand/arvore-zodiaco.webp` (tree + zodiac ring, transparent), `public/brand/paisagem.webp` (lake), `public/brand/mark.svg` (interlocking hearts, redrawn as vector from the owner’s logo). Zodiac sculpture stills in `public/zodiac/*.webp`.
 - No testimonials, user counts or press exist — never fabricate them.
 
 ## Product Principles

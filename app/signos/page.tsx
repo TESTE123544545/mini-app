@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import "./signos.css";
 import { ColorModeToggle } from "@/components/ColorModeToggle";
+import { BrandLockup } from "@/components/BrandLockup";
 import { ZODIAC_SIGNS } from "@/lib/zodiacContent";
 import { brazilDayKey, getSignDaily, getSkyToday, settleWithin, signSlugFromName } from "@/lib/sky";
 import { SkyBlock, formatDay } from "./LiveSections";
@@ -48,7 +49,7 @@ export default async function ZodiacIndexPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <div className="zodiac-shell">
         <nav className="zodiac-nav">
-          <Link href="/">← Veias da Sintonia</Link>
+          <Link href="/" aria-label="Veias da Sintonia — início"><BrandLockup/></Link>
           <div className="zodiac-nav-actions"><ColorModeToggle /><Link href="/" className="zodiac-pill">Começar minha jornada</Link></div>
         </nav>
 

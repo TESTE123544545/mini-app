@@ -7,6 +7,7 @@ import { DIAGNOSTIC_QUESTIONS, PROFILES, buildResult, type Answers, type Diagnos
 import { DiagnosticQuestion } from "./DiagnosticQuestion";
 import { DiagnosticProcessing } from "./DiagnosticProcessing";
 import { DiagnosticResult } from "./DiagnosticResult";
+import { PremiumFeatures } from "@/components/PremiumFeatures";
 
 type Stage = "intro" | "question" | "processing" | "result";
 
@@ -165,6 +166,7 @@ function DiagnosticLockedResult({ offer, onRestart }: { offer: ReactNode; onRest
       <ul className="diag-locked__parts">{LOCKED_PARTS.map((part) => <li key={part}><LockKeyhole aria-hidden="true"/>{part}</li>)}</ul>
       <div className="diag-locked__preview" aria-hidden="true"><span/><span/><span/><span/><span/></div>
     </section>
+    <section className="surface-card premium-view__hero"><PremiumFeatures/></section>
     <section className="surface-card premium-view__offer paywall-dialog">{offer}</section>
     <button type="button" className="ghost-button diag-restart" onClick={onRestart}><RotateCcw size={15}/> Refazer diagnóstico</button>
   </div>;

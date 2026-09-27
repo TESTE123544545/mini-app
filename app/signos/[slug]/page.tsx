@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import "../signos.css";
 import { ColorModeToggle } from "@/components/ColorModeToggle";
+import { BrandLockup } from "@/components/BrandLockup";
 import { ZODIAC_SIGNS, getZodiacSign } from "@/lib/zodiacContent";
 import { brazilDayKey, getSignDaily, getSignGuide, getSignMonthly, getSignWeekly, getSkyToday, settleWithin, signSlugFromName } from "@/lib/sky";
 import { DailyBlock, GuideSections, PeriodBlock, SkyBlock, formatDay, formatMonth, formatWeek } from "../LiveSections";
@@ -85,7 +86,7 @@ export default async function ZodiacSignPage({ params }: { params: Promise<{ slu
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <div className="zodiac-shell">
         <nav className="zodiac-nav">
-          <Link href="/">← Veias da Sintonia</Link>
+          <Link href="/" aria-label="Veias da Sintonia — início"><BrandLockup/></Link>
           <div className="zodiac-nav-actions"><ColorModeToggle /><Link href="/" className="zodiac-pill">Começar minha jornada</Link></div>
         </nav>
         <p className="zodiac-breadcrumb"><Link href="/signos">Os 12 signos</Link> / {sign.name}</p>

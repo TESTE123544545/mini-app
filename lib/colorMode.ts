@@ -9,7 +9,7 @@ export type ResolvedMode = "light" | "dark";
 
 const CHANGE_EVENT = "vds-mode-change";
 /** Matches the ground colour of each mode, for the browser/PWA status bar. */
-const THEME_COLOR: Record<ResolvedMode, string> = { light: "#e9e7e3", dark: "#0f0f10" };
+const THEME_COLOR: Record<ResolvedMode, string> = { light: "#f4ede7", dark: "#1c1715" };
 
 function readStored(): ColorMode {
   try {
