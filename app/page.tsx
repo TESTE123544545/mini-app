@@ -26,7 +26,7 @@ import { AdminAchievements } from "@/components/AdminAchievements";
 import { AdminMetrics } from "@/components/AdminMetrics";
 import { AdminResetLink } from "@/components/AdminResetLink";
 import { ColorModePicker, ColorModeToggle } from "@/components/ColorModeToggle";
-import { BrandLockup, BrandOrnament } from "@/components/BrandLockup";
+import { BrandLockup } from "@/components/BrandLockup";
 import { PremiumFeatures } from "@/components/PremiumFeatures";
 import { recallLogin, rememberLogin, stopSilentLogin } from "@/lib/savedLogin";
 import { loadDiagnostics, saveDiagnostic, type DiagnosticResult } from "@/lib/diagnostic";
@@ -853,27 +853,31 @@ function BrandTree({ priority = false }: { priority?: boolean }) {
 }
 
 function WelcomeHero({ onStart, onLogin }: { onStart: () => void; onLogin: () => void }) {
-  return <main className="entry">
-    <div className="entry-frame entry-welcome">
+  return <main className="entry entry--welcome">
+    <div className="entry-welcome">
       <header className="entry-nav">
+        <BrandLockup className="entry-nav-brand"/>
         <nav className="entry-nav-links" aria-label="Acesso">
           <Link href="/signos" className="entry-nav-link">12 signos</Link>
           <ColorModeToggle/>
           <button type="button" className="entry-pill entry-pill--line entry-pill--small" onClick={onLogin}>Entrar</button>
         </nav>
       </header>
+      {/* The owner's artwork, shown whole: galaxies, the hearts, the golden Tree of Life in the astrolabe, the river of light. */}
+      <figure className="entry-art">
+        {/* eslint-disable-next-line @next/next/no-img-element -- one pre-sized WebP illustration */}
+        <img src="/brand/cosmos-hero.webp" alt="A Árvore da Vida dourada dentro de um astrolábio, sob galáxias, com templos e um rio de luz" width={843} height={1264} fetchPriority="high"/>
+      </figure>
       <div className="entry-copy">
-        <BrandLockup stacked/>
-        <BrandOrnament/>
+        <BrandLockup/>
         <span className="entry-beta">Versão beta disponível</span>
         <h1 className="entry-title">Use seu signo para prosperar.</h1>
         <p className="entry-lede">Faça seu diagnóstico <strong>gratuito</strong>. Conheça a versão beta. Depois, desbloqueie sua experiência Premium.</p>
-      </div>
-      <div className="entry-spacer" aria-hidden="true"/>
-      <div className="entry-actions">
-        <button type="button" className="entry-pill entry-pill--solid" onClick={onStart}>Fazer diagnóstico gratuito <ArrowRight aria-hidden="true"/></button>
-        <button type="button" className="entry-pill entry-pill--line" onClick={onLogin}>Já tenho conta</button>
-        <Link href="/signos" className="entry-link">Conheça os 12 signos do zodíaco</Link>
+        <div className="entry-actions">
+          <button type="button" className="entry-pill entry-pill--solid" onClick={onStart}>Fazer diagnóstico gratuito <ArrowRight aria-hidden="true"/></button>
+          <button type="button" className="entry-pill entry-pill--line" onClick={onLogin}>Já tenho conta</button>
+          <Link href="/signos" className="entry-link">Conheça os 12 signos do zodíaco</Link>
+        </div>
       </div>
     </div>
   </main>;

@@ -24,7 +24,7 @@
   background:var(--entry-navy);
   caret-color:var(--entry-gold);
 }
-/* The owner's artwork fills the screen; navy veils keep the words readable over it. */
+/* On the account screen the owner's artwork fills the screen, under navy veils that keep the words readable. */
 .entry::before{content:"";position:fixed;inset:0;z-index:-2;background:url(/brand/cosmos-hero.webp) center 62%/cover no-repeat}
 .entry::after{content:"";position:fixed;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(7,15,36,.94) 0,rgba(7,15,36,.86) 34%,rgba(7,15,36,.55) 48%,rgba(7,15,36,.12) 62%,rgba(7,15,36,.55) 80%,rgba(7,15,36,.95) 100%)}
 html:has(.entry),body:has(.entry){background:#070f24}
@@ -80,13 +80,20 @@ html:has(.entry),body:has(.entry){background:#070f24}
 .entry-lede strong{color:var(--entry-gold);font-weight:700;letter-spacing:.04em}
 .entry-beta{display:inline-flex;align-items:center;min-height:30px;padding:0 16px;border:1px solid var(--entry-line);border-radius:999px;background:rgba(7,15,36,.55);color:var(--entry-gold);font-size:.68rem;font-weight:800;letter-spacing:.22em;text-transform:uppercase}
 
-/* Welcome composition: brand and promise above, the artwork breathing in the middle, actions below. */
-.entry-welcome{min-height:calc(100svh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));grid-template-rows:auto auto minmax(120px,1fr) auto;text-align:center}
-.entry-copy{display:grid;justify-items:center;gap:10px}
-.entry-copy .brand-lockup--stacked{--logo-h:46px;color:var(--entry-gold)}
-.entry-copy .brand-ornament{width:100%;color:var(--entry-gold)}
+/* Welcome composition: the artwork stands whole at the top (no veil over it), and the words rise
+   out of the river of light at its foot. */
+.entry--welcome{padding:0;display:block;background:var(--entry-sky)}
+.entry--welcome::before,.entry--welcome::after{content:none}
+.entry-welcome{position:relative;min-height:100svh;display:grid;grid-template-rows:auto auto;text-align:center}
+.entry-welcome .entry-nav{position:absolute;z-index:2;top:0;left:0;right:0;padding:max(12px,env(safe-area-inset-top)) 14px 12px}
+.entry-art{position:relative;margin:0;height:min(150vw,58svh);overflow:hidden}
+.entry-art img{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 0;-webkit-mask:linear-gradient(180deg,#000 70%,transparent);mask:linear-gradient(180deg,#000 70%,transparent)}
+.entry-copy{position:relative;z-index:1;display:grid;justify-items:center;gap:10px;margin-top:-72px;padding:0 20px max(20px,env(safe-area-inset-bottom))}
+.entry-copy .brand-lockup{--logo-h:40px;color:var(--entry-gold);filter:drop-shadow(0 2px 10px rgba(7,15,36,.9))}
+.entry-copy .brand-mark-img{display:none}
+.entry-welcome .entry-beta{min-height:0;padding:0;border:0;background:none;font-size:.64rem}
 .entry-copy .entry-lede{margin-top:0}
-.entry-spacer{min-height:0}
+.entry-welcome .entry-actions{width:100%;max-width:420px;margin-top:8px}
 
 /* Pills */
 .entry-actions{display:grid;gap:10px;justify-items:stretch}
@@ -146,18 +153,30 @@ html:has(.entry),body:has(.entry){background:#070f24}
   .entry::before{background-position:center 42%}
   .entry::after{background:linear-gradient(90deg,rgba(7,15,36,.92) 0,rgba(7,15,36,.7) 38%,rgba(7,15,36,.15) 62%,rgba(7,15,36,.35) 100%)}
   .entry-frame{padding:24px 40px 36px;border-radius:28px;gap:22px 48px}
-  .entry-welcome{min-height:calc(100svh - 40px);grid-template-columns:minmax(0,560px) minmax(0,1fr);grid-template-rows:auto 1fr auto 1fr;grid-template-areas:"nav nav" "copy ." "actions ." ". .";text-align:left}
-  .entry-welcome .entry-nav{grid-area:nav}
-  .entry-welcome .entry-copy{grid-area:copy;justify-items:start;align-self:end}
-  .entry-welcome .entry-copy .brand-ornament{justify-content:flex-start}
-  .entry-welcome .entry-lede{margin-left:0}
-  .entry-welcome .entry-spacer{display:none}
-  .entry-welcome .entry-actions{grid-area:actions;grid-template-columns:auto auto;justify-content:start;justify-items:start}
+  /* The art is portrait: it stands centred at its own size (never stretched), over a starfield,
+     and the promise sits on the river of light at its foot. */
+  .entry-welcome{display:block;min-height:100svh;overflow:hidden}
+  .entry-welcome .entry-nav{padding:24px clamp(32px,4vw,64px)}
+  .entry-art{position:absolute;inset:0 auto auto 50%;transform:translateX(-50%);height:min(100svh,1264px);aspect-ratio:843/1264}
+  .entry-art img{-webkit-mask:linear-gradient(90deg,transparent,#000 14%,#000 86%,transparent),linear-gradient(180deg,#000 52%,rgba(0,0,0,.35) 80%,transparent);-webkit-mask-composite:source-in;mask:linear-gradient(90deg,transparent,#000 14%,#000 86%,transparent),linear-gradient(180deg,#000 52%,rgba(0,0,0,.35) 80%,transparent);mask-composite:intersect}
+  .entry-copy{position:absolute;left:0;right:0;bottom:0;margin:0;padding:0 32px max(32px,4svh);gap:12px}
+  .entry-copy .brand-lockup{display:none}
+  .entry-welcome .entry-title{font-size:clamp(2.2rem,min(3.6vw,6svh),3.6rem);max-width:none;text-shadow:0 0 30px rgba(230,196,122,.35),0 2px 18px rgba(7,15,36,.95)}
+  .entry-welcome .entry-beta{font-size:.72rem}
+  .entry-welcome .entry-lede{max-width:52ch;font-size:1.06rem}
+  .entry-welcome .entry-actions{grid-template-columns:auto auto;justify-content:center;max-width:none;margin-top:10px}
   .entry-welcome .entry-link{grid-column:1/-1}
+  .entry-nav-brand{display:inline-flex;--logo-h:44px;color:var(--entry-gold)}
+  /* The account screen too: starfield instead of the stretched art. */
+  .entry:not(.entry--welcome){background:var(--entry-sky)}
+  .entry:not(.entry--welcome)::before,.entry:not(.entry--welcome)::after{content:none}
   .entry-auth{grid-template-columns:minmax(0,1fr) minmax(0,440px);grid-template-areas:"nav nav" "object panel";align-items:stretch}
   .entry-auth .entry-nav{grid-area:nav}
   .entry-auth .entry-object{grid-area:object;height:auto;min-height:560px}
   .entry-auth .entry-panel{grid-area:panel;align-self:center;padding:8px 0}
+}
+@media (max-width:899px){
+  .entry-nav-brand{display:none}
 }
 @media (max-width:479px){
   .entry-nav-link{display:none}
