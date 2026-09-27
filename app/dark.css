@@ -760,6 +760,9 @@ html[data-mode=dark],:root[data-mode=dark] body{background:#191917;color:var(--s
 :root[data-mode=dark] .premium-features small{color:var(--studio-ink-3)}
 :root[data-mode=dark] body .premium-card.is-active{border-color:rgba(185,139,129,0.35)}
 :root[data-mode=dark] body .premium-card.is-active .premium-icon{color:#f0a494;background:rgba(185,139,129,0.14);border-color:rgba(185,139,129,0.4)}
+:root[data-mode=dark] .app-splash{background:radial-gradient(120% 60% at 50% 20%,#21201e 0,#191917 55%,#100f0e 100%)}
+:root[data-mode=dark] .splash-bar{background:rgba(185,139,129,0.2)}
+:root[data-mode=dark] .splash-bar i{background:linear-gradient(90deg,transparent,#b98b81,transparent)}
 
 /* from app/entry.css */
 :root[data-mode=dark] .entry{color:var(--entry-ink);background:radial-gradient(120% 70% at 50% -12%,var(--entry-ground-hi) 0,var(--entry-ground) 48%,var(--entry-ground-lo) 100%);caret-color:var(--entry-ink)}

@@ -253,3 +253,11 @@ body .premium-card.is-active .premium-icon{color:#9a6b61;background:rgba(185,139
 .onboarding-tree,.diag-bridge__tree{position:relative;overflow:hidden}
 .onboarding-tree>.prosperity-tree-svg,.diag-bridge__tree>.prosperity-tree-svg{position:absolute;inset:0;width:100%;height:100%}
 .onboarding-tree--brand img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+
+/* Loading screen: the logo breathing softly above a rose progress line. */
+.app-splash{background:radial-gradient(120% 60% at 50% 20%,#fbf7f3 0,#f4ede7 55%,#ebe1d9 100%)}
+.splash-brand{--logo-h:58px;animation:splash-logo 2.4s ease-in-out infinite}
+@keyframes splash-logo{50%{transform:scale(1.04);opacity:.85}}
+.splash-bar{width:132px;background:rgba(185,139,129,.2)}
+.splash-bar i{background:linear-gradient(90deg,transparent,#b98b81,transparent)}
+@media (prefers-reduced-motion:reduce){.splash-brand{animation:none}}

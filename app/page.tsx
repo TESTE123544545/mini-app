@@ -685,7 +685,7 @@ let activeNavTransition: ViewTransition | null = null;
 const viewLabels: Record<View, string> = { home: "Início", premium: "Premium", diagnostic: "Meu Diagnóstico", signs: "Signos & Astrologia", tree: "Sua Árvore", missions: "Sua Jornada", journal: "Seu Diário", profile: "Seu Caminho", goal: "Meu Objetivo", chat: "Conversar" };
 
 function AppSplash() {
-  return <main className="app-splash"><div className="stars" aria-hidden="true"/><div><div className="brand-mark"><Leaf/></div><p>Veias da Sintonia</p><div className="splash-bar" aria-hidden="true"><i/></div></div></main>;
+  return <main className="app-splash" aria-busy="true"><div><BrandLockup stacked className="splash-brand"/><div className="splash-bar" aria-hidden="true"><i/></div></div></main>;
 }
 
 const paywallHeadline: Record<string, string> = {
