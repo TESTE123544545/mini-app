@@ -82,7 +82,7 @@ html:has(.entry),body:has(.entry){background:#070f24}
 
 /* Welcome composition: the artwork stands whole at the top (no veil over it), and the words rise
    out of the river of light at its foot. */
-.entry--welcome{padding:0;display:block;background:radial-gradient(90% 40% at 50% 100%,rgba(79,140,255,.12),transparent 70%),#070f24}
+.entry--welcome{padding:0;display:block;background:radial-gradient(1.4px 1.4px at 12px 18px,rgba(255,244,220,0.9) 50%,transparent),radial-gradient(1px 1px at 140px 62px,rgba(255,244,220,0.7) 50%,transparent),radial-gradient(1.2px 1.2px at 88px 150px,rgba(255,244,220,0.8) 50%,transparent),radial-gradient(1px 1px at 210px 190px,rgba(255,244,220,0.6) 50%,transparent),radial-gradient(1.6px 1.6px at 40px 230px,rgba(255,244,220,0.95) 50%,transparent),radial-gradient(1px 1px at 260px 40px,rgba(255,244,220,0.7) 50%,transparent),radial-gradient(1.3px 1.3px at 180px 110px,rgba(255,244,220,0.85) 50%,transparent) 0 0/280px 280px,radial-gradient(1px 1px at 30px 70px,rgba(255,244,220,0.5) 50%,transparent),radial-gradient(1px 1px at 190px 20px,rgba(255,244,220,0.45) 50%,transparent),radial-gradient(1px 1px at 120px 200px,rgba(255,244,220,0.5) 50%,transparent),radial-gradient(1.2px 1.2px at 300px 260px,rgba(255,244,220,0.6) 50%,transparent),radial-gradient(1px 1px at 250px 140px,rgba(255,244,220,0.4) 50%,transparent),radial-gradient(1px 1px at 70px 320px,rgba(255,244,220,0.5) 50%,transparent) 60px 90px/340px 340px,radial-gradient(60% 50% at 72% 45%,rgba(217,178,106,.1),transparent 70%),radial-gradient(70% 60% at 15% 20%,rgba(79,110,200,.14),transparent 70%),radial-gradient(90% 40% at 50% 100%,rgba(79,140,255,.12),transparent 70%),#070f24}
 .entry--welcome::before,.entry--welcome::after{content:none}
 .entry-welcome{position:relative;min-height:100svh;display:grid;grid-template-rows:auto auto;text-align:center}
 .entry-welcome .entry-nav{position:absolute;z-index:2;top:0;left:0;right:0;padding:max(12px,env(safe-area-inset-top)) 14px 12px}
@@ -153,16 +153,16 @@ html:has(.entry),body:has(.entry){background:#070f24}
   .entry::before{background-position:center 42%}
   .entry::after{background:linear-gradient(90deg,rgba(7,15,36,.92) 0,rgba(7,15,36,.7) 38%,rgba(7,15,36,.15) 62%,rgba(7,15,36,.35) 100%)}
   .entry-frame{padding:24px 40px 36px;border-radius:28px;gap:22px 48px}
-  .entry--welcome{padding:0}
-  .entry--welcome::before{content:"";position:fixed;inset:-60px;z-index:-1;background:url(/brand/cosmos-hero.webp) 0 20%/cover no-repeat;filter:blur(48px) saturate(1.1);opacity:.32}
-  .entry-welcome{min-height:100svh;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:1fr;align-items:center;text-align:left}
-  .entry-welcome .entry-nav{padding:24px 40px}
-  .entry-art{grid-column:2;grid-row:1;height:100svh;aspect-ratio:843/1264}
-  .entry-art img{-webkit-mask:linear-gradient(90deg,transparent,#000 22%);mask:linear-gradient(90deg,transparent,#000 22%)}
-  .entry-copy{grid-column:1;grid-row:1;justify-items:start;margin:0;padding:96px 48px 48px max(48px,calc((100vw - 1240px) / 2));max-width:680px;justify-self:end}
-  .entry-copy .brand-lockup{--logo-h:52px}
-  .entry-welcome .entry-lede{margin-left:0}
-  .entry-welcome .entry-actions{grid-template-columns:auto auto;justify-content:start;justify-items:start;max-width:none}
+  .entry-welcome{max-width:1360px;margin:0 auto;padding:0 clamp(32px,4vw,64px);grid-template-columns:minmax(0,1fr) auto;grid-template-rows:1fr;column-gap:clamp(24px,4vw,80px);align-items:center;text-align:left}
+  .entry-welcome .entry-nav{padding:24px clamp(32px,4vw,64px)}
+  .entry-art{grid-column:2;grid-row:1;height:min(100svh,1080px);aspect-ratio:843/1264;overflow:visible}
+  .entry-art img{-webkit-mask:linear-gradient(90deg,transparent,#000 16%,#000 84%,transparent),linear-gradient(180deg,transparent,#000 6%,#000 84%,transparent);-webkit-mask-composite:source-in;mask:linear-gradient(90deg,transparent,#000 16%,#000 84%,transparent),linear-gradient(180deg,transparent,#000 6%,#000 84%,transparent);mask-composite:intersect}
+  .entry-copy{grid-column:1;grid-row:1;justify-items:start;justify-self:end;width:100%;max-width:600px;margin:0;padding:96px 0 48px}
+  .entry-copy .brand-lockup{--logo-h:56px}
+  .entry-welcome .entry-title{font-size:clamp(2.8rem,4.4vw,4.4rem)}
+  .entry-welcome .entry-beta{font-size:.72rem}
+  .entry-welcome .entry-lede{margin-left:0;max-width:40ch;font-size:1.08rem}
+  .entry-welcome .entry-actions{grid-template-columns:auto auto;justify-content:start;justify-items:start;max-width:none;margin-top:14px}
   .entry-welcome .entry-link{grid-column:1/-1;justify-self:start}
   .entry-auth{grid-template-columns:minmax(0,1fr) minmax(0,440px);grid-template-areas:"nav nav" "object panel";align-items:stretch}
   .entry-auth .entry-nav{grid-area:nav}
