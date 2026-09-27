@@ -61,3 +61,11 @@ next-env.d.ts
 /.impeccable/
 
 .vercel
+
+# Native Android app (Capacitor)
+/app-nativo/node_modules/
+/app-nativo/android/.gradle/
+/app-nativo/android/app/build/
+/app-nativo/android/build/
+/app-nativo/android/local.properties
+/app-nativo/android/capacitor-cordova-android-plugins/build/

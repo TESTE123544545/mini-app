@@ -1,0 +1,30 @@
+{
+  "appId": "br.com.veiasdasintonia.prosperar",
+  "appName": "Seu Signo",
+  "webDir": "www",
+  "server": {
+    "url": "https://veiasdasintonia.com.br",
+    "cleartext": false,
+    "errorPath": "offline.html",
+    "allowNavigation": ["veiasdasintonia.com.br", "checkout.stripe.com", "*.stripe.com"]
+  },
+  "android": {
+    "backgroundColor": "#070f24",
+    "allowMixedContent": false,
+    "webContentsDebuggingEnabled": false
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 1200,
+      "launchAutoHide": true,
+      "backgroundColor": "#070f24",
+      "showSpinner": false,
+      "androidScaleType": "CENTER"
+    },
+    "StatusBar": {
+      "overlaysWebView": false,
+      "backgroundColor": "#070f24",
+      "style": "DARK"
+    }
+  }
+}

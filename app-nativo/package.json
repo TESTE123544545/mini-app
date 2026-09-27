@@ -1,0 +1,19 @@
+{
+  "name": "veias-da-sintonia-nativo",
+  "private": true,
+  "version": "1.0.0",
+  "description": "App Android nativo (Capacitor) do Veias da Sintonia: WebView própria, sem Chrome.",
+  "scripts": {
+    "sync": "cap sync android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.5.2",
+    "@capacitor/app": "^8.1.1",
+    "@capacitor/core": "^8.5.2",
+    "@capacitor/splash-screen": "^8.0.2",
+    "@capacitor/status-bar": "^8.0.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.5.2"
+  }
+}
