@@ -1,10 +1,13 @@
 [
   {
-    "relation": ["delegate_permission/common.handle_all_urls"],
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
     "target": {
       "namespace": "android_app",
       "package_name": "br.com.veiasdasintonia.prosperar",
       "sha256_cert_fingerprints": [
+        "84:97:16:F8:13:A5:26:3A:A5:64:A7:31:02:10:49:DC:DF:15:8F:48:CE:63:19:64:5F:3D:A7:1F:47:D1:0D:F7",
         "F7:1B:7C:01:80:1E:5A:08:24:BB:65:4B:68:76:0A:CF:2F:8E:25:31:16:08:75:4C:E4:63:C7:DD:5F:5A:36:00"
       ]
     }

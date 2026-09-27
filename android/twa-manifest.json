@@ -4,23 +4,23 @@
   "name": "Use Seu Signo Para Prosperar",
   "launcherName": "Seu Signo",
   "display": "standalone",
-  "themeColor": "#071326",
-  "themeColorDark": "#000000",
-  "navigationColor": "#000000",
-  "navigationColorDark": "#000000",
-  "navigationDividerColor": "#000000",
-  "navigationDividerColorDark": "#000000",
-  "backgroundColor": "#071326",
+  "themeColor": "#070f24",
+  "themeColorDark": "#070f24",
+  "navigationColor": "#070f24",
+  "navigationColorDark": "#070f24",
+  "navigationDividerColor": "#070f24",
+  "navigationDividerColorDark": "#070f24",
+  "backgroundColor": "#070f24",
   "enableNotifications": true,
   "startUrl": "/",
   "iconUrl": "https://veiasdasintonia.com.br/app-icon-512.png",
   "maskableIconUrl": "https://veiasdasintonia.com.br/app-icon-maskable-512.png",
   "splashScreenFadeOutDuration": 300,
   "signingKey": {
-    "path": "D:\\miniapp\\android\\android.keystore",
-    "alias": "android"
+    "path": "D:\tudoandroid-signing\u000beias-da-sintonia-release.keystore",
+    "alias": "veias"
   },
-  "appVersionName": "1",
+  "appVersionName": "1.0.0",
   "appVersionCode": 1,
   "shortcuts": [],
   "generatorApp": "bubblewrap-cli",
@@ -36,12 +36,17 @@
   "fullScopeUrl": "https://veiasdasintonia.com.br/",
   "minSdkVersion": 21,
   "orientation": "portrait",
-  "fingerprints": [],
+  "fingerprints": [
+    {
+      "name": "release",
+      "value": "84:97:16:F8:13:A5:26:3A:A5:64:A7:31:02:10:49:DC:DF:15:8F:48:CE:63:19:64:5F:3D:A7:1F:47:D1:0D:F7"
+    }
+  ],
   "additionalTrustedOrigins": [],
   "retainedBundles": [],
   "protocolHandlers": [],
   "fileHandlers": [],
   "launchHandlerClientMode": "",
   "displayOverride": [],
-  "appVersion": "1"
+  "appVersion": "1.0.0"
 }

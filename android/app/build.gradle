@@ -26,13 +26,13 @@ def twaManifest = [
     launchUrl: '/', // The start path for the TWA. Must be relative to the domain.
     name: 'Use Seu Signo Para Prosperar', // The application name.
     launcherName: 'Seu Signo', // The name shown on the Android Launcher.
-    themeColor: '#071326', // The color used for the status bar.
-    themeColorDark: '#000000', // The color used for the dark status bar.
-    navigationColor: '#000000', // The color used for the navigation bar.
-    navigationColorDark: '#000000', // The color used for the dark navbar.
-    navigationDividerColor: '#000000', // The navbar divider color.
-    navigationDividerColorDark: '#000000', // The dark navbar divider color.
-    backgroundColor: '#071326', // The color used for the splash screen background.
+    themeColor: '#070F24', // The color used for the status bar.
+    themeColorDark: '#070F24', // The color used for the dark status bar.
+    navigationColor: '#070F24', // The color used for the navigation bar.
+    navigationColorDark: '#070F24', // The color used for the dark navbar.
+    navigationDividerColor: '#070F24', // The navbar divider color.
+    navigationDividerColorDark: '#070F24', // The dark navbar divider color.
+    backgroundColor: '#070F24', // The color used for the splash screen background.
     enableNotifications: true, // Set to true to enable notification delegation.
     // Every shortcut must include the following fields:
     // - name: String that will show up in the shortcut.
@@ -58,7 +58,7 @@ android {
         minSdkVersion 21
         targetSdkVersion 36
         versionCode 1
-        versionName "1"
+        versionName "1.0.0"
 
         // The name for the application
         resValue "string", "appName", twaManifest.name
