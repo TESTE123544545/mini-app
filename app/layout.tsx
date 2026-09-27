@@ -92,9 +92,9 @@ export const metadata: Metadata = {
     title: "Seu Signo",
   },
   icons: {
-    icon: "/favicon.svg",
-    shortcut: "/favicon.svg",
-    apple: "/app-icon-192.png",
+    icon: "/favicon.png",
+    shortcut: "/favicon.png",
+    apple: "/apple-touch-icon.png",
   },
 };
 
@@ -138,7 +138,7 @@ export default function RootLayout({
       <body className="antialiased">
         {/* React hoists these into <head>; the display face loads with the first paint. */}
         <link rel="preload" href="/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
-        <link rel="preload" href="/fonts/archivo-latin.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+        <link rel="preload" href="/fonts/cormorant-garamond-latin.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
         {children}
         <PwaRegister />
       </body>

@@ -133,3 +133,5 @@
 .zodiac-section h2{font-size:clamp(1.6rem,5.4vw,2.05rem)}
 .zodiac-card h2{font-size:1.35rem}
 .zodiac-phrase p{font-stretch:normal;font-size:1.35rem!important}
+
+.zodiac-nav .brand-lockup{--logo-h:30px}

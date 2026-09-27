@@ -1,6 +1,5 @@
 /* Entry screens (welcome + account) in the Veias da Sintonia brand: warm cream, rose gold, an elegant
    serif, the Tree of Prosperity inside the zodiac ring, and the misty lake from the brand pieces. */
-@font-face{font-family:"Archivo";font-style:normal;font-weight:100 900;font-stretch:62% 125%;font-display:swap;src:url(/fonts/archivo-latin.woff2) format("woff2-variations"),url(/fonts/archivo-latin.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
 
 .entry{
   --entry-ground:#f4ede7;
@@ -50,7 +49,7 @@ html:has(.entry),body:has(.entry){background:#f4ede7}
 
 /* Nav */
 .entry-nav{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:40px}
-.entry-nav .brand-lockup span{font-size:1.05rem}
+.entry-nav .brand-lockup{--logo-h:30px}
 .entry-nav-links{display:flex;align-items:center;gap:12px;margin-left:auto}
 .entry-nav-link{color:var(--entry-ink-2);font-size:.72rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;text-decoration:none}
 .entry-nav-link:hover{color:var(--entry-ink)}
@@ -169,8 +168,7 @@ html:has(.entry),body:has(.entry){background:#f4ede7}
 @media (max-width:899px){
   .entry-welcome{gap:14px;grid-template-rows:auto auto minmax(150px,1fr) auto}
   .entry-copy{gap:10px}
-  .entry-copy .brand-lockup--stacked img{width:44px;height:44px}
-  .entry-copy .brand-lockup--stacked span{font-size:1.55rem}
+  .entry-copy .brand-lockup--stacked{--logo-h:50px}
   .entry-title{font-size:clamp(1.9rem,8.6vw,2.6rem)}
   .entry-lede{font-size:.94rem}
   .entry-pill{min-height:50px}

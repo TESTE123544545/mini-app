@@ -52,13 +52,12 @@ body .bottom-nav button:hover{color:var(--studio-ink)}
 body .bottom-nav .active{color:var(--studio-accent);background:rgba(185,139,129,.14)}
 body .bottom-nav .active svg{filter:none;color:var(--studio-accent)}
 
-/* Brand lockup: the interlocking-hearts mark with the lowercase serif name. */
-.brand-lockup{display:inline-flex;align-items:center;gap:8px;color:var(--studio-ink);text-decoration:none}
-.brand-lockup img{width:30px;height:30px;flex:0 0 auto}
-.brand-lockup span{font-family:var(--font-display);font-size:1.12rem;font-weight:600;line-height:.95;letter-spacing:-.005em;text-transform:lowercase}
-.brand-lockup--stacked{flex-direction:column;gap:10px;text-align:center}
-.brand-lockup--stacked img{width:64px;height:64px}
-.brand-lockup--stacked span{font-size:2.1rem;line-height:.9}
+/* Brand lockup: the logo mark beside the logo name (a mask tinted with the text colour). */
+.brand-lockup{--logo-h:32px;display:inline-flex;align-items:center;gap:8px;color:var(--studio-ink);text-decoration:none}
+.brand-mark-img{width:var(--logo-h);height:var(--logo-h);flex:0 0 auto;object-fit:contain}
+.brand-wordmark{display:block;height:var(--logo-h);aspect-ratio:2/1;flex:0 0 auto;background:currentColor;-webkit-mask:url(/brand/logo-wordmark.png) center/contain no-repeat;mask:url(/brand/logo-wordmark.png) center/contain no-repeat}
+.brand-lockup--stacked{--logo-h:64px;flex-direction:column;gap:8px}
+.brand-lockup--stacked .brand-mark-img{width:calc(var(--logo-h) * 1.15);height:calc(var(--logo-h) * 1.15)}
 .brand-ornament{display:flex;align-items:center;justify-content:center;gap:12px;color:var(--studio-amber)}
 .brand-ornament::before,.brand-ornament::after{content:"";height:1px;width:min(90px,22vw);background:linear-gradient(90deg,transparent,var(--studio-amber))}
 .brand-ornament::after{transform:scaleX(-1)}
@@ -232,8 +231,7 @@ body .tree-stage>.prosperity-tree-svg{position:absolute;inset:0;width:100%;heigh
 .admin-reset__result .ghost-button{justify-self:start;display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 16px;font-weight:700}
 /* The lockup above each screen title. */
 .topbar-brand{margin-bottom:4px}
-.topbar-brand img{width:22px;height:22px}
-.topbar-brand span{font-size:.98rem}
+.topbar-brand{--logo-h:24px}
 
 /* "Quer ir além do diagnóstico?" — the brand's circled-icon grid of what Premium unlocks. */
 .premium-features{text-align:center}

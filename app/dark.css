@@ -672,6 +672,7 @@ html[data-mode=dark],:root[data-mode=dark] body{background:#191917;color:var(--s
 :root[data-mode=dark] body .bottom-nav .active{color:var(--studio-accent);background:rgba(185,139,129,0.14)}
 :root[data-mode=dark] body .bottom-nav .active svg{filter:none;color:var(--studio-accent)}
 :root[data-mode=dark] .brand-lockup{color:var(--studio-ink)}
+:root[data-mode=dark] .brand-wordmark{background:currentColor}
 :root[data-mode=dark] .brand-ornament{color:var(--studio-amber)}
 :root[data-mode=dark] .brand-ornament::before,:root[data-mode=dark] .brand-ornament::after{background:linear-gradient(90deg,transparent,var(--studio-amber))}
 :root[data-mode=dark] .app-shell h1,:root[data-mode=dark] .app-shell h2,:root[data-mode=dark] .app-shell h3,:root[data-mode=dark] .onboarding h1,:root[data-mode=dark] .chat-entry strong,:root[data-mode=dark] .diag-entry__copy strong,:root[data-mode=dark] .diag-entry__copy h2,:root[data-mode=dark] .diag-entry__copy h3{color:var(--studio-ink)}
