@@ -13,6 +13,7 @@
   --entry-line:rgba(217,178,106,.42);
   --entry-display:"Cinzel","Cormorant Garamond",Georgia,serif;
   --entry-ease:cubic-bezier(.16,1,.3,1);
+  --entry-sky:url(/brand/stars.svg) 0 0/800px 800px,url(/brand/stars.svg) 310px 170px/520px 520px,radial-gradient(55% 60% at 74% 48%,rgba(217,178,106,.13),transparent 70%),radial-gradient(60% 70% at 12% 18%,rgba(70,110,220,.2),transparent 70%),radial-gradient(80% 50% at 40% 110%,rgba(79,140,255,.14),transparent 70%),#070f24;
   color-scheme:dark;
   position:relative;
   min-height:100svh;
@@ -153,19 +154,21 @@ html:has(.entry),body:has(.entry){background:#070f24}
   .entry::before{background-position:center 42%}
   .entry::after{background:linear-gradient(90deg,rgba(7,15,36,.92) 0,rgba(7,15,36,.7) 38%,rgba(7,15,36,.15) 62%,rgba(7,15,36,.35) 100%)}
   .entry-frame{padding:24px 40px 36px;border-radius:28px;gap:22px 48px}
-  /* The art is portrait: it stands centred at its own size (never stretched), over a starfield,
-     and the promise sits on the river of light at its foot. */
-  .entry-welcome{display:block;min-height:100svh;overflow:hidden}
-  .entry-welcome .entry-nav{padding:24px clamp(32px,4vw,64px)}
-  .entry-art{position:absolute;inset:0 auto auto 50%;transform:translateX(-50%);height:min(100svh,1264px);aspect-ratio:843/1264}
-  .entry-art img{-webkit-mask:linear-gradient(90deg,transparent,#000 14%,#000 86%,transparent),linear-gradient(180deg,#000 52%,rgba(0,0,0,.35) 80%,transparent);-webkit-mask-composite:source-in;mask:linear-gradient(90deg,transparent,#000 14%,#000 86%,transparent),linear-gradient(180deg,#000 52%,rgba(0,0,0,.35) 80%,transparent);mask-composite:intersect}
-  .entry-copy{position:absolute;left:0;right:0;bottom:0;margin:0;padding:0 32px max(32px,4svh);gap:12px}
+  /* Promise on the left; the owner's art on the right as a temple-arch portal in gold hairlines,
+     shown at its own resolution (never stretched). */
+  .entry-welcome{max-width:1320px;margin:0 auto;padding:96px clamp(32px,5vw,80px) 40px;min-height:100svh;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:1fr;column-gap:clamp(40px,6vw,120px);align-items:center;text-align:left}
+  .entry-welcome .entry-nav{padding:28px clamp(32px,5vw,80px)}
+  .entry-art{grid-column:2;grid-row:1;height:min(calc(100svh - 150px),860px);aspect-ratio:843/1264;overflow:visible;border-radius:9999px 9999px 18px 18px;box-shadow:0 0 0 1px rgba(230,196,122,.75),0 0 90px -10px rgba(217,178,106,.35),0 40px 90px -30px rgba(0,0,0,.9)}
+  .entry-art::before{content:"";position:absolute;inset:-14px;border:1px solid rgba(217,178,106,.4);border-radius:9999px 9999px 26px 26px;pointer-events:none}
+  .entry-art::after{content:"";position:absolute;left:50%;top:-24px;width:18px;height:18px;transform:translateX(-50%);background:var(--entry-gold);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 0L13.6 10.4L24 12L13.6 13.6L12 24L10.4 13.6L0 12L10.4 10.4Z'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 0L13.6 10.4L24 12L13.6 13.6L12 24L10.4 13.6L0 12L10.4 10.4Z'/%3E%3C/svg%3E") center/contain no-repeat;filter:drop-shadow(0 0 8px rgba(230,196,122,.8))}
+  .entry-art img{border-radius:inherit;-webkit-mask:none;mask:none}
+  .entry-copy{grid-column:1;grid-row:1;justify-items:start;margin:0;padding:0;gap:14px;max-width:620px}
   .entry-copy .brand-lockup{display:none}
-  .entry-welcome .entry-title{font-size:clamp(2.2rem,min(3.6vw,6svh),3.6rem);max-width:none;text-shadow:0 0 30px rgba(230,196,122,.35),0 2px 18px rgba(7,15,36,.95)}
-  .entry-welcome .entry-beta{font-size:.72rem}
-  .entry-welcome .entry-lede{max-width:52ch;font-size:1.06rem}
-  .entry-welcome .entry-actions{grid-template-columns:auto auto;justify-content:center;max-width:none;margin-top:10px}
-  .entry-welcome .entry-link{grid-column:1/-1}
+  .entry-welcome .entry-beta{min-height:30px;padding:0 16px;border:1px solid var(--entry-line);border-radius:999px;background:rgba(7,15,36,.55);font-size:.7rem}
+  .entry-welcome .entry-title{font-size:clamp(2.8rem,4.6vw,4.9rem);line-height:1.04}
+  .entry-welcome .entry-lede{margin:4px 0 0;max-width:38ch;font-size:1.1rem}
+  .entry-welcome .entry-actions{grid-template-columns:auto auto;justify-content:start;justify-items:start;max-width:none;margin-top:16px}
+  .entry-welcome .entry-link{grid-column:1/-1;justify-self:start}
   .entry-nav-brand{display:inline-flex;--logo-h:44px;color:var(--entry-gold)}
   /* The account screen too: starfield instead of the stretched art. */
   .entry:not(.entry--welcome){background:var(--entry-sky)}
