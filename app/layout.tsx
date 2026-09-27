@@ -6,6 +6,7 @@ import "./diagnostic.css";
 import "./studio.css";
 import "./entry.css";
 import "./dark.css";
+import "./celestial.css";
 import { PwaRegister } from "./pwa-register";
 import { COLOR_MODE_BOOT } from "@/lib/colorModeBoot";
 

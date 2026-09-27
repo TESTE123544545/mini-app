@@ -1016,6 +1016,7 @@ function HomeView({ profile, plan, week, part, xp, level, stage, streak, fruits,
   const firstName = profile.name.split(" ")[0];
   const tomorrow = week[1];
   return <div className="home-flow">
+    <div className="home-main">
     <button type="button" className="chat-entry" onClick={() => (isPremium ? navigate("chat") : openPaywall("chat"))}>
       <span className="chat-entry-icon"><Sparkles/></span>
       <span><strong>Conversar com a IA</strong><small>Desabafe, pense em voz alta ou peça um conselho — a qualquer hora</small></span>
@@ -1025,6 +1026,8 @@ function HomeView({ profile, plan, week, part, xp, level, stage, streak, fruits,
     {!diagnostic && <DiagnosticHomeCards onOpenDiagnostic={() => navigate("diagnostic")} onOpenTree={() => openTree("home")}/>}
     <section className="daily-briefing">
       <div className="briefing-orbit" aria-hidden="true"><span/><span/><span/></div>
+      {/* eslint-disable-next-line @next/next/no-img-element -- the pre-sized brand medallion */}
+      <img className="briefing-medallion" src="/brand/arvore-cosmos.webp" alt="" width={552} height={552}/>
       <div className="briefing-top"><span className="theme-pill"><Compass/>Dia de {plan.theme.name}</span><span className="day-phase">{dayPartIcon[part]}{dayPartLabel[part]}</span></div>
       <p className="eyebrow">Seu clima de prosperidade</p>
       <h2>{greetingLabel[part]}, {firstName}. {plan.theme.verb} é a palavra de hoje.</h2>
@@ -1034,6 +1037,8 @@ function HomeView({ profile, plan, week, part, xp, level, stage, streak, fruits,
     </section>
     <section className={`mission-card ${missionDone ? "done" : ""}`}><div className="mission-icon">{missionDone ? <Check/> : <Target/>}</div><div className="mission-copy"><p className="eyebrow">Missão do dia · {missionDone ? "concluída" : "+20 XP"}</p><h2>{missionDone ? "Intenção em movimento" : plan.theme.verb}</h2><p>{plan.mission}</p></div><button className="gold-button" disabled={missionDone} onClick={completeMission}>{missionDone ? <><Check/> Missão concluída</> : <><Target/> Começar missão</>}</button></section>
     {diagnostic && <DiagnosticHomeCards result={diagnostic} onOpenDiagnostic={() => navigate("diagnostic")} onOpenTree={() => openTree("home")}/>}
+    </div>
+    <aside className="home-side" aria-label="Sua árvore e seu ciclo">
     <TreeCard xp={xp} level={level} stage={stage} streak={streak} fruits={fruits} celebrating={treeCelebrating} goalProgress={mainGoal?.progress}/>
     <section className="week-orbit" aria-label="Próximos sete dias">
       <div className="section-heading"><div><p className="eyebrow">Seu ciclo</p><h2>Próximos 7 dias</h2></div><CalendarDays/></div>
@@ -1041,9 +1046,12 @@ function HomeView({ profile, plan, week, part, xp, level, stage, streak, fruits,
       <p>{missionDone ? `Missão de hoje concluída. Amanhã o foco muda para ${tomorrow.theme.name.toLowerCase()}.` : "Cada dia traz um foco simbólico diferente — nenhum deles é uma previsão."}</p>
     </section>
     <section className="journey-shortcuts" aria-label="Atalhos da jornada"><button onClick={() => navigate("missions")}><span><Route/></span><strong>Jornada</strong><small>{missionDone ? "Missão feita" : "Missão de hoje"}</small></button><button onClick={() => navigate("journal")}><span><BookOpen/></span><strong>Refletir</strong><small>Meu diário</small></button><button onClick={() => navigate("tree")}><span><Leaf/></span><strong>Minha árvore</strong><small>{stage}</small></button></section>
+    </aside>
+    <div className="home-more">
     <section className="oracle-card"><div><p className="eyebrow">Oráculo do dia</p><h2>{oracleOpen ? plan.oracle.message : "Uma mensagem para o seu momento"}</h2>{oracleOpen && <p>Transforme em ação: {plan.oracle.action.charAt(0).toLowerCase() + plan.oracle.action.slice(1)}</p>}</div><button className="ghost-button" onClick={() => { setOracleOpen(!oracleOpen); if (!oracleOpen) { haptic(8); track("oracle_revealed"); } }}>{oracleOpen ? "Recolher" : "Revelar mensagem"}</button></section>
     <section className="goal-snapshot"><div className="section-heading"><div><p className="eyebrow">Meu objetivo</p><h2>{mainGoal ? mainGoal.title : "Plante sua primeira meta"}</h2></div><button onClick={openGoals}>{mainGoal ? "Ver objetivo" : <><Plus size={16}/> Criar</>}</button></div>{mainGoal ? <><Progress value={mainGoal.progress}/><div className="goal-foot"><span>{mainGoal.category} · {mainGoal.progress}%</span>{(mainGoal.kind === "financial" || mainGoal.kind === "partial") && mainGoal.targetAmount ? <button onClick={openGoals} disabled={mainGoal.progress === 100}>{mainGoal.progress === 100 ? "Fruto conquistado" : "Adicionar valor"}</button> : <button onClick={() => advanceGoal(mainGoal.id)} disabled={mainGoal.progress === 100}>{mainGoal.progress === 100 ? "Fruto conquistado" : "Avançar +25%"}</button>}</div></> : <p>Metas concluídas se transformam em frutos na sua árvore.</p>}</section>
     <div className="tomorrow"><Sparkles/><div><strong>Amanhã: dia de {tomorrow.theme.name.toLowerCase()}</strong><span>{tomorrow.theme.guidance}</span></div></div>
+    </div>
     <AiInsightBubble profile={profile} week={week}/>
   </div>;
 }

@@ -1,0 +1,97 @@
+/* Celestial app layer: the logged-in app under the owner's celestial identity — a real night sky, the
+   golden Tree of Life medallion on the day's briefing, gold-framed cards, and a two-column Home on
+   desktop. Loaded after dark.css (and not read by the dark-theme generator): colour rules here are
+   scoped to the navy mode, layout rules apply to both modes. */
+
+/* ---------- Sky ---------- */
+/* The sky layer sits behind the page, so the page itself stays see-through while the app is open. */
+:root[data-mode=dark]:has(.app-shell){background:#070f24}
+:root[data-mode=dark]:has(.app-shell) body{background:transparent}
+:root[data-mode=dark] .app-shell,:root[data-mode=dark] .app-shell[data-daypart],:root[data-mode=dark] .app-shell[data-theme]{background:transparent}
+/* A fixed layer rather than background-attachment:fixed, which phones ignore and which repaints badly. */
+:root[data-mode=dark] .app-shell::before{content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;
+  background:
+    url(/brand/stars.svg) 0 0/800px 800px,
+    url(/brand/stars.svg) 310px 170px/520px 520px,
+    radial-gradient(70% 45% at 50% -8%,rgba(70,110,220,.3),transparent 70%),
+    radial-gradient(45% 40% at 100% 55%,rgba(217,178,106,.09),transparent 70%),
+    radial-gradient(50% 45% at 0% 95%,rgba(79,140,255,.12),transparent 70%),
+    #070f24;
+}
+
+/* ---------- Top bar ---------- */
+body .topbar{align-items:flex-start}
+body .topbar>div:first-child{display:grid;gap:8px;justify-items:start}
+body .topbar .topbar-brand{--logo-h:28px;margin:0}
+:root[data-mode=dark] body .topbar h1{color:#f1d9a0;text-shadow:0 0 24px rgba(230,196,122,.35)}
+
+/* ---------- Gold-framed cards ---------- */
+:root[data-mode=dark] body :is(.surface-card,.tree-card,.mission-card,.oracle-card,.goal-snapshot,.week-orbit,.chat-entry,.diag-entry,.premium-card,.content-list,.history,.sign-profile,.trail-card,.weekly-report,.tomorrow){
+  border:1px solid rgba(217,178,106,.36);
+  background:linear-gradient(165deg,rgba(22,37,80,.9),rgba(9,18,42,.93));
+  box-shadow:inset 0 1px 0 rgba(241,217,160,.08),0 30px 60px -34px rgba(0,0,0,.9);
+}
+/* The hero cards carry the brand's corner ornaments, as on the owner's frames. */
+:root[data-mode=dark] body :is(.daily-briefing,.tree-card,.mission-card,.oracle-card){
+  --c:rgba(230,196,122,.8);
+  border:1px solid rgba(217,178,106,.42);
+  background:
+    linear-gradient(var(--c),var(--c)) left 12px top 12px/18px 1px no-repeat,
+    linear-gradient(var(--c),var(--c)) left 12px top 12px/1px 18px no-repeat,
+    linear-gradient(var(--c),var(--c)) right 12px top 12px/18px 1px no-repeat,
+    linear-gradient(var(--c),var(--c)) right 12px top 12px/1px 18px no-repeat,
+    linear-gradient(var(--c),var(--c)) left 12px bottom 12px/18px 1px no-repeat,
+    linear-gradient(var(--c),var(--c)) left 12px bottom 12px/1px 18px no-repeat,
+    linear-gradient(var(--c),var(--c)) right 12px bottom 12px/18px 1px no-repeat,
+    linear-gradient(var(--c),var(--c)) right 12px bottom 12px/1px 18px no-repeat,
+    radial-gradient(80% 60% at 85% 0%,rgba(217,178,106,.14),transparent 70%),
+    linear-gradient(165deg,rgba(24,40,86,.94),rgba(9,18,42,.95));
+  box-shadow:inset 0 0 0 5px rgba(7,15,36,.35),inset 0 0 0 6px rgba(217,178,106,.1),0 34px 70px -36px rgba(0,0,0,.95),0 0 50px -24px rgba(217,178,106,.3);
+}
+
+/* ---------- The day's briefing: the golden Tree of Life medallion ---------- */
+.daily-briefing .briefing-orbit{display:none}
+.briefing-medallion{position:relative;z-index:2;display:block;width:148px;height:148px;margin:4px auto 18px;border-radius:50%;box-shadow:0 0 0 1px rgba(230,196,122,.65),0 0 0 7px rgba(7,15,36,.55),0 0 0 8px rgba(217,178,106,.3),0 0 60px rgba(230,196,122,.35)}
+@media (prefers-reduced-motion:no-preference){
+  .briefing-medallion{animation:medallion-glow 6s ease-in-out infinite alternate}
+}
+@keyframes medallion-glow{
+  from{box-shadow:0 0 0 1px rgba(230,196,122,.65),0 0 0 7px rgba(7,15,36,.55),0 0 0 8px rgba(217,178,106,.3),0 0 40px rgba(230,196,122,.25)}
+  to{box-shadow:0 0 0 1px rgba(230,196,122,.8),0 0 0 7px rgba(7,15,36,.55),0 0 0 8px rgba(217,178,106,.4),0 0 80px rgba(230,196,122,.45)}
+}
+:root[data-mode=dark] .daily-briefing h2{color:#f3dfae}
+:root[data-mode=dark] .daily-briefing .briefing-voice{border-left-color:#d9b26a;background:rgba(217,178,106,.07)}
+
+/* ---------- Home columns ---------- */
+.home-main,.home-side,.home-more{display:contents}
+.home-main>.diag-entry,.home-more>.diag-entry{margin:0}
+
+@media (min-width:1100px){
+  body .app-frame{width:min(100%,1180px);padding-left:32px;padding-right:32px}
+  /* Other screens keep a comfortable reading width inside the wider frame. */
+  .view-swap>:not(.home-flow){max-width:720px;margin-left:auto;margin-right:auto}
+  body .topbar{max-width:none}
+  body .topbar h1{font-size:1.9rem}
+
+  .home-flow{grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);grid-template-areas:"main side" "more side";align-items:start;gap:24px}
+  .home-main,.home-more{display:grid;gap:18px;min-width:0}
+  .home-main{grid-area:main}
+  .home-more{grid-area:more}
+  .home-side{grid-area:side;display:grid;gap:18px;min-width:0;position:sticky;top:24px}
+
+  .daily-briefing{display:grid;grid-template-columns:minmax(0,1fr) 210px;column-gap:28px;padding:30px}
+  .daily-briefing>*{grid-column:1}
+  .daily-briefing>.briefing-medallion{grid-column:2;grid-row:1/span 5;align-self:center;width:210px;height:210px;margin:0}
+  .daily-briefing>.ritual-button{grid-column:1/-1}
+  .daily-briefing h2{max-width:none;font-size:1.8rem}
+}
+
+/* ---------- The living tree: set inside a gold astrolabe ring, like the brand's Tree of Life ---------- */
+:root[data-mode=dark] .tree-card .tree-stage{background:
+  radial-gradient(circle at 50% 50%,rgba(230,196,122,.2),transparent 42%),
+  radial-gradient(circle at 50% 50%,transparent 0 124px,rgba(217,178,106,.5) 124.5px 125.5px,transparent 126px),
+  radial-gradient(circle at 50% 50%,transparent 0 136px,rgba(217,178,106,.24) 136.5px 137.5px,transparent 138px),
+  radial-gradient(circle at 50% 50%,transparent 0 100px,rgba(217,178,106,.14) 100.5px 101.5px,transparent 102px)}
+
+/* Day names in the 7-day strip stay on one line instead of breaking mid-word. */
+.week-days b{display:block;max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;letter-spacing:0}
