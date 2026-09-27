@@ -129,53 +129,53 @@ export function ProsperityTree({ xp, celebrating = false, goalProgress }: { xp: 
     >
       <defs>
         <radialGradient id="pt-glow" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#fff1e6" stopOpacity={0.9 * glow} />
-          <stop offset="60%" stopColor="#f3d9cb" stopOpacity={0.35 * glow} />
-          <stop offset="100%" stopColor="#f3d9cb" stopOpacity="0" />
+          <stop offset="0%" stopColor="#f1d9a0" stopOpacity={0.55 * glow} />
+          <stop offset="60%" stopColor="#d9b26a" stopOpacity={0.18 * glow} />
+          <stop offset="100%" stopColor="#d9b26a" stopOpacity="0" />
         </radialGradient>
         <radialGradient id="pt-floor" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#5a3f38" stopOpacity="0.22" />
-          <stop offset="100%" stopColor="#5a3f38" stopOpacity="0" />
+          <stop offset="0%" stopColor="#000000" stopOpacity="0.35" />
+          <stop offset="100%" stopColor="#000000" stopOpacity="0" />
         </radialGradient>
         <linearGradient id="pt-pot" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#efe3da" />
-          <stop offset="28%" stopColor="#e6d6cb" />
-          <stop offset="70%" stopColor="#d3bfb2" />
-          <stop offset="100%" stopColor="#dcc9bd" />
+          <stop offset="0%" stopColor="#22386e" />
+          <stop offset="28%" stopColor="#172a58" />
+          <stop offset="70%" stopColor="#0b1633" />
+          <stop offset="100%" stopColor="#122249" />
         </linearGradient>
         <linearGradient id="pt-rim" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#f6ece5" />
-          <stop offset="100%" stopColor="#dbc8bc" />
+          <stop offset="0%" stopColor="#2a3f75" />
+          <stop offset="100%" stopColor="#0e1a3a" />
         </linearGradient>
         <radialGradient id="pt-soil" cx="50%" cy="40%" r="60%">
-          <stop offset="0%" stopColor="#8a6a5c" />
-          <stop offset="100%" stopColor="#5c4239" />
+          <stop offset="0%" stopColor="#2e2716" />
+          <stop offset="100%" stopColor="#15120b" />
         </radialGradient>
         <linearGradient id="pt-stem-green" x1="0" y1="1" x2="0" y2="0">
-          <stop offset="0%" stopColor="#8fa487" />
-          <stop offset="100%" stopColor="#b7c7a6" />
+          <stop offset="0%" stopColor="#a88b45" />
+          <stop offset="100%" stopColor="#e6c47a" />
         </linearGradient>
         <linearGradient id="pt-wood" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#9c7568" />
-          <stop offset="45%" stopColor="#c9a193" />
-          <stop offset="100%" stopColor="#8a6558" />
+          <stop offset="0%" stopColor="#8a6a2e" />
+          <stop offset="45%" stopColor="#e6c47a" />
+          <stop offset="100%" stopColor="#a57c35" />
         </linearGradient>
         <linearGradient id="pt-leaf" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#8fa487" />
-          <stop offset="100%" stopColor="#c3cfb2" />
+          <stop offset="0%" stopColor="#c9a254" />
+          <stop offset="100%" stopColor="#f1d9a0" />
         </linearGradient>
-        <radialGradient id="pt-leaf-back" cx="40%" cy="35%" r="70%"><stop offset="0%" stopColor="#b3bda0" /><stop offset="100%" stopColor="#8c9a80" /></radialGradient>
-        <radialGradient id="pt-leaf-mid" cx="38%" cy="30%" r="70%"><stop offset="0%" stopColor="#cfd4b6" /><stop offset="100%" stopColor="#a5ae8f" /></radialGradient>
-        <radialGradient id="pt-leaf-front" cx="35%" cy="28%" r="70%"><stop offset="0%" stopColor="#f0dccf" /><stop offset="100%" stopColor="#d4b5a4" /></radialGradient>
-        <radialGradient id="pt-gold-leaf" cx="35%" cy="28%" r="70%"><stop offset="0%" stopColor="#f6d9c9" /><stop offset="100%" stopColor="#c99a86" /></radialGradient>
+        <radialGradient id="pt-leaf-back" cx="40%" cy="35%" r="70%"><stop offset="0%" stopColor="#7d6128" /><stop offset="100%" stopColor="#4a3a18" /></radialGradient>
+        <radialGradient id="pt-leaf-mid" cx="38%" cy="30%" r="70%"><stop offset="0%" stopColor="#c9a254" /><stop offset="100%" stopColor="#8a6a2e" /></radialGradient>
+        <radialGradient id="pt-leaf-front" cx="35%" cy="28%" r="70%"><stop offset="0%" stopColor="#f5dc9e" /><stop offset="100%" stopColor="#d4ad5e" /></radialGradient>
+        <radialGradient id="pt-gold-leaf" cx="35%" cy="28%" r="70%"><stop offset="0%" stopColor="#fff0c4" /><stop offset="100%" stopColor="#e6c47a" /></radialGradient>
         <radialGradient id="pt-fruit" cx="34%" cy="30%" r="72%">
-          <stop offset="0%" stopColor="#fff0ea" />
-          <stop offset="45%" stopColor="#d9a595" />
-          <stop offset="100%" stopColor="#9a6b61" />
+          <stop offset="0%" stopColor="#fff4d6" />
+          <stop offset="45%" stopColor="#f1c661" />
+          <stop offset="100%" stopColor="#b8872e" />
         </radialGradient>
         <radialGradient id="pt-seed" cx="35%" cy="30%" r="70%">
-          <stop offset="0%" stopColor="#f3d6ca" />
-          <stop offset="100%" stopColor="#b98b81" />
+          <stop offset="0%" stopColor="#f7e3a8" />
+          <stop offset="100%" stopColor="#c99a3e" />
         </radialGradient>
       </defs>
 
@@ -185,9 +185,9 @@ export function ProsperityTree({ xp, celebrating = false, goalProgress }: { xp: 
       {/* Pot, soil and floor shadow — the one dark object in the scene. */}
       <ellipse cx={CX} cy="404" rx="96" ry="12" fill="url(#pt-floor)" />
       <path d="M92,344 L208,344 L196,398 Q150,408 104,398 Z" fill="url(#pt-pot)" />
-      <path d="M100,352 L102,392" stroke="#ffffff" strokeOpacity="0.55" strokeWidth="5" strokeLinecap="round" />
+      <path d="M100,352 L102,392" stroke="#f1d9a0" strokeOpacity="0.18" strokeWidth="5" strokeLinecap="round" />
       <rect x="84" y="330" width="132" height="16" rx="8" fill="url(#pt-rim)" />
-      <path d="M92,331.5 L208,331.5" stroke="#b98b81" strokeOpacity="0.8" strokeWidth="1" strokeLinecap="round" />
+      <path d="M92,331.5 L208,331.5" stroke="#e6c47a" strokeOpacity="0.9" strokeWidth="1" strokeLinecap="round" />
       <ellipse cx={CX} cy="336" rx="56" ry="5.5" fill="url(#pt-soil)" />
 
       {/* The seed rests on the soil until the sprout takes over. */}
@@ -220,7 +220,7 @@ export function ProsperityTree({ xp, celebrating = false, goalProgress }: { xp: 
           const rotation = side < 0 ? 180 + angle : -angle;
           return <g key={index} transform={`translate(${p.x.toFixed(1)} ${p.y.toFixed(1)}) rotate(${rotation})`} opacity={shown} style={{ transition: smooth }}>
             <path d={leafPath(L)} fill="url(#pt-leaf)" />
-            <path d={`M1,0 L${(L * 0.86).toFixed(1)},0`} stroke="#6f8467" strokeOpacity="0.45" strokeWidth="0.8" strokeLinecap="round" />
+            <path d={`M1,0 L${(L * 0.86).toFixed(1)},0`} stroke="#8a6a2e" strokeOpacity="0.5" strokeWidth="0.8" strokeLinecap="round" />
           </g>;
         })}
       </g>}
@@ -245,8 +245,8 @@ export function ProsperityTree({ xp, celebrating = false, goalProgress }: { xp: 
           const fx = crown.x + x * R;
           const fy = crown.y + y * R;
           return <g key={index} opacity={on ? 1 : 0} transform={`translate(${fx.toFixed(1)} ${fy.toFixed(1)}) scale(${on ? 1 : 0.3})`} style={{ transition: smooth }}>
-            {[0, 72, 144, 216, 288].map((angle) => <ellipse key={angle} cx="0" cy="-3.6" rx="2.6" ry="3.6" fill="#fbeae4" transform={`rotate(${angle})`} />)}
-            <circle r="2" fill="#c9958a" />
+            {[0, 72, 144, 216, 288].map((angle) => <ellipse key={angle} cx="0" cy="-3.6" rx="2.6" ry="3.6" fill="#dcebff" transform={`rotate(${angle})`} />)}
+            <circle r="2" fill="#f1d9a0" />
           </g>;
         })}
       </g>}
@@ -257,7 +257,7 @@ export function ProsperityTree({ xp, celebrating = false, goalProgress }: { xp: 
           const fx = crown.x + x * R;
           const fy = crown.y + y * R;
           return <g key={index} opacity={on ? 1 : 0} transform={`translate(${fx.toFixed(1)} ${fy.toFixed(1)}) scale(${on ? 1 : 0.3})`} style={{ transition: smooth }}>
-            <path d="M0,-6 Q1.5,-9 4,-10" stroke="#8a6558" strokeWidth="1.2" fill="none" strokeLinecap="round" />
+            <path d="M0,-6 Q1.5,-9 4,-10" stroke="#8a6a2e" strokeWidth="1.2" fill="none" strokeLinecap="round" />
             <circle r="6.4" fill="url(#pt-fruit)" />
             <ellipse cx="-2.2" cy="-2.4" rx="1.8" ry="1.2" fill="#ffffff" opacity="0.7" />
           </g>;
@@ -265,7 +265,7 @@ export function ProsperityTree({ xp, celebrating = false, goalProgress }: { xp: 
       </g>}
 
       <g className="prosperity-tree-sparkles" aria-hidden="true" opacity={0.25 + glow * 0.6}>
-        {SPARKLES.map(([x, y, s], index) => <path key={index} d={sparklePath(x, y, s)} fill="#c9958a" style={{ animationDelay: `${index * 0.5}s` }} />)}
+        {SPARKLES.map(([x, y, s], index) => <path key={index} d={sparklePath(x, y, s)} fill="#f1d9a0" style={{ animationDelay: `${index * 0.5}s` }} />)}
       </g>
 
       {goalProgress !== undefined && goalProgress >= 50 && canopy > 0 && (

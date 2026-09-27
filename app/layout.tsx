@@ -102,7 +102,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#f4ede7",
+  themeColor: "#070f24",
 };
 
 export default function RootLayout({
@@ -126,7 +126,7 @@ export default function RootLayout({
   };
 
   return (
-    <html lang="pt-BR" data-mode="light" suppressHydrationWarning>
+    <html lang="pt-BR" data-mode="dark" suppressHydrationWarning>
       <head>
         {/* Applies the saved light/dark choice before the first paint. */}
         <script dangerouslySetInnerHTML={{ __html: COLOR_MODE_BOOT }} />
@@ -138,7 +138,7 @@ export default function RootLayout({
       <body className="antialiased">
         {/* React hoists these into <head>; the display face loads with the first paint. */}
         <link rel="preload" href="/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
-        <link rel="preload" href="/fonts/cormorant-garamond-latin.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+        <link rel="preload" href="/fonts/cinzel-latin.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
         {children}
         <PwaRegister />
       </body>

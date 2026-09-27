@@ -846,16 +846,15 @@ function EntryBrand() {
   return <BrandLockup/>;
 }
 
-/** The brand's Tree of Prosperity inside the zodiac ring (from the Veias da Sintonia brand pieces). */
+/** The golden Tree of Life inside the astrolabe (from the Veias da Sintonia celestial artwork). */
 function BrandTree({ priority = false }: { priority?: boolean }) {
   // eslint-disable-next-line @next/next/no-img-element -- a single pre-sized WebP illustration
-  return <img src="/brand/arvore-zodiaco.webp" alt="A Árvore da Prosperidade cercada pelos 12 signos do zodíaco" width={660} height={660} fetchPriority={priority ? "high" : "auto"}/>;
+  return <img src="/brand/arvore-cosmos.webp" alt="A Árvore da Prosperidade dourada dentro de um astrolábio" width={552} height={552} fetchPriority={priority ? "high" : "auto"}/>;
 }
 
 function WelcomeHero({ onStart, onLogin }: { onStart: () => void; onLogin: () => void }) {
   return <main className="entry">
     <div className="entry-frame entry-welcome">
-      <span className="entry-landscape" aria-hidden="true"/>
       <header className="entry-nav">
         <nav className="entry-nav-links" aria-label="Acesso">
           <Link href="/signos" className="entry-nav-link">12 signos</Link>
@@ -870,9 +869,7 @@ function WelcomeHero({ onStart, onLogin }: { onStart: () => void; onLogin: () =>
         <h1 className="entry-title">Use seu signo para prosperar.</h1>
         <p className="entry-lede">Faça seu diagnóstico <strong>gratuito</strong>. Conheça a versão beta. Depois, desbloqueie sua experiência Premium.</p>
       </div>
-      <figure className="entry-object">
-        <BrandTree priority/>
-      </figure>
+      <div className="entry-spacer" aria-hidden="true"/>
       <div className="entry-actions">
         <button type="button" className="entry-pill entry-pill--solid" onClick={onStart}>Fazer diagnóstico gratuito <ArrowRight aria-hidden="true"/></button>
         <button type="button" className="entry-pill entry-pill--line" onClick={onLogin}>Já tenho conta</button>
@@ -946,10 +943,7 @@ function AuthScreen({ onAuthenticated, initialMode, onBack, resetToken: linkToke
         {(mode === "register" || mode === "login") && onBack && <button className="entry-back" type="button" onClick={onBack}><ArrowLeft aria-hidden="true"/> Voltar</button>}
       </header>
       <figure className="entry-object entry-object--auth" aria-hidden="true">
-        <picture>
-          <source media="(min-width: 900px)" srcSet="/brand/arvore-zodiaco.webp"/>
-          <img src="/brand/paisagem.webp" alt="" width={719} height={380}/>
-        </picture>
+        <BrandTree/>
       </figure>
       <section className="entry-panel" aria-labelledby="entry-auth-title">
         <h1 className="entry-title entry-title--panel" id="entry-auth-title">{titles[mode]}</h1>

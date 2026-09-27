@@ -1,13 +1,13 @@
 /* Public, crawlable zodiac pages — the studio world as an editorial page: warm ground, ink type, amber accent. */
 
-.zodiac-page{min-height:100svh;position:relative;overflow-x:hidden;color:var(--studio-ink);background:radial-gradient(120% 50% at 50% -10%,#fbf8f6 0,#f1e4dc 55%,#e8d4c7 100%)}
+.zodiac-page{min-height:100svh;position:relative;overflow-x:hidden;color:var(--studio-ink);background:radial-gradient(120% 50% at 50% -10%,#fbf8f6 0,#f7ecd6 55%,#f2e0bd 100%)}
 .zodiac-shell{width:min(100%,880px);margin:0 auto;padding:24px 20px 64px;position:relative}
 
 .zodiac-nav{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}
 .zodiac-nav>a{color:var(--studio-ink);text-decoration:none;font-family:var(--font-display);font-stretch:112%;font-weight:700;font-size:.78rem;letter-spacing:.06em;text-transform:uppercase}
 .zodiac-nav-actions{display:flex;align-items:center;gap:10px}
-.zodiac-pill{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:0 20px;border-radius:999px;background:var(--studio-accent);color:var(--studio-accent-ink);letter-spacing:.12em;text-transform:uppercase;font-size:.74rem;text-decoration:none;font-size:.86rem;font-weight:700;white-space:nowrap;box-shadow:0 12px 24px -14px rgba(58,43,39,0.7);transition:box-shadow .25s cubic-bezier(.16,1,.3,1)}
-.zodiac-pill:hover{box-shadow:0 14px 28px -12px rgba(58,43,39,0.75),0 0 0 4px var(--studio-amber-soft)}
+.zodiac-pill{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:0 20px;border-radius:999px;background:var(--studio-accent);color:var(--studio-accent-ink);letter-spacing:.12em;text-transform:uppercase;font-size:.74rem;text-decoration:none;font-size:.86rem;font-weight:700;white-space:nowrap;box-shadow:0 12px 24px -14px rgba(19,31,58,0.7);transition:box-shadow .25s cubic-bezier(.16,1,.3,1)}
+.zodiac-pill:hover{box-shadow:0 14px 28px -12px rgba(19,31,58,0.75),0 0 0 4px var(--studio-amber-soft)}
 
 .zodiac-breadcrumb{margin:18px 0 6px;color:var(--studio-ink-3);font-size:.78rem}
 .zodiac-breadcrumb a{color:var(--studio-ink-2);text-underline-offset:3px}
@@ -19,19 +19,19 @@
 .zodiac-hero .zodiac-date{margin-bottom:14px}
 
 .zodiac-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;margin-top:32px}
-.zodiac-card{display:flex;flex-direction:column;align-items:center;gap:4px;padding:24px 16px 18px;border-radius:16px;background:rgba(255,255,255,.72);box-shadow:inset 0 1px 0 #fff,0 18px 36px -26px rgba(60,44,41,0.45);text-align:center;text-decoration:none;color:var(--studio-ink);transition:transform .3s cubic-bezier(.16,1,.3,1),box-shadow .3s cubic-bezier(.16,1,.3,1)}
-.zodiac-card:hover{transform:translateY(-3px);box-shadow:inset 0 1px 0 #fff,0 24px 40px -22px rgba(60,44,41,0.5)}
+.zodiac-card{display:flex;flex-direction:column;align-items:center;gap:4px;padding:24px 16px 18px;border-radius:16px;background:rgba(255,255,255,.72);box-shadow:inset 0 1px 0 #fff,0 18px 36px -26px rgba(20,32,61,0.45);text-align:center;text-decoration:none;color:var(--studio-ink);transition:transform .3s cubic-bezier(.16,1,.3,1),box-shadow .3s cubic-bezier(.16,1,.3,1)}
+.zodiac-card:hover{transform:translateY(-3px);box-shadow:inset 0 1px 0 #fff,0 24px 40px -22px rgba(20,32,61,0.5)}
 .zodiac-card h2{margin:6px 0 0;font-family:var(--font-display);font-stretch:110%;font-weight:700;font-size:1.12rem}
 .zodiac-card .zodiac-dates{margin:0;color:var(--studio-ink-3);font-size:.74rem}
 .zodiac-card-phrase{margin:10px 0 0;color:var(--studio-ink-2);font-size:.86rem;line-height:1.45;text-wrap:pretty}
-.zodiac-card-more{margin-top:auto;padding-top:12px;color:#69372d;font-size:.76rem;font-weight:700}
+.zodiac-card-more{margin-top:auto;padding-top:12px;color:#75561a;font-size:.76rem;font-weight:700}
 
-.zodiac-badge{width:64px;height:64px;display:grid;place-items:center;border-radius:50%;background:rgba(255,250,247,.85);border:1px solid rgba(185,139,129,.65);box-shadow:0 10px 22px -14px rgba(122,80,72,.6)}
-.zodiac-badge .zodiac-symbol{font-size:1.7rem;line-height:1;color:#9a6b61}
+.zodiac-badge{width:64px;height:64px;display:grid;place-items:center;border-radius:50%;background:rgba(255,250,247,.85);border:1px solid rgba(206,173,108,0.65);box-shadow:0 10px 22px -14px rgba(138,108,46,0.6)}
+.zodiac-badge .zodiac-symbol{font-size:1.7rem;line-height:1;color:#b38b3c}
 .zodiac-badge-big{width:104px;height:104px;margin:0 auto 18px}
 .zodiac-badge-big .zodiac-symbol{font-size:2.8rem}
 [data-element="Fogo"]{--sign-glow:rgba(217,110,43,.7)}
-[data-element="Terra"]{--sign-glow:rgba(123,76,66,0.7)}
+[data-element="Terra"]{--sign-glow:rgba(135,105,45,0.7)}
 [data-element="Ar"]{--sign-glow:rgba(171,154,149,0.7)}
 [data-element="Água"]{--sign-glow:rgba(60,130,190,.7)}
 
@@ -46,10 +46,10 @@
 .zodiac-facts span{display:block;margin-bottom:4px;color:var(--studio-ink-3);font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
 .zodiac-facts strong{display:block;color:var(--studio-ink);font-size:.95rem}
 
-.zodiac-jump{position:sticky;top:0;z-index:5;display:flex;gap:6px;overflow-x:auto;margin:0 -20px;padding:10px 20px;background:rgba(241,228,220,0.9);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);scrollbar-width:none}
+.zodiac-jump{position:sticky;top:0;z-index:5;display:flex;gap:6px;overflow-x:auto;margin:0 -20px;padding:10px 20px;background:rgba(247,236,214,0.9);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);scrollbar-width:none}
 .zodiac-jump::-webkit-scrollbar{display:none}
-.zodiac-jump a{flex:0 0 auto;padding:8px 14px;border-radius:999px;border:1px solid rgba(58,43,39,0.14);color:var(--studio-ink);font-size:.8rem;font-weight:700;text-decoration:none}
-.zodiac-jump a:hover{background:rgba(58,43,39,0.06)}
+.zodiac-jump a{flex:0 0 auto;padding:8px 14px;border-radius:999px;border:1px solid rgba(19,31,58,0.14);color:var(--studio-ink);font-size:.8rem;font-weight:700;text-decoration:none}
+.zodiac-jump a:hover{background:rgba(19,31,58,0.06)}
 
 .zodiac-body{margin-top:8px}
 .zodiac-section{margin:0;padding:34px 0 0;scroll-margin-top:64px}
@@ -58,26 +58,26 @@
 .zodiac-section p{margin:0 0 14px;max-width:68ch;color:var(--studio-ink-2);font-size:1rem;line-height:1.7}
 .zodiac-section p:last-child{margin-bottom:0}
 
-.zodiac-live{margin-top:18px;padding:26px 24px;border-radius:16px;background:rgba(255,255,255,.78);box-shadow:inset 0 1px 0 #fff,0 18px 36px -28px rgba(60,44,41,0.45)}
+.zodiac-live{margin-top:18px;padding:26px 24px;border-radius:16px;background:rgba(255,255,255,.78);box-shadow:inset 0 1px 0 #fff,0 18px 36px -28px rgba(20,32,61,0.45)}
 .zodiac-live+.zodiac-live{margin-top:12px}
 .zodiac-date{margin:0 0 14px!important;color:var(--studio-ink-3)!important;font-size:.84rem!important;font-weight:700}
 .zodiac-date::first-letter{text-transform:uppercase}
-.zodiac-phrase{margin:0 0 16px;padding:16px 18px;border-radius:14px;background:rgba(177,107,93,0.12)}
-.zodiac-phrase span{display:block;margin-bottom:6px;color:#69372d;font-size:.7rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.zodiac-phrase{margin:0 0 16px;padding:16px 18px;border-radius:14px;background:rgba(202,157,68,0.12)}
+.zodiac-phrase span{display:block;margin-bottom:6px;color:#75561a;font-size:.7rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
 .zodiac-phrase p{margin:0!important;color:var(--studio-ink)!important;font-family:var(--font-display);font-stretch:106%;font-weight:700;font-size:1.15rem!important;line-height:1.35!important}
 .zodiac-areas{display:grid;gap:12px;margin:16px 0 0}
-.zodiac-areas div{padding-top:12px;border-top:1px solid rgba(58,43,39,0.08)}
+.zodiac-areas div{padding-top:12px;border-top:1px solid rgba(19,31,58,0.08)}
 .zodiac-areas dt{color:var(--studio-ink-3);font-size:.72rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
 .zodiac-areas dd{margin:4px 0 0;color:var(--studio-ink-2);line-height:1.6}
 .zodiac-tip{color:var(--studio-ink)!important}
 .zodiac-keydates{display:grid;gap:10px;margin:14px 0 0;padding:0;list-style:none}
 .zodiac-keydates li{display:grid;grid-template-columns:52px minmax(0,1fr);gap:12px;align-items:start}
-.zodiac-keydates time{padding:6px 0;border-radius:10px;background:rgba(58,43,39,0.05);text-align:center;font-size:.8rem;font-weight:800;font-variant-numeric:tabular-nums;color:var(--studio-ink)}
+.zodiac-keydates time{padding:6px 0;border-radius:10px;background:rgba(19,31,58,0.05);text-align:center;font-size:.8rem;font-weight:800;font-variant-numeric:tabular-nums;color:var(--studio-ink)}
 .zodiac-keydates strong{display:block;color:var(--studio-ink);font-size:.92rem}
 .zodiac-keydates span{display:block;margin-top:2px;color:var(--studio-ink-2);font-size:.86rem;line-height:1.5}
 .zodiac-moonline{color:var(--studio-ink)!important}
 .zodiac-planets{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px;margin:14px 0 0;padding:0;list-style:none}
-.zodiac-planets li{display:flex;align-items:baseline;gap:6px;padding:9px 11px;border-radius:12px;background:rgba(58,43,39,0.04);font-size:.84rem}
+.zodiac-planets li{display:flex;align-items:baseline;gap:6px;padding:9px 11px;border-radius:12px;background:rgba(19,31,58,0.04);font-size:.84rem}
 .zodiac-planets span{color:var(--studio-ink-3)}
 .zodiac-planets strong{color:var(--studio-ink);font-variant-numeric:tabular-nums;white-space:nowrap}
 .zodiac-planets em{margin-left:auto;font-style:normal;font-size:.7rem;font-weight:800;color:#b3261e}
@@ -85,10 +85,10 @@
 .zodiac-index-sky{margin-top:28px}
 
 .zodiac-traits{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
-.zodiac-traits span{padding:7px 14px;border-radius:999px;background:rgba(177,107,93,0.12);color:#69372d;font-size:.8rem;font-weight:700}
+.zodiac-traits span{padding:7px 14px;border-radius:999px;background:rgba(202,157,68,0.12);color:#75561a;font-size:.8rem;font-weight:700}
 .zodiac-compat{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
-.zodiac-compat a{padding:9px 15px;border-radius:999px;border:1px solid rgba(58,43,39,0.14);color:var(--studio-ink);font-size:.86rem;font-weight:600;text-decoration:none}
-.zodiac-compat a:hover{background:rgba(58,43,39,0.06)}
+.zodiac-compat a{padding:9px 15px;border-radius:999px;border:1px solid rgba(19,31,58,0.14);color:var(--studio-ink);font-size:.86rem;font-weight:600;text-decoration:none}
+.zodiac-compat a:hover{background:rgba(19,31,58,0.06)}
 
 .zodiac-habits{display:grid;gap:10px;margin:6px 0 0;padding:0;list-style:none;counter-reset:habit}
 .zodiac-habits li{position:relative;padding:12px 14px 12px 46px;border-radius:12px;background:rgba(255,255,255,.72);color:var(--studio-ink-2);line-height:1.55;counter-increment:habit}
@@ -104,7 +104,7 @@
 .zodiac-cta{margin-top:44px;padding:30px 26px;border-radius:16px;background:var(--studio-accent);color:var(--studio-accent-ink);text-align:center}
 .zodiac-cta h2{margin:0 0 10px;font-family:var(--font-display);font-stretch:110%;font-weight:800;font-size:1.4rem;line-height:1.15;color:#faf6f3;text-wrap:balance}
 .zodiac-cta p{margin:0 auto 20px;max-width:440px;color:rgba(250,246,243,0.78);line-height:1.55;font-size:.95rem}
-.zodiac-cta .zodiac-pill{background:#faf6f3;color:#3a2b27}
+.zodiac-cta .zodiac-pill{background:#faf6f3;color:#131f3a}
 
 .zodiac-disclaimer{margin-top:28px;color:var(--studio-ink-3);font-size:.78rem;line-height:1.5;text-align:center}
 .zodiac-pager{display:flex;justify-content:space-between;gap:10px;margin-top:32px}

@@ -1,4 +1,4 @@
-const CACHE_NAME = "veias-da-sintonia-v5";
+const CACHE_NAME = "veias-da-sintonia-v6";
 const APP_SHELL = [
   "/",
   "/manifest.webmanifest",
@@ -7,8 +7,8 @@ const APP_SHELL = [
   "/app-icon-512.png",
   "/fonts/manrope-latin.woff2",
   "/fonts/manrope-latin-ext.woff2",
-  "/fonts/cormorant-garamond-latin.woff2",
-  "/brand/logo-mark.webp",
+  "/fonts/cinzel-latin.woff2",
+  "/brand/logo-mark-gold.webp",
   "/brand/logo-wordmark.png",
 ];
 

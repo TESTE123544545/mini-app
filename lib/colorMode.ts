@@ -9,14 +9,14 @@ export type ResolvedMode = "light" | "dark";
 
 const CHANGE_EVENT = "vds-mode-change";
 /** Matches the ground colour of each mode, for the browser/PWA status bar. */
-const THEME_COLOR: Record<ResolvedMode, string> = { light: "#f4ede7", dark: "#1c1715" };
+const THEME_COLOR: Record<ResolvedMode, string> = { light: "#f6f1ea", dark: "#070f24" };
 
 function readStored(): ColorMode {
   try {
     const value = localStorage.getItem(STORAGE_KEY);
-    return value === "dark" || value === "system" ? value : "light";
+    return value === "light" || value === "system" ? value : "dark";
   } catch {
-    return "light";
+    return "dark";
   }
 }
 
@@ -48,8 +48,8 @@ function subscribe(onChange: () => void) {
 
 /** The stored choice and what is actually on screen. */
 export function useColorMode(): { mode: ColorMode; resolved: ResolvedMode } {
-  const mode = useSyncExternalStore(subscribe, readStored, () => "light" as ColorMode);
-  const resolved = useSyncExternalStore(subscribe, () => (document.documentElement.dataset.mode === "dark" ? "dark" : "light"), () => "light" as ResolvedMode);
+  const mode = useSyncExternalStore(subscribe, readStored, () => "dark" as ColorMode);
+  const resolved = useSyncExternalStore(subscribe, () => (document.documentElement.dataset.mode === "light" ? "light" : "dark"), () => "dark" as ResolvedMode);
 
   // In "system" mode, follow the phone when it switches (e.g. automatic dark at night).
   useEffect(() => {

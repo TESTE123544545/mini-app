@@ -1,35 +1,35 @@
-/* Entry screens (welcome + account) in the Veias da Sintonia brand: warm cream, rose gold, an elegant
-   serif, the Tree of Prosperity inside the zodiac ring, and the misty lake from the brand pieces. */
+/* Entry screens (welcome + account): always the celestial identity — the owner's golden Tree of Life
+   inside the astrolabe, a river of light, gold hairline frames and classical capitals on deep navy.
+   Not part of the generated dark theme: these screens look the same in both modes. */
 
 .entry{
-  --entry-ground:#f4ede7;
-  --entry-ground-hi:#fbf7f3;
-  --entry-ground-lo:#ebe1d9;
-  --entry-frame:rgba(255,250,247,.62);
-  --entry-edge:rgba(255,255,255,.9);
-  --entry-ink:#3b2c28;
-  --entry-ink-2:#65524c;
-  --entry-ink-3:#76635c;
-  --entry-line:#dccdc4;
-  --entry-amber:#b98b81;
-  --entry-amber-soft:rgba(185,139,129,.26);
-  --entry-accent:#9a6b61;
-  --entry-accent-hover:#87594f;
-  --entry-accent-ink:#fffaf7;
-  --entry-serif:"Cormorant Garamond",Georgia,"Times New Roman",serif;
+  --entry-navy:#070f24;
+  --entry-ink:#eef1f8;
+  --entry-ink-2:#c3cbe0;
+  --entry-ink-3:#9aa6c6;
+  --entry-gold:#e6c47a;
+  --entry-gold-deep:#d9b26a;
+  --entry-gold-soft:rgba(217,178,106,.25);
+  --entry-line:rgba(217,178,106,.42);
+  --entry-display:"Cinzel","Cormorant Garamond",Georgia,serif;
   --entry-ease:cubic-bezier(.16,1,.3,1);
-  color-scheme:light;
+  color-scheme:dark;
+  position:relative;
   min-height:100svh;
   padding:max(12px,env(safe-area-inset-top)) 12px max(12px,env(safe-area-inset-bottom));
   display:grid;
+  isolation:isolate;
   color:var(--entry-ink);
   font-family:var(--font-sans,"Manrope"),system-ui,sans-serif;
-  background:radial-gradient(120% 70% at 50% -12%,var(--entry-ground-hi) 0,var(--entry-ground) 48%,var(--entry-ground-lo) 100%);
-  caret-color:var(--entry-ink);
+  background:var(--entry-navy);
+  caret-color:var(--entry-gold);
 }
-html:has(.entry),body:has(.entry){background:#f4ede7}
-.entry ::selection{background:var(--entry-amber-soft);color:var(--entry-ink)}
-.entry :focus-visible{outline:2px solid var(--entry-amber);outline-offset:3px}
+/* The owner's artwork fills the screen; navy veils keep the words readable over it. */
+.entry::before{content:"";position:fixed;inset:0;z-index:-2;background:url(/brand/cosmos-hero.webp) center 62%/cover no-repeat}
+.entry::after{content:"";position:fixed;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(7,15,36,.94) 0,rgba(7,15,36,.86) 34%,rgba(7,15,36,.55) 48%,rgba(7,15,36,.12) 62%,rgba(7,15,36,.55) 80%,rgba(7,15,36,.95) 100%)}
+html:has(.entry),body:has(.entry){background:#070f24}
+.entry ::selection{background:var(--entry-gold-soft);color:var(--entry-ink)}
+.entry :focus-visible{outline:2px solid var(--entry-gold);outline-offset:3px}
 
 .entry-frame{
   position:relative;
@@ -38,61 +38,62 @@ html:has(.entry),body:has(.entry){background:#f4ede7}
   margin:0 auto;
   min-width:0;
   display:grid;
-  gap:20px;
+  gap:18px;
   padding:16px 18px 24px;
-  border-radius:28px;
-  overflow:hidden;
-  isolation:isolate;
-  background:var(--entry-frame);
-  box-shadow:inset 0 1px 0 var(--entry-edge),0 30px 60px -30px rgba(80,56,48,.3);
+  border-radius:24px;
+  border:1px solid var(--entry-line);
+  box-shadow:inset 0 0 0 4px rgba(7,15,36,.35),inset 0 0 0 5px rgba(217,178,106,.18),0 30px 80px -30px rgba(0,0,0,.9);
 }
+/* Gold corner ornaments, as on the brand's frames. */
+.entry-frame::before,.entry-frame::after{content:"";position:absolute;width:26px;height:26px;border:1px solid var(--entry-gold);pointer-events:none}
+.entry-frame::before{top:9px;left:9px;border-right:0;border-bottom:0;border-top-left-radius:14px}
+.entry-frame::after{right:9px;bottom:9px;border-left:0;border-top:0;border-bottom-right-radius:14px}
 
 /* Nav */
 .entry-nav{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:40px}
-.entry-nav .brand-lockup{--logo-h:30px}
+.entry-nav .brand-lockup{--logo-h:30px;color:var(--entry-gold)}
 .entry-nav-links{display:flex;align-items:center;gap:12px;margin-left:auto}
 .entry-nav-link{color:var(--entry-ink-2);font-size:.72rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;text-decoration:none}
-.entry-nav-link:hover{color:var(--entry-ink)}
+.entry-nav-link:hover{color:var(--entry-gold)}
 .entry-back{display:inline-flex;align-items:center;gap:6px;border:0;background:none;padding:8px 0;color:var(--entry-ink-2);font:inherit;font-size:.8rem;font-weight:700;white-space:nowrap}
 .entry-back svg{width:16px;height:16px;transition:transform .3s var(--entry-ease)}
-.entry-back:hover{color:var(--entry-ink)}
+.entry-back:hover{color:var(--entry-gold)}
 .entry-back:hover svg{transform:translateX(-3px)}
+.entry .mode-toggle{border-color:var(--entry-line);color:var(--entry-gold)}
+.entry .mode-toggle:hover{background:rgba(217,178,106,.1)}
 
 /* Type */
 .entry-title{
   margin:0;
-  font-family:var(--entry-serif);
-  font-weight:600;
-  font-size:clamp(2.1rem,9.6vw,4.4rem);
-  line-height:1;
-  letter-spacing:.02em;
+  font-family:var(--entry-display);
+  font-weight:700;
+  font-size:clamp(1.8rem,8.2vw,3.6rem);
+  line-height:1.08;
+  letter-spacing:.04em;
   text-transform:uppercase;
   text-wrap:balance;
-  color:var(--entry-ink);
+  color:var(--entry-gold);
+  text-shadow:0 0 28px rgba(230,196,122,.35),0 2px 0 rgba(7,15,36,.6);
 }
-.entry-title--panel{font-size:clamp(2rem,8vw,2.9rem);letter-spacing:.01em;text-transform:none;line-height:1.02}
-.entry-lede{margin:14px auto 0;max-width:34ch;color:var(--entry-ink-2);font-size:1rem;line-height:1.55;text-wrap:pretty}
-.entry-lede strong{color:var(--entry-ink);font-weight:700;letter-spacing:.04em}
-.entry-beta{display:inline-flex;align-items:center;min-height:30px;padding:0 16px;border-radius:999px;background:rgba(185,139,129,.18);color:#7a5048;font-size:.7rem;font-weight:800;letter-spacing:.22em;text-transform:uppercase}
+.entry-title--panel{font-size:clamp(1.6rem,6.8vw,2.3rem);text-shadow:0 0 22px rgba(230,196,122,.3)}
+.entry-lede{margin:12px auto 0;max-width:34ch;color:var(--entry-ink-2);font-size:1rem;line-height:1.55;text-wrap:pretty}
+.entry-lede strong{color:var(--entry-gold);font-weight:700;letter-spacing:.04em}
+.entry-beta{display:inline-flex;align-items:center;min-height:30px;padding:0 16px;border:1px solid var(--entry-line);border-radius:999px;background:rgba(7,15,36,.55);color:var(--entry-gold);font-size:.68rem;font-weight:800;letter-spacing:.22em;text-transform:uppercase}
 
-/* Welcome composition */
-.entry-welcome{min-height:calc(100svh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));grid-template-rows:auto auto minmax(210px,1fr) auto;text-align:center}
-.entry-copy{display:grid;justify-items:center;gap:14px}
-.entry-copy .brand-lockup--stacked{margin-bottom:2px}
-.entry-copy .brand-ornament{width:100%}
+/* Welcome composition: brand and promise above, the artwork breathing in the middle, actions below. */
+.entry-welcome{min-height:calc(100svh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));grid-template-rows:auto auto minmax(120px,1fr) auto;text-align:center}
+.entry-copy{display:grid;justify-items:center;gap:10px}
+.entry-copy .brand-lockup--stacked{--logo-h:46px;color:var(--entry-gold)}
+.entry-copy .brand-ornament{width:100%;color:var(--entry-gold)}
 .entry-copy .entry-lede{margin-top:0}
-.entry-object{position:relative;margin:0;min-height:0;display:grid;place-items:center}
-.entry-object::before{content:"";position:absolute;inset:8% 10%;z-index:-1;border-radius:50%;background:radial-gradient(closest-side,rgba(255,244,236,.95),rgba(255,244,236,0));filter:blur(8px)}
-.entry-object img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;animation:entry-rise 1.4s var(--entry-ease) both}
-@keyframes entry-rise{from{transform:scale(.96);filter:blur(6px)}to{transform:none;filter:none}}
-.entry-landscape{position:absolute;left:0;right:0;bottom:0;z-index:-1;height:38%;background:url(/brand/paisagem.webp) center 30%/cover no-repeat;-webkit-mask-image:linear-gradient(180deg,transparent 0,#000 55%);mask-image:linear-gradient(180deg,transparent 0,#000 55%);opacity:.75}
+.entry-spacer{min-height:0}
 
 /* Pills */
 .entry-actions{display:grid;gap:10px;justify-items:stretch}
 .entry-pill{
   display:inline-flex;align-items:center;justify-content:center;gap:10px;
-  min-height:54px;padding:0 26px;border-radius:999px;
-  font:inherit;font-size:.8rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
+  min-height:52px;padding:0 26px;border-radius:999px;
+  font:inherit;font-size:.78rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase;
   text-decoration:none;white-space:nowrap;cursor:pointer;
   transition:background-color .25s var(--entry-ease),color .25s var(--entry-ease),transform .25s var(--entry-ease),box-shadow .25s var(--entry-ease);
 }
@@ -100,76 +101,71 @@ html:has(.entry),body:has(.entry){background:#f4ede7}
 .entry-pill:hover svg{transform:translateX(3px)}
 .entry-pill:active{transform:scale(.98)}
 .entry-pill:disabled{opacity:.5;cursor:default;transform:none}
-.entry-pill--solid{border:0;background:var(--entry-accent);color:var(--entry-accent-ink);box-shadow:0 12px 24px -14px rgba(122,80,72,.7)}
-.entry-pill--solid:not(:disabled):hover{background:var(--entry-accent-hover);box-shadow:0 14px 28px -12px rgba(122,80,72,.75),0 0 0 4px var(--entry-amber-soft)}
-.entry-pill--line{border:1px solid var(--entry-accent);background:rgba(255,250,247,.6);color:var(--entry-accent)}
-.entry-pill--line:hover{background:rgba(185,139,129,.1)}
-.entry-pill--small{min-height:38px;padding:0 16px;font-size:.7rem}
+.entry-pill--solid{border:0;background:linear-gradient(180deg,#f1d9a0,#d9b26a 55%,#b88f45);color:#0b1633;box-shadow:0 0 0 1px rgba(241,217,160,.5),0 12px 30px -10px rgba(217,178,106,.55)}
+.entry-pill--solid:not(:disabled):hover{box-shadow:0 0 0 1px rgba(241,217,160,.7),0 14px 34px -8px rgba(217,178,106,.75),0 0 26px rgba(230,196,122,.45)}
+.entry-pill--line{border:1px solid var(--entry-gold);background:rgba(7,15,36,.55);color:var(--entry-gold)}
+.entry-pill--line:hover{background:rgba(217,178,106,.12)}
+.entry-pill--small{min-height:38px;padding:0 16px;font-size:.68rem}
 .entry-pill--wide{width:100%}
 .entry-link{justify-self:center;padding:6px 2px;color:var(--entry-ink-2);font-size:.84rem;font-weight:600;text-decoration:underline;text-decoration-color:var(--entry-line);text-underline-offset:4px;transition:text-decoration-color .25s,color .25s}
-.entry-link:hover{color:var(--entry-ink);text-decoration-color:var(--entry-amber)}
+.entry-link:hover{color:var(--entry-gold);text-decoration-color:var(--entry-gold)}
 
-/* Account composition */
-.entry-auth{align-content:start;align-self:center}
+/* Account composition: a framed navy panel beside the golden tree. */
+.entry-auth{align-content:start;align-self:center;background:rgba(7,15,36,.6)}
 .entry-auth .entry-nav{justify-content:flex-start}
-.entry-object--auth{height:150px;border-radius:20px;overflow:hidden;background:#efe4dc}
-.entry-object--auth::before{display:none}
-.entry-object--auth img{object-fit:cover;animation:none}
+.entry-auth .entry-nav .brand-lockup{margin-right:auto}
+.entry-object{position:relative;margin:0;min-height:0;display:grid;place-items:center}
+.entry-object--auth{height:170px}
+.entry-object img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 0 30px rgba(230,196,122,.25))}
 .entry-panel{min-width:0;text-align:left}
-.entry-switch{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:22px 0 18px;padding:4px;border-radius:999px;background:rgba(59,44,40,.06)}
-.entry-switch button{min-height:42px;border:0;border-radius:999px;background:transparent;color:var(--entry-ink-2);font:inherit;font-size:.86rem;font-weight:700;cursor:pointer;transition:background-color .25s var(--entry-ease),color .25s var(--entry-ease),box-shadow .25s var(--entry-ease)}
-.entry-switch button[aria-selected=true]{background:#fffaf7;color:var(--entry-accent);box-shadow:0 4px 12px -6px rgba(80,56,48,.35)}
-.entry-form{display:grid;gap:14px;margin-top:22px}
+.entry-switch{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:20px 0 18px;padding:4px;border:1px solid var(--entry-line);border-radius:999px;background:rgba(7,15,36,.55)}
+.entry-switch button{min-height:42px;border:0;border-radius:999px;background:transparent;color:var(--entry-ink-2);font:inherit;font-size:.84rem;font-weight:700;cursor:pointer;transition:background-color .25s var(--entry-ease),color .25s var(--entry-ease)}
+.entry-switch button[aria-selected=true]{background:rgba(217,178,106,.16);color:var(--entry-gold)}
+.entry-form{display:grid;gap:14px;margin-top:20px}
 .entry-switch+.entry-form{margin-top:0}
 .entry-field{display:grid;gap:7px;color:var(--entry-ink);font-size:.82rem;font-weight:700}
-.entry-input{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:10px;min-height:52px;padding:0 6px 0 16px;border:1px solid var(--entry-line);border-radius:14px;background:#fffaf7;transition:border-color .2s,box-shadow .2s}
-.entry-input:focus-within{border-color:var(--entry-accent);box-shadow:0 0 0 4px var(--entry-amber-soft)}
-.entry-input>svg{width:18px;height:18px;color:var(--entry-ink-3)}
+.entry-input{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:10px;min-height:52px;padding:0 6px 0 16px;border:1px solid rgba(217,178,106,.3);border-radius:14px;background:rgba(10,20,48,.8);transition:border-color .2s,box-shadow .2s}
+.entry-input:focus-within{border-color:var(--entry-gold);box-shadow:0 0 0 4px var(--entry-gold-soft)}
+.entry-input>svg{width:18px;height:18px;color:var(--entry-gold-deep)}
 .entry-input input{min-width:0;height:50px;border:0;outline:0;background:transparent;color:var(--entry-ink);font:inherit;font-size:1rem;font-weight:500}
 .entry-input input::placeholder{color:var(--entry-ink-3)}
 .entry-input:focus-within input:focus-visible{outline:0}
 .entry-input button{width:40px;height:40px;display:grid;place-items:center;border:0;border-radius:999px;background:transparent;color:var(--entry-ink-2);cursor:pointer}
-.entry-input button:hover{background:rgba(59,44,40,.06)}
+.entry-input button:hover{background:rgba(217,178,106,.1)}
 .entry-input button svg{width:18px;height:18px}
-.entry-forgot{justify-self:end;margin-top:-4px;padding:4px 0;border:0;background:none;color:var(--entry-accent);font:inherit;font-size:.8rem;font-weight:700;text-decoration:underline;text-decoration-color:var(--entry-line);text-underline-offset:4px;cursor:pointer}
-.entry-forgot:hover{text-decoration-color:var(--entry-amber)}
+.entry-forgot{justify-self:end;margin-top:-4px;padding:4px 0;border:0;background:none;color:var(--entry-gold);font:inherit;font-size:.8rem;font-weight:700;text-decoration:underline;text-decoration-color:var(--entry-line);text-underline-offset:4px;cursor:pointer}
 .entry-message{display:flex;align-items:flex-start;gap:8px;margin:0;padding:11px 14px;border-radius:14px;font-size:.84rem;line-height:1.45}
 .entry-message svg{width:18px;height:18px;flex:0 0 auto}
-.entry-message--error{background:#f8e6e2;color:#8a2a22}
-.entry-message--ok{background:#e9f1e8;color:#2c5a36}
+.entry-message--error{background:rgba(240,138,128,.14);color:#ffc4bd}
+.entry-message--ok{background:rgba(120,200,150,.14);color:#bfe8cf}
 .entry-security{display:flex;align-items:center;gap:8px;margin:18px 0 0;color:var(--entry-ink-3);font-size:.76rem;line-height:1.45}
-.entry-security svg{width:14px;height:14px;flex:0 0 auto}
+.entry-security svg{width:14px;height:14px;flex:0 0 auto;color:var(--entry-gold-deep)}
 
 @media (min-width:900px){
   .entry{padding:20px}
-  .entry-frame{padding:24px 38px 36px;border-radius:32px;gap:24px 48px}
-  .entry-welcome{min-height:calc(100svh - 40px);grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto 1fr auto;grid-template-areas:"nav nav" "copy object" "actions object"}
+  .entry::before{background-position:center 42%}
+  .entry::after{background:linear-gradient(90deg,rgba(7,15,36,.92) 0,rgba(7,15,36,.7) 38%,rgba(7,15,36,.15) 62%,rgba(7,15,36,.35) 100%)}
+  .entry-frame{padding:24px 40px 36px;border-radius:28px;gap:22px 48px}
+  .entry-welcome{min-height:calc(100svh - 40px);grid-template-columns:minmax(0,560px) minmax(0,1fr);grid-template-rows:auto 1fr auto 1fr;grid-template-areas:"nav nav" "copy ." "actions ." ". .";text-align:left}
   .entry-welcome .entry-nav{grid-area:nav}
-  .entry-welcome .entry-copy{grid-area:copy;align-self:end}
-  .entry-welcome .entry-object{grid-area:object;min-height:520px}
-  .entry-welcome .entry-actions{grid-area:actions;align-self:start;justify-items:center;grid-template-columns:auto auto;justify-content:center}
+  .entry-welcome .entry-copy{grid-area:copy;justify-items:start;align-self:end}
+  .entry-welcome .entry-copy .brand-ornament{justify-content:flex-start}
+  .entry-welcome .entry-lede{margin-left:0}
+  .entry-welcome .entry-spacer{display:none}
+  .entry-welcome .entry-actions{grid-area:actions;grid-template-columns:auto auto;justify-content:start;justify-items:start}
   .entry-welcome .entry-link{grid-column:1/-1}
-  .entry-welcome .entry-lede{font-size:1.1rem}
-  .entry-welcome .entry-title{font-size:min(4.4rem,4.6vw)}
-  .entry-landscape{height:34%}
   .entry-auth{grid-template-columns:minmax(0,1fr) minmax(0,440px);grid-template-areas:"nav nav" "object panel";align-items:stretch}
   .entry-auth .entry-nav{grid-area:nav}
-  .entry-auth .entry-object{grid-area:object;height:auto;min-height:560px;background:transparent}
-  .entry-auth .entry-object img{object-fit:contain}
+  .entry-auth .entry-object{grid-area:object;height:auto;min-height:560px}
   .entry-auth .entry-panel{grid-area:panel;align-self:center;padding:8px 0}
 }
 @media (max-width:479px){
   .entry-nav-link{display:none}
 }
 @media (prefers-reduced-motion:reduce){
-  .entry-object img{animation:none}
   .entry-pill,.entry-pill svg,.entry-back svg{transition:none}
 }
-@media (max-width:899px){
-  .entry-welcome{gap:14px;grid-template-rows:auto auto minmax(150px,1fr) auto}
-  .entry-copy{gap:10px}
-  .entry-copy .brand-lockup--stacked{--logo-h:50px}
-  .entry-title{font-size:clamp(1.9rem,8.6vw,2.6rem)}
-  .entry-lede{font-size:.94rem}
-  .entry-pill{min-height:50px}
-}
+
+/* The generated dark theme styles every heading; these screens keep their own gold titles. */
+:root .entry .entry-title{color:var(--entry-gold);font-family:var(--entry-display);font-weight:700;letter-spacing:.04em}
+:root .entry .entry-lede{color:var(--entry-ink-2);text-shadow:0 1px 12px rgba(7,15,36,.9)}
