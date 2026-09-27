@@ -246,3 +246,10 @@ body .tree-stage>.prosperity-tree-svg{position:absolute;inset:0;width:100%;heigh
 @media (max-width:360px){.premium-features ul{grid-template-columns:repeat(2,minmax(0,1fr))}}
 body .premium-card.is-active{border-color:rgba(185,139,129,.35)}
 body .premium-card.is-active .premium-icon{color:#9a6b61;background:rgba(185,139,129,.14);border-color:rgba(185,139,129,.4)}
+
+/* Onboarding: the brand lockup on top; the first step shows the brand tree in the zodiac ring.
+   Every tree container pins its drawing so it can never spill over the text around it. */
+.onboarding-brand{--logo-h:40px;margin:0 auto 6px}
+.onboarding-tree,.diag-bridge__tree{position:relative;overflow:hidden}
+.onboarding-tree>.prosperity-tree-svg,.diag-bridge__tree>.prosperity-tree-svg{position:absolute;inset:0;width:100%;height:100%}
+.onboarding-tree--brand img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
