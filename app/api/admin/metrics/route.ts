@@ -1,7 +1,11 @@
 import { sql } from "drizzle-orm";
 import { getDb } from "@/db";
 import { getSessionUser, isAdminEmail } from "@/lib/auth";
+import { RESERVED, RESERVED_SUFFIXES } from "@/lib/emailPolicy";
 import { enforceRateLimit, RequestError, secureErrorResponse } from "@/lib/security";
+
+// Real accounts only: test addresses (example.com, *.test…) have no access and don't count.
+const REAL_USER = sql.raw(`NOT (${[...RESERVED.map((domain) => `lower(email) LIKE '%@${domain}'`), ...RESERVED_SUFFIXES.map((suffix) => `lower(email) LIKE '%${suffix}'`)].join(" OR ")})`);
 
 /** The conversion funnel, in order. Each step counts distinct accounts (or anonymous events). */
 const FUNNEL = [
@@ -31,7 +35,7 @@ export async function GET(request: Request) {
       GROUP BY event_name`);
     const counts = new Map(rows.map((row) => [row.name, Number(row.people)]));
     const [totals] = await db.all<{ users: number; premium: number }>(sql`
-      SELECT (SELECT COUNT(*) FROM users) AS users, (SELECT COUNT(*) FROM profiles WHERE plan = 'premium') AS premium`);
+      SELECT (SELECT COUNT(*) FROM users WHERE ${REAL_USER}) AS users, (SELECT COUNT(*) FROM profiles p JOIN users ON users.primary_device_id = p.device_id WHERE p.plan = 'premium' AND ${REAL_USER}) AS premium`);
 
     return Response.json({
       days,

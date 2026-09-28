@@ -3,6 +3,7 @@ import { getDb } from "@/db";
 import { passwordResetTokens, sessions, users } from "@/db/schema";
 import { createPassword, hashToken, normalizeEmail, validEmail, validPassword } from "@/lib/auth";
 import { emailIsConfigured, sendPasswordResetEmail } from "@/lib/email";
+import { isBlockedEmail } from "@/lib/emailPolicy";
 import { issueResetLink } from "@/lib/passwordReset";
 import { enforceRateLimit, readJsonBody, secureErrorResponse } from "@/lib/security";
 
@@ -17,7 +18,8 @@ export async function POST(request: Request) {
     if (!validEmail(email)) return Response.json({ error: "Digite um e-mail válido." }, { status: 400 });
     const db = getDb();
     const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
-    if (!user) return Response.json(genericResult);
+    // Test and temporary-inbox accounts have no access, so they get no reset link either.
+    if (!user || isBlockedEmail(user.email)) return Response.json(genericResult);
     await enforceRateLimit(request, "password-recovery-account", user.id, 3, 60 * 60);
 
     const [recent] = await db.select().from(passwordResetTokens).where(and(eq(passwordResetTokens.userId, user.id), isNull(passwordResetTokens.usedAt))).orderBy(desc(passwordResetTokens.createdAt)).limit(1);

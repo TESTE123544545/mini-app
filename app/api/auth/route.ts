@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { getDb } from "@/db";
 import { users } from "@/db/schema";
 import { createPassword, createSession, deleteSession, getSessionUser, normalizeEmail, PASSWORD_ITERATIONS, publicUser, renewSession, validEmail, validPassword, verifyPassword } from "@/lib/auth";
+import { isBlockedEmail, signupEmailProblem } from "@/lib/emailPolicy";
 import { enforceRateLimit, readJsonBody, secureErrorResponse } from "@/lib/security";
 
 type AuthPayload = { action?: "register" | "login" | "logout"; email?: string; password?: string };
@@ -40,10 +41,13 @@ export async function POST(request: Request) {
     if (payload.action === "register") {
       await enforceRateLimit(request, "register", "new-account", 5, 60 * 60);
       if (existing) return Response.json({ error: "Já existe uma conta com este e-mail." }, { status: 409 });
+      const problem = await signupEmailProblem(email);
+      if (problem) return Response.json({ error: problem }, { status: 400 });
       const passwordData = await createPassword(password);
       user = { id: crypto.randomUUID(), email, primaryDeviceId: null, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), ...passwordData };
       await db.insert(users).values(user);
     } else if (payload.action === "login") {
+      if (isBlockedEmail(email)) return Response.json({ error: "Contas com e-mail de teste ou temporário não têm acesso ao app." }, { status: 403 });
       if (existing) await enforceRateLimit(request, "login-account", existing.id, 7, 15 * 60);
       const valid = existing
         ? await verifyPassword(password, existing.passwordHash, existing.passwordSalt, existing.passwordIterations)

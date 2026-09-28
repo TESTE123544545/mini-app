@@ -2,6 +2,7 @@ import { env } from "cloudflare:workers";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/db";
 import { sessions, users } from "@/db/schema";
+import { isBlockedEmail } from "@/lib/emailPolicy";
 
 const SESSION_COOKIE = "vds_session";
 // Long-lived and sliding: people who keep using the app are never logged out by the clock.
@@ -114,6 +115,8 @@ export async function getSessionUser(request: Request) {
     return null;
   }
   const [user] = await db.select().from(users).where(eq(users.id, session.userId)).limit(1);
+  // Test and temporary-inbox accounts have no access, even with a session from before the rule.
+  if (user && isBlockedEmail(user.email)) return null;
   return user ?? null;
 }
 
