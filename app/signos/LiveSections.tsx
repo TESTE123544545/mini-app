@@ -5,6 +5,8 @@ import type { SignDaily, SignGuide, SignPeriod, SkyToday } from "@/lib/sky";
 const TZ = "America/Sao_Paulo";
 const atNoon = (iso: string) => new Date(`${iso}T12:00:00Z`);
 export const formatDay = (iso: string) => new Intl.DateTimeFormat("pt-BR", { timeZone: TZ, weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(atNoon(iso));
+/** "27 de setembro" — the date as it goes in a page title. */
+export const formatDayShort = (iso: string) => new Intl.DateTimeFormat("pt-BR", { timeZone: TZ, day: "numeric", month: "long" }).format(atNoon(iso));
 const formatShort = (iso: string) => new Intl.DateTimeFormat("pt-BR", { timeZone: TZ, day: "2-digit", month: "2-digit" }).format(atNoon(iso));
 export function formatWeek(startIso: string) {
   const end = atNoon(startIso);

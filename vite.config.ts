@@ -14,7 +14,9 @@ const isCodexSeatbeltSandbox = process.env.CODEX_SANDBOX === "seatbelt";
 const managedLinux = readExecutionProfile() === "managed-linux";
 
 const localBindingConfig = {
-  main: "vinext/server/fetch-handler",
+  main: "./worker/index.ts",
+  // 00:10, 06:10 and 12:10 in Brasília: creates the day's horoscope texts before visitors and crawlers arrive.
+  triggers: { crons: ["10 3,9,15 * * *"] },
   compatibility_flags: ["nodejs_compat"],
   routes: ["veiasdasintonia.com.br/*", "www.veiasdasintonia.com.br/*"],
   d1_databases: d1

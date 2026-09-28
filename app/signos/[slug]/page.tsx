@@ -111,6 +111,7 @@ export default async function ZodiacSignPage({ params }: { params: Promise<{ slu
           {daily && <section className="zodiac-section zodiac-live" id="hoje">
             <h2>Horóscopo de {sign.name} hoje</h2>
             <DailyBlock daily={daily} />
+            <p><Link href={`/horoscopo-do-dia/${sign.slug}`}>Horóscopo do dia de {sign.name} completo →</Link></p>
           </section>}
 
           {weekly && <section className="zodiac-section zodiac-live" id="semana">

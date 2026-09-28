@@ -17,6 +17,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "daily",
       priority: 0.9,
     },
+    {
+      url: `${BASE_URL}/horoscopo-do-dia`,
+      lastModified: new Date(),
+      changeFrequency: "daily",
+      priority: 0.9,
+    },
+    ...ZODIAC_SIGNS.map((sign) => ({
+      url: `${BASE_URL}/horoscopo-do-dia/${sign.slug}`,
+      lastModified: new Date(),
+      changeFrequency: "daily" as const,
+      priority: 0.9,
+    })),
     ...ZODIAC_SIGNS.map((sign) => ({
       url: `${BASE_URL}/signos/${sign.slug}`,
       lastModified: new Date(),

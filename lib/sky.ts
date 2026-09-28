@@ -4,6 +4,8 @@ import { getDb } from "@/db";
 import { skyDaily } from "@/db/schema";
 import { adaptSignDaily, adaptSignPeriod, adaptSkyArticles, generateSignGuide, type GuideReference } from "@/lib/openrouter";
 import { SIGNS } from "@/lib/signs";
+import { announceUpdated } from "@/lib/indexnow";
+import { ZODIAC_SIGNS } from "@/lib/zodiacContent";
 
 /**
  * Live sky data from CosmyDay (https://cosmyday.com/api-docs): free, keyless, computed from the
@@ -79,8 +81,22 @@ async function cachedDaily<Raw extends { date: string }, T>(day: string, key: st
   }
   const value = await adapt(raw);
   // Two first visitors can race; the first write wins and the second is simply ignored.
-  await getDb().insert(skyDaily).values({ day: raw.date, key, payloadJson: JSON.stringify(value) }).onConflictDoNothing();
+  const stored = await getDb().insert(skyDaily).values({ day: raw.date, key, payloadJson: JSON.stringify(value) }).onConflictDoNothing().returning({ key: skyDaily.key });
+  // Only the write that actually created the day's text tells search engines the pages changed.
+  const changed = stored.length ? pagesShowing(key) : [];
+  if (changed.length) announceUpdated(changed);
   return value;
+}
+
+/** The public pages whose text comes from this cache entry. */
+function pagesShowing(key: string): string[] {
+  if (key === "sky") return ["/horoscopo-do-dia", "/signos"];
+  const [kind, en] = key.split(":");
+  const slug = ZODIAC_SIGNS[(SIGN_EN as readonly string[]).indexOf(en)]?.slug;
+  if (!slug) return [];
+  if (kind === "sign") return [`/horoscopo-do-dia/${slug}`, `/signos/${slug}`];
+  if (kind === "week" || kind === "month") return [`/signos/${slug}`];
+  return [];
 }
 
 // ---- The sky of the day (same for everyone) -------------------------------------------------
