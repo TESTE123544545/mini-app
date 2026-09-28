@@ -2,7 +2,9 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, RefreshCw } from "lucide-react";
+import { ArrowLeft, LogOut, RefreshCw } from "lucide-react";
+import { AdminAchievements } from "@/components/AdminAchievements";
+import { AdminResetLink } from "@/components/AdminResetLink";
 import { BrandLockup } from "@/components/BrandLockup";
 
 type Day = { day: string; views: number; visitors: number; signups: number; active: number };
@@ -171,7 +173,12 @@ async function fetchDashboard(days: number): Promise<LoadState> {
   }
 }
 
-export function AdminDashboard() {
+async function logout() {
+  await fetch("/api/admin/logout", { method: "POST" }).catch(() => null);
+  window.location.reload();
+}
+
+export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
   const [days, setDays] = useState<(typeof PERIODS)[number]>(30);
   const [state, setState] = useState<LoadState>({ status: "loading" });
   const [refreshedAt, setRefreshedAt] = useState<Date | null>(null);
@@ -198,7 +205,7 @@ export function AdminDashboard() {
     <header className="adm-head">
       <div className="adm-head__brand">
         <BrandLockup/>
-        <div><p className="adm-eyebrow">Visível só para a equipe</p><h1>Painel</h1></div>
+        <div><p className="adm-eyebrow">Acesso restrito · equipe</p><h1>Painel</h1><span className="adm-user">{adminEmail}</span></div>
       </div>
       <div className="adm-head__actions">
         <div className="adm-periods" role="tablist" aria-label="Período">
@@ -206,13 +213,14 @@ export function AdminDashboard() {
         </div>
         <button type="button" className="adm-icon-btn" onClick={() => setTick((value) => value + 1)} aria-label="Atualizar agora"><RefreshCw/></button>
         <Link href="/" className="adm-back"><ArrowLeft/>App</Link>
+        <button type="button" className="adm-back" onClick={logout}><LogOut/>Sair</button>
       </div>
     </header>
 
     {state.status === "loading" && <p className="adm-status">Carregando o painel…</p>}
     {state.status === "error" && <div className="adm-status adm-status--error">
       <p>{state.message}</p>
-      {(state.code === 401 || state.code === 403) && <p>Entre no app com uma conta da equipe e abra esta página de novo. <Link href="/">Ir para o app</Link></p>}
+      {state.code === 401 && <p>Sua sessão do painel expirou. <button type="button" className="adm-login__link" onClick={() => window.location.reload()}>Entrar de novo</button></p>}
     </div>}
 
     {data && k && <>
@@ -271,6 +279,11 @@ export function AdminDashboard() {
             </tr>)}</tbody>
           </table>
         </div>
+      </section>
+
+      <section className="adm-tools" aria-label="Ferramentas da equipe">
+        <AdminResetLink/>
+        <AdminAchievements/>
       </section>
 
       <p className="adm-foot">

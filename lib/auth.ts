@@ -43,7 +43,7 @@ function constantTimeEqual(left: string, right: string) {
   return mismatch === 0;
 }
 
-function readCookie(request: Request, name: string) {
+export function readCookie(request: Request, name: string) {
   const cookies = request.headers.get("cookie") ?? "";
   for (const item of cookies.split(";")) {
     const [key, ...parts] = item.trim().split("=");
@@ -135,7 +135,7 @@ export function isAdminEmail(email: string) {
 }
 
 export function publicUser(user: { email: string; primaryDeviceId: string | null }) {
-  return { email: user.email, deviceId: user.primaryDeviceId, isAdmin: isAdminEmail(user.email) };
+  return { email: user.email, deviceId: user.primaryDeviceId };
 }
 
 export function createSecureToken() {

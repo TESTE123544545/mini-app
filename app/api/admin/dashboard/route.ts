@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 import { getDb } from "@/db";
-import { getSessionUser, isAdminEmail } from "@/lib/auth";
-import { enforceRateLimit, RequestError, secureErrorResponse } from "@/lib/security";
+import { requireAdmin } from "@/lib/adminAuth";
+import { enforceRateLimit, secureErrorResponse } from "@/lib/security";
 import { RESERVED, RESERVED_SUFFIXES } from "@/lib/emailPolicy";
 import { brazilDayKey } from "@/lib/sky";
 
@@ -44,9 +44,7 @@ function dayShift(day: string, delta: number) {
 /** GET /api/admin/dashboard?days=30 — everything the admin dashboard shows (ADMIN_EMAILS only). */
 export async function GET(request: Request) {
   try {
-    const user = await getSessionUser(request);
-    if (!user) throw new RequestError("Entre na sua conta.", 401);
-    if (!isAdminEmail(user.email)) throw new RequestError("Acesso restrito à equipe.", 403);
+    const user = await requireAdmin(request);
     await enforceRateLimit(request, "admin", user.id, 60, 60);
 
     const days = Math.min(365, Math.max(1, Number(new URL(request.url).searchParams.get("days")) || 30));

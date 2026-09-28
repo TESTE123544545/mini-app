@@ -1,20 +1,15 @@
 import { and, eq, like } from "drizzle-orm";
 import { getDb } from "@/db";
 import { achievements, profiles, users } from "@/db/schema";
-import { getSessionUser, isAdminEmail, normalizeEmail } from "@/lib/auth";
+import { requireAdmin } from "@/lib/adminAuth";
+import { normalizeEmail } from "@/lib/auth";
 import { EXCLUSIVE_ACHIEVEMENTS } from "@/lib/journey";
 import { enforceRateLimit, readJsonBody, RequestError, secureErrorResponse } from "@/lib/security";
 
 /**
- * Exclusive achievements are granted by hand by the Veias da Sintonia team. Only accounts listed in
- * ADMIN_EMAILS may call this; the sync route never lets a client add an exclusive key to itself.
+ * Exclusive achievements are granted by hand by the Veias da Sintonia team, from the /admin panel
+ * (developer login, lib/adminAuth.ts); the sync route never lets a client add an exclusive key to itself.
  */
-async function requireAdmin(request: Request) {
-  const user = await getSessionUser(request);
-  if (!user) throw new RequestError("Entre na sua conta.", 401);
-  if (!isAdminEmail(user.email)) throw new RequestError("Acesso restrito à equipe.", 403);
-  return user;
-}
 
 async function findTarget(email: string) {
   const db = getDb();

@@ -2,7 +2,8 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { getDb } from "@/db";
 import { users } from "@/db/schema";
-import { getSessionUser, isAdminEmail, normalizeEmail } from "@/lib/auth";
+import { requireAdmin } from "@/lib/adminAuth";
+import { normalizeEmail } from "@/lib/auth";
 import { issueResetLink } from "@/lib/passwordReset";
 import { enforceRateLimit, readJsonBody, RequestError, secureErrorResponse } from "@/lib/security";
 
@@ -17,9 +18,7 @@ export async function POST(request: Request) {
   try {
     const parsed = bodySchema.safeParse(await readJsonBody<unknown>(request, 2 * 1024));
     if (!parsed.success) throw new RequestError("Digite um e-mail válido.", 400);
-    const admin = await getSessionUser(request);
-    if (!admin) throw new RequestError("Entre na sua conta.", 401);
-    if (!isAdminEmail(admin.email)) throw new RequestError("Acesso restrito à equipe.", 403);
+    const admin = await requireAdmin(request);
     await enforceRateLimit(request, "admin-reset-link", admin.id, 20, 3600);
 
     const [target] = await getDb().select({ id: users.id, email: users.email }).from(users).where(eq(users.email, normalizeEmail(parsed.data.email))).limit(1);

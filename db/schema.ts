@@ -182,3 +182,22 @@ export const pageViews = sqliteTable("page_views", {
   device: text("device").notNull(),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 }, (table) => [index("page_views_day_idx").on(table.day)]);
+
+/** Developer access to /admin: separate from app sessions, short-lived, only for ADMIN_EMAILS. */
+export const adminSessions = sqliteTable("admin_sessions", {
+  tokenHash: text("token_hash").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  expiresAt: text("expires_at").notNull(),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+/** Second step of the admin login: a 6-digit code e-mailed to the admin, valid for 10 minutes. */
+export const adminLoginCodes = sqliteTable("admin_login_codes", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  codeHash: text("code_hash").notNull(),
+  attempts: integer("attempts").notNull().default(0),
+  expiresAt: text("expires_at").notNull(),
+  usedAt: text("used_at"),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+});

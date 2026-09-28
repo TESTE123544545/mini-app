@@ -22,9 +22,6 @@ import { DiagnosticHomeCards, DiagnosticTreeFocus } from "@/components/diagnosti
 import { track } from "@/lib/analytics";
 import { GUIDES, type GuideId } from "@/lib/library";
 import { LibraryReader } from "@/components/LibraryReader";
-import { AdminAchievements } from "@/components/AdminAchievements";
-import { AdminMetrics } from "@/components/AdminMetrics";
-import { AdminResetLink } from "@/components/AdminResetLink";
 import { ColorModePicker, ColorModeToggle } from "@/components/ColorModeToggle";
 import { BrandLockup } from "@/components/BrandLockup";
 import { PremiumFeatures } from "@/components/PremiumFeatures";
@@ -48,7 +45,7 @@ type ApiMessage = { error?: string; message?: string };
 type Theme = "dourado" | "lua" | "aurora";
 type Plan = "free" | "premium";
 type Profile = { name: string; birthDate: string; objective: string; sign: string; intention: string; theme: Theme; hasAvatar?: boolean; plan?: Plan };
-type Account = { email: string; deviceId: string | null; isAdmin?: boolean };
+type Account = { email: string; deviceId: string | null };
 
 const emptyProfile: Profile = { name: "", birthDate: "", objective: "", sign: "Capricórnio", intention: "", theme: "dourado", hasAvatar: false, plan: "free" };
 const FREE_GOAL_LIMIT = 3;
@@ -1456,7 +1453,7 @@ function ProfileView({ profile, setProfile, account, guide, goals, advanceGoal, 
     setProfile({ ...draft, name: draft.name.trim(), sign: getSign(draft.birthDate) }); setEditing(false); toast.success("Seu perfil foi atualizado.");
   }
 
-  return <div className="view-stack"><section className="profile-identity"><div className={`profile-photo ${profile.hasAvatar ? "has-photo" : ""}`}>{profile.hasAvatar ? <Image unoptimized src={`/api/profile/avatar?v=${avatarVersion}`} alt={`Foto de ${profile.name}`} width={86} height={86}/> : <UserRound/>}<button onClick={() => setCameraOpen(true)} aria-label="Tirar foto"><Camera/></button></div><div><p className="eyebrow">Meu perfil</p><h2>{profile.name}</h2><span>{account.email}</span></div></section>{account.isAdmin && <><AdminMetrics/><AdminResetLink/><AdminAchievements/></>}
+  return <div className="view-stack"><section className="profile-identity"><div className={`profile-photo ${profile.hasAvatar ? "has-photo" : ""}`}>{profile.hasAvatar ? <Image unoptimized src={`/api/profile/avatar?v=${avatarVersion}`} alt={`Foto de ${profile.name}`} width={86} height={86}/> : <UserRound/>}<button onClick={() => setCameraOpen(true)} aria-label="Tirar foto"><Camera/></button></div><div><p className="eyebrow">Meu perfil</p><h2>{profile.name}</h2><span>{account.email}</span></div></section>
     {isPremium && <>
     <section className="surface-card photo-card"><div className="section-heading"><div><p className="eyebrow">Sua imagem</p><h2>Foto de perfil</h2></div><button className="privacy-link" onClick={() => setPrivacyOpen(true)}><ShieldCheck/> Privacidade</button></div><p>Você decide quando usar a câmera e quais fotos compartilhar.</p><div className="photo-actions"><button disabled={photoLoading} onClick={() => setCameraOpen(true)}><Camera/> {photoLoading ? "Enviando…" : "Abrir câmera"}</button><button disabled={photoLoading} onClick={() => setGalleryOpen(true)}><ImagePlus/> Escolher foto</button>{profile.hasAvatar && <button className="danger-button" disabled={photoLoading} onClick={removePhoto}>Remover</button>}</div><input ref={cameraInput} className="file-input" type="file" accept="image/*" capture="user" onChange={(event) => uploadPhoto(event.target.files?.[0])}/><input ref={galleryInput} className="file-input" type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => { uploadPhoto(event.target.files?.[0]); event.target.value = ""; }}/></section>
     <Dialog open={cameraOpen} onOpenChange={(open) => { setCameraOpen(open); if (!open) stopCamera(); }}><DialogContent className="goal-dialog permission-dialog"><DialogHeader><DialogTitle>Usar a câmera</DialogTitle><DialogDescription>A câmera só será ligada agora, com sua autorização. O Android mostrará as opções disponíveis para este aparelho.</DialogDescription></DialogHeader><div className="permission-visual"><span className={cameraPermission}><Camera/></span><div><strong>{cameraPermission === "granted" ? "Câmera permitida" : cameraPermission === "denied" ? "Câmera bloqueada" : "Você está no controle"}</strong><small>{cameraPermission === "denied" ? "Libere a câmera nas configurações do aplicativo ou use o seletor do sistema." : "Apenas a foto capturada será enviada ao seu perfil."}</small></div></div>{cameraActive ? <><video className="camera-preview" ref={(element) => { cameraVideo.current = element; if (element && cameraStream.current) element.srcObject = cameraStream.current; }} autoPlay playsInline muted/><button className="gold-button" onClick={capturePhoto}><Camera/> Usar esta foto</button></> : <div className="permission-actions"><button className="gold-button" onClick={startCamera}><ShieldCheck/> Solicitar acesso à câmera</button><button className="ghost-button" onClick={() => cameraInput.current?.click()}><Camera/> Abrir câmera do sistema</button></div>}</DialogContent></Dialog>
