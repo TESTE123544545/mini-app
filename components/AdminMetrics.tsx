@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { BarChart3 } from "lucide-react";
 
 type Metrics = { days: number; funnel: { key: string; label: string; people: number }[]; totals: { users: number; premium: number } };
@@ -42,6 +43,7 @@ export function AdminMetrics() {
         </ol>
         <p className="admin-metrics__totals">Total de contas: <strong>{metrics.totals.users}</strong> · Premium: <strong>{metrics.totals.premium}</strong></p>
         <p className="admin-metrics__sub">As métricas começaram a ser registradas em 26/09/2026; antes disso não há dados.</p>
+        <Link href="/admin" className="gold-button admin-metrics__open">Abrir painel completo</Link>
       </>}
   </section>;
 }

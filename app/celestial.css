@@ -95,3 +95,6 @@ body .topbar .topbar-brand{--logo-h:28px;margin:0}
 
 /* Day names in the 7-day strip stay on one line instead of breaking mid-word. */
 .week-days b{display:block;max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;letter-spacing:0}
+
+/* Link from the profile funnel card to the full admin dashboard. */
+.admin-metrics__open{display:flex;justify-content:center;margin-top:12px;text-decoration:none}

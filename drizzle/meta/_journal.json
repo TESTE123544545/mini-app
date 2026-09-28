@@ -99,6 +99,13 @@
       "when": 1790394225840,
       "tag": "0013_rich_lady_deathstrike",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "6",
+      "when": 1790557244545,
+      "tag": "0014_tranquil_firebrand",
+      "breakpoints": true
     }
   ]
 }

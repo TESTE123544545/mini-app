@@ -1,17 +1,22 @@
 import handler from "vinext/server/fetch-handler";
+import { isCountableView, recordView } from "@/lib/visits";
 
 /**
  * The Worker entry: vinext serves every request, and a cron (see vite.config.ts) renders the
  * "Horóscopo do dia" hub a few times after midnight in Brasília. That creates the day's texts for
  * all twelve signs before any visitor or crawler arrives, so search engines always find today's
- * reading on the page — and each newly created text is announced through IndexNow.
+ * reading on the page — and each newly created text is announced through IndexNow. It also
+ * counts page views (lib/visits.ts) for the admin dashboard.
  */
 type Handler = { fetch(request: Request, env: unknown, ctx: ExecutionContext): Promise<Response> };
 const app = handler as unknown as Handler;
 
 const worker = {
-  fetch(request: Request, env: unknown, ctx: ExecutionContext) {
-    return app.fetch(request, env, ctx);
+  async fetch(request: Request, env: unknown, ctx: ExecutionContext) {
+    const response = await app.fetch(request, env, ctx);
+    // Page views for the admin dashboard, written after the response so visitors never wait for it.
+    if (isCountableView(request, response)) ctx.waitUntil(recordView(request).catch((error) => console.error("visit_record_failed", error)));
+    return response;
   },
   async scheduled(_controller: unknown, env: unknown, ctx: ExecutionContext) {
     const warm = new Request("https://veiasdasintonia.com.br/horoscopo-do-dia", { headers: { "user-agent": "VeiasDaSintonia-warmup/1.0" } });

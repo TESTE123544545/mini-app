@@ -166,3 +166,19 @@ export const skyDaily = sqliteTable("sky_daily", {
   payloadJson: text("payload_json").notNull(),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 }, (table) => [primaryKey({ columns: [table.day, table.key] })]);
+
+/**
+ * One row per page view by a person (crawlers and prefetches excluded). `visitor` is a hash of IP +
+ * browser with a salt that changes every day and is then deleted: unique visitors can be counted
+ * per day, but nobody can be recognised across days, and no cookie is set.
+ */
+export const pageViews = sqliteTable("page_views", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  day: text("day").notNull(),
+  path: text("path").notNull(),
+  visitor: text("visitor").notNull(),
+  referrer: text("referrer"),
+  country: text("country"),
+  device: text("device").notNull(),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [index("page_views_day_idx").on(table.day)]);
