@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { BrandLockup } from "@/components/BrandLockup";
 import { ColorModeToggle } from "@/components/ColorModeToggle";
+import { SeoTracker } from "@/components/SeoTracker";
 import type { Article } from "@/lib/openrouter";
 
 /**
@@ -47,7 +48,7 @@ export function SeoPage({ crumbs, jsonLd, children }: { crumbs: Crumb[]; jsonLd:
     <div className="zodiac-shell">
       <nav className="zodiac-nav">
         <Link href="/" aria-label="Veias da Sintonia — início"><BrandLockup/></Link>
-        <div className="zodiac-nav-actions"><ColorModeToggle/><Link href="/" className="zodiac-pill">Diagnóstico grátis</Link></div>
+        <div className="zodiac-nav-actions"><ColorModeToggle/><Link href="/" className="zodiac-pill" data-cta="topo">Diagnóstico grátis</Link></div>
       </nav>
       <nav className="zodiac-breadcrumb" aria-label="Você está em">
         {all.map((crumb, index) => <span key={crumb.href}>{index > 0 && " / "}{index < all.length - 1 ? <Link href={crumb.href}>{crumb.name}</Link> : <span aria-current="page">{crumb.name}</span>}</span>)}
@@ -56,14 +57,14 @@ export function SeoPage({ crumbs, jsonLd, children }: { crumbs: Crumb[]; jsonLd:
       <EndCta/>
       <SeoFooter/>
     </div>
-    <Link href="/" className="seo-sticky-cta">Fazer meu diagnóstico gratuito</Link>
+    <Link href="/" className="seo-sticky-cta" data-cta="barra-fixa">Fazer meu diagnóstico gratuito</Link>
   </main>;
 }
 
 export function InlineCta({ text = "Quer saber como isso aparece na sua vida?" }: { text?: string }) {
   return <aside className="seo-inline-cta">
     <p>{text} <strong>Faça o diagnóstico gratuito</strong> — leva menos de 2 minutos.</p>
-    <Link href="/" className="zodiac-pill">Fazer diagnóstico</Link>
+    <Link href="/" className="zodiac-pill" data-cta="meio-do-texto">Fazer diagnóstico</Link>
   </aside>;
 }
 
@@ -71,12 +72,13 @@ function EndCta() {
   return <div className="zodiac-cta">
     <h2>Seu signo é o ponto de partida — sua ação é o que constrói</h2>
     <p>No Veias da Sintonia você faz o diagnóstico gratuito e, ao criar sua conta, experimenta o Premium completo por 3 dias: leitura diária do seu signo, conversa com a IA e a Árvore da Prosperidade.</p>
-    <Link href="/" className="zodiac-pill">Começar grátis</Link>
+    <Link href="/" className="zodiac-pill" data-cta="fim-da-pagina">Começar grátis</Link>
   </div>;
 }
 
 export function SeoFooter() {
   return <footer className="seo-footer">
+    <SeoTracker/>
     <p className="zodiac-disclaimer">Conteúdo para entretenimento e autoconhecimento. Astrologia é uma linguagem simbólica — não uma previsão garantida e não substitui aconselhamento profissional (psicológico, médico, jurídico ou financeiro).</p>
     <nav aria-label="Mais conteúdo">
       <Link href="/horoscopo-do-dia">Horóscopo do dia</Link>

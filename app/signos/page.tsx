@@ -51,7 +51,7 @@ export default async function ZodiacIndexPage() {
       <div className="zodiac-shell">
         <nav className="zodiac-nav">
           <Link href="/" aria-label="Veias da Sintonia — início"><BrandLockup/></Link>
-          <div className="zodiac-nav-actions"><ColorModeToggle /><Link href="/" className="zodiac-pill">Começar minha jornada</Link></div>
+          <div className="zodiac-nav-actions"><ColorModeToggle /><Link href="/" className="zodiac-pill" data-cta="topo">Começar minha jornada</Link></div>
         </nav>
 
         <header className="zodiac-hero">
@@ -84,7 +84,7 @@ export default async function ZodiacIndexPage() {
 
         <SeoFooter/>
       </div>
-      <Link href="/" className="seo-sticky-cta">Fazer meu diagnóstico gratuito</Link>
+      <Link href="/" className="seo-sticky-cta" data-cta="barra-fixa">Fazer meu diagnóstico gratuito</Link>
     </main>
   );
 }

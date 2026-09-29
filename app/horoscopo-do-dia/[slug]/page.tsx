@@ -87,7 +87,7 @@ export default async function DailyHoroscopePage({ params }: { params: Promise<{
       <div className="zodiac-shell">
         <nav className="zodiac-nav">
           <Link href="/" aria-label="Veias da Sintonia — início"><BrandLockup/></Link>
-          <div className="zodiac-nav-actions"><ColorModeToggle /><Link href="/" className="zodiac-pill">Começar minha jornada</Link></div>
+          <div className="zodiac-nav-actions"><ColorModeToggle /><Link href="/" className="zodiac-pill" data-cta="topo">Começar minha jornada</Link></div>
         </nav>
         <p className="zodiac-breadcrumb"><Link href="/horoscopo-do-dia">Horóscopo do dia</Link> / {sign.name}</p>
 
@@ -158,12 +158,12 @@ export default async function DailyHoroscopePage({ params }: { params: Promise<{
         <div className="zodiac-cta">
           <h2>Receba o horóscopo de {sign.name} todo dia — e transforme em ação</h2>
           <p>No Veias da Sintonia, a leitura do seu signo vira uma pequena missão por dia, e sua evolução aparece numa árvore que cresce com você.</p>
-          <Link href="/" className="zodiac-pill">Plantar minha árvore</Link>
+          <Link href="/" className="zodiac-pill" data-cta="fim-da-pagina">Plantar minha árvore</Link>
         </div>
 
         <SeoFooter/>
       </div>
-      <Link href="/" className="seo-sticky-cta">Fazer meu diagnóstico gratuito</Link>
+      <Link href="/" className="seo-sticky-cta" data-cta="barra-fixa">Fazer meu diagnóstico gratuito</Link>
     </main>
   );
 }

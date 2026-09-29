@@ -55,7 +55,7 @@ export async function GET(request: Request) {
 
     const [
       [accounts], signupsByDay, visitsByDay, activeByDay, [activeWeek], pages, referrers, countries, devices,
-      funnelRows, events, recent, [missions],
+      funnelRows, events, recent, [missions], ctaRows, [reading],
     ] = await Promise.all([
       db.all<{ total: number; premium: number; lifetime: number; trials: number }>(sql`
         SELECT (SELECT COUNT(*) FROM users WHERE ${REAL_USER}) AS total,
@@ -102,6 +102,14 @@ export async function GET(request: Request) {
         FROM (SELECT * FROM users WHERE ${REAL_USER}) u LEFT JOIN profiles p ON p.device_id = u.primary_device_id
         ORDER BY u.created_at DESC LIMIT 15`),
       db.all<{ n: number }>(sql`SELECT COUNT(*) AS n FROM mission_completions WHERE ${brDay("completed_at")} = ${today}`),
+      // Public pages: which diagnostic buttons get clicked, and how far people read (components/SeoTracker.tsx).
+      db.all<{ where: string | null; n: number }>(sql`
+        SELECT json_extract(payload_json, '$.where') AS "where", COUNT(*) AS n FROM analytics_events
+        WHERE event_name = 'cta_click' AND ${brDay("created_at")} >= ${since} GROUP BY "where" ORDER BY n DESC`),
+      db.all<{ seoViews: number; half: number; most: number }>(sql`
+        SELECT (SELECT COUNT(*) FROM page_views WHERE day >= ${since} AND path <> '/') AS seoViews,
+               (SELECT COUNT(*) FROM analytics_events WHERE event_name = 'scroll_depth' AND json_extract(payload_json, '$.depth') = 50 AND ${brDay("created_at")} >= ${since}) AS half,
+               (SELECT COUNT(*) FROM analytics_events WHERE event_name = 'scroll_depth' AND json_extract(payload_json, '$.depth') = 90 AND ${brDay("created_at")} >= ${since}) AS most`),
     ]);
 
     const signups = new Map(signupsByDay.map((row) => [row.day, Number(row.n)]));
@@ -147,6 +155,12 @@ export async function GET(request: Request) {
       funnel: FUNNEL.map(([key, label]) => ({ key, label, people: funnelCounts.get(key) ?? 0 })),
       events: events.map((row) => ({ name: row.name, count: Number(row.n) })),
       recentAccounts: recent.map((row) => ({ ...row, plan: row.plan ?? "free" })),
+      content: {
+        views: Number(reading?.seoViews ?? 0),
+        readHalf: Number(reading?.half ?? 0),
+        readMost: Number(reading?.most ?? 0),
+        ctaClicks: ctaRows.map((row) => ({ where: row.where ?? "outro", clicks: Number(row.n) })),
+      },
     }, { headers: { "cache-control": "no-store" } });
   } catch (error) {
     return secureErrorResponse(error, "Não foi possível carregar o painel.");

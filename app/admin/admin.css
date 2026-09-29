@@ -119,3 +119,8 @@ html:has(.adm),body:has(.adm){background:radial-gradient(70% 40% at 50% -10%,rgb
 .adm-tools{display:grid;gap:16px;margin-bottom:16px}
 @media (min-width:880px){.adm-tools{grid-template-columns:1fr 1fr}}
 .adm-user{color:var(--adm-ink-3);font-size:.78rem}
+
+.adm-content-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.adm-content-stats div{display:grid;gap:2px;padding:12px;border:1px solid var(--adm-line);border-radius:12px}
+.adm-content-stats strong{font-size:1.5rem;font-variant-numeric:tabular-nums;color:var(--adm-ink)}
+.adm-content-stats span{color:var(--adm-ink-3);font-size:.78rem;line-height:1.35}

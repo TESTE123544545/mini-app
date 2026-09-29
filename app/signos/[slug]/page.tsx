@@ -90,7 +90,7 @@ export default async function ZodiacSignPage({ params }: { params: Promise<{ slu
       <div className="zodiac-shell">
         <nav className="zodiac-nav">
           <Link href="/" aria-label="Veias da Sintonia — início"><BrandLockup/></Link>
-          <div className="zodiac-nav-actions"><ColorModeToggle /><Link href="/" className="zodiac-pill">Começar minha jornada</Link></div>
+          <div className="zodiac-nav-actions"><ColorModeToggle /><Link href="/" className="zodiac-pill" data-cta="topo">Começar minha jornada</Link></div>
         </nav>
         <p className="zodiac-breadcrumb"><Link href="/signos">Os 12 signos</Link> / {sign.name}</p>
 
@@ -187,7 +187,7 @@ export default async function ZodiacSignPage({ params }: { params: Promise<{ slu
         <div className="zodiac-cta">
           <h2>Seu signo é o ponto de partida — sua ação é o que constrói</h2>
           <p>No Veias da Sintonia, você recebe a leitura do seu signo todos os dias, transforma em pequenas ações e acompanha sua evolução numa árvore que cresce com você.</p>
-          <Link href="/" className="zodiac-pill">Plantar minha árvore</Link>
+          <Link href="/" className="zodiac-pill" data-cta="fim-da-pagina">Plantar minha árvore</Link>
         </div>
 
         <nav className="zodiac-pager" aria-label="Outros signos">
@@ -197,7 +197,7 @@ export default async function ZodiacSignPage({ params }: { params: Promise<{ slu
 
         <SeoFooter/>
       </div>
-      <Link href="/" className="seo-sticky-cta">Fazer meu diagnóstico gratuito</Link>
+      <Link href="/" className="seo-sticky-cta" data-cta="barra-fixa">Fazer meu diagnóstico gratuito</Link>
     </main>
   );
 }

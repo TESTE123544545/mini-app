@@ -24,7 +24,10 @@ type Dashboard = {
   funnel: { key: string; label: string; people: number }[];
   events: { name: string; count: number }[];
   recentAccounts: { email: string; name: string | null; sign: string | null; plan: string; createdAt: string }[];
+  content: { views: number; readHalf: number; readMost: number; ctaClicks: { where: string; clicks: number }[] };
 };
+
+const CTA_LABEL: Record<string, string> = { "barra-fixa": "Barra fixa no celular", "meio-do-texto": "No meio do texto", "fim-da-pagina": "No fim da página", topo: "Botão do topo", outro: "Outros" };
 
 const PERIODS = [7, 30, 90] as const;
 const nf = new Intl.NumberFormat("pt-BR");
@@ -266,6 +269,19 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
           </ol>
         </section>
         <RankList title={`O que as pessoas fazem no app · ${data.days} dias`} unit="vezes" rows={data.events.map((row) => ({ label: EVENT_LABEL[row.name] ?? row.name, value: row.count }))}/>
+      </div>
+
+      <div className="adm-two">
+        <section className="adm-card">
+          <h3>Páginas de conteúdo · {data.days} dias</h3>
+          <div className="adm-content-stats">
+            <div><strong>{nf.format(data.content.views)}</strong><span>visitas nas páginas de conteúdo</span></div>
+            <div><strong>{data.content.views ? `${Math.round((data.content.readHalf / data.content.views) * 100)}%` : "—"}</strong><span>leram metade da página</span></div>
+            <div><strong>{data.content.views ? `${Math.round((data.content.readMost / data.content.views) * 100)}%` : "—"}</strong><span>leram quase tudo</span></div>
+            <div><strong>{data.content.views ? `${(data.content.ctaClicks.reduce((sum, row) => sum + row.clicks, 0) / data.content.views * 100).toFixed(1)}%` : "—"}</strong><span>clicaram para fazer o diagnóstico</span></div>
+          </div>
+        </section>
+        <RankList title="Cliques nos botões de diagnóstico" unit="cliques" rows={data.content.ctaClicks.map((row) => ({ label: CTA_LABEL[row.where] ?? row.where, value: row.clicks }))}/>
       </div>
 
       <section className="adm-card adm-card--wide">
