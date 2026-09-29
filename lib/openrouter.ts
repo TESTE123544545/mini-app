@@ -290,7 +290,7 @@ sections = exatamente as seções pedidas, na ordem, cada uma com um título h2 
 faq = 5 perguntas que as pessoas realmente pesquisam no Google sobre o tema, cada resposta com 2 a 3 frases diretas.
 O texto inteiro deve ter entre 1000 e 1400 palavras.`;
   const user = [`Título: ${input.title}`, `Tema: ${input.brief}`, `Seções, nesta ordem: ${input.sections.map((section, index) => `${index + 1}. ${section}`).join(" ")}`, "Fatos:", ...input.facts].join("\n");
-  const parsed = await callOpenRouterJson(system, user, 5000) as Record<string, unknown>;
+  const parsed = await callOpenRouterJson(system, user, 3200) as Record<string, unknown>;
   const paragraphs = (value: unknown) => (Array.isArray(value) ? value : []).map((item) => cleanField(item, 1400)).filter(Boolean).slice(0, 4);
   const article: Article = {
     intro: paragraphs(parsed.intro),

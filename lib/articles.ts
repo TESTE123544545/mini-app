@@ -74,7 +74,7 @@ function allJobs(): Job[] {
  * Writes the articles that don't exist yet, a few at a time, and announces each new page through
  * IndexNow. Safe to run often: when everything exists it is one small query.
  */
-export async function buildMissingArticles({ limit = 12, concurrency = 4 } = {}) {
+export async function buildMissingArticles({ limit = 8, concurrency = 4 } = {}) {
   const db = getDb();
   const existing = new Set((await db.select({ key: skyDaily.key }).from(skyDaily).where(and(eq(skyDaily.day, EVERGREEN), like(skyDaily.key, "%:v1:%")))).map((row) => row.key));
   const queue = allJobs().filter((job) => !existing.has(job.key)).slice(0, limit);

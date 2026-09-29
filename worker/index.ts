@@ -21,9 +21,12 @@ const worker = {
     return response;
   },
   async scheduled(controller: { cron: string }, env: unknown, ctx: ExecutionContext) {
-    // Every 15 minutes: write any long SEO article that doesn't exist yet (a no-op once all do).
-    ctx.waitUntil(buildMissingArticles().catch((error) => console.error("articles_failed", error)));
-    if (controller.cron === "*/15 * * * *") return;
+    // Every 15 minutes, in its own invocation (the free plan allows 50 subrequests per run):
+    // write any long SEO article that doesn't exist yet — a no-op once they all do.
+    if (controller.cron === "*/15 * * * *") {
+      ctx.waitUntil(buildMissingArticles().catch((error) => console.error("articles_failed", error)));
+      return;
+    }
     const warm = new Request("https://veiasdasintonia.com.br/horoscopo-do-dia", { headers: { "user-agent": "VeiasDaSintonia-warmup/1.0" } });
     ctx.waitUntil(app.fetch(warm, env, ctx).then((response) => response.arrayBuffer()).catch((error) => console.error("warmup_failed", error)));
     // Premium trial e-mails (sent only in daytime in Brasília).
