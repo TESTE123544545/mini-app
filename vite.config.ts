@@ -17,7 +17,8 @@ const localBindingConfig = {
   main: "./worker/index.ts",
   // 00:10, 06:10, 12:10 and 18:10 in Brasília: the day's horoscope texts before visitors and crawlers
   // arrive, and (in daytime) the Premium trial e-mails.
-  triggers: { crons: ["10 3,9,15,21 * * *"] },
+  // Every 15 minutes the cron also writes any missing SEO article (a no-op once they all exist).
+  triggers: { crons: ["10 3,9,15,21 * * *", "*/15 * * * *"] },
   compatibility_flags: ["nodejs_compat"],
   routes: ["veiasdasintonia.com.br/*", "www.veiasdasintonia.com.br/*"],
   d1_databases: d1

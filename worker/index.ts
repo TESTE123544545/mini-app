@@ -1,4 +1,5 @@
 import handler from "vinext/server/fetch-handler";
+import { buildMissingArticles } from "@/lib/articles";
 import { runTrialEmails } from "@/lib/trialEmails";
 import { isCountableView, recordView } from "@/lib/visits";
 
@@ -19,10 +20,13 @@ const worker = {
     if (isCountableView(request, response)) ctx.waitUntil(recordView(request).catch((error) => console.error("visit_record_failed", error)));
     return response;
   },
-  async scheduled(_controller: unknown, env: unknown, ctx: ExecutionContext) {
+  async scheduled(controller: { cron: string }, env: unknown, ctx: ExecutionContext) {
+    // Every 15 minutes: write any long SEO article that doesn't exist yet (a no-op once all do).
+    ctx.waitUntil(buildMissingArticles().catch((error) => console.error("articles_failed", error)));
+    if (controller.cron === "*/15 * * * *") return;
     const warm = new Request("https://veiasdasintonia.com.br/horoscopo-do-dia", { headers: { "user-agent": "VeiasDaSintonia-warmup/1.0" } });
     ctx.waitUntil(app.fetch(warm, env, ctx).then((response) => response.arrayBuffer()).catch((error) => console.error("warmup_failed", error)));
-    // Premium trial reminders and "trial ended" notes (sent only in daytime in Brasília).
+    // Premium trial e-mails (sent only in daytime in Brasília).
     ctx.waitUntil(runTrialEmails().catch((error) => console.error("trial_emails_failed", error)));
   },
 };

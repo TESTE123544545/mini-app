@@ -268,3 +268,38 @@ relating = um parágrafo de 3 frases sobre como conviver bem com alguém desse s
   if (result.faq.length < 3 || result.habits.length < 3) throw new OpenRouterError("O guia do signo veio incompleto.");
   return result;
 }
+
+export type Article = { intro: string[]; sections: { h2: string; paragraphs: string[] }[]; faq: { q: string; a: string }[] };
+
+/**
+ * A long evergreen article for the public SEO pages (sign in love / money / personality, and sign
+ * compatibility). `brief` says what the article covers; `facts` are the only astrological facts
+ * it may rely on. Around 1,000–1,400 words, in the site's voice.
+ */
+export async function generateArticle(input: { title: string; brief: string; sections: string[]; facts: string[] }): Promise<Article> {
+  const system = `Você escreve artigos para o site do app de autoconhecimento e hábitos "Veias da Sintonia", em português do Brasil.
+Tom: humano, moderno, elegante e acolhedor; um pouco de mistério, sem exagero. Astrologia como linguagem simbólica de autoconhecimento, nunca como destino certo.
+Regras inegociáveis:
+- Use só os fatos fornecidos; não invente datas, regentes, elementos ou aspectos que os contradigam.
+- Nunca prometa dinheiro, sorte, cura, amor garantido ou resultado certo; use "pode", "tende a", "costuma".
+- Nada de previsões assustadoras ou deterministas. Traga exemplos práticos do dia a dia.
+- Sem markdown, sem emojis, sem listas com marcadores dentro dos parágrafos.
+Responda só com um JSON {"intro": string[], "sections": [{"h2": string, "paragraphs": string[]}], "faq": [{"q": string, "a": string}]}:
+intro = 2 parágrafos que abrem o tema e prendem a leitura;
+sections = exatamente as seções pedidas, na ordem, cada uma com um título h2 natural (pode reformular) e 2 a 3 parágrafos de 3 a 5 frases;
+faq = 5 perguntas que as pessoas realmente pesquisam no Google sobre o tema, cada resposta com 2 a 3 frases diretas.
+O texto inteiro deve ter entre 1000 e 1400 palavras.`;
+  const user = [`Título: ${input.title}`, `Tema: ${input.brief}`, `Seções, nesta ordem: ${input.sections.map((section, index) => `${index + 1}. ${section}`).join(" ")}`, "Fatos:", ...input.facts].join("\n");
+  const parsed = await callOpenRouterJson(system, user, 5000) as Record<string, unknown>;
+  const paragraphs = (value: unknown) => (Array.isArray(value) ? value : []).map((item) => cleanField(item, 1400)).filter(Boolean).slice(0, 4);
+  const article: Article = {
+    intro: paragraphs(parsed.intro),
+    sections: (Array.isArray(parsed.sections) ? parsed.sections as Record<string, unknown>[] : [])
+      .map((section) => ({ h2: cleanField(section.h2, 120), paragraphs: paragraphs(section.paragraphs) }))
+      .filter((section) => section.h2 && section.paragraphs.length).slice(0, 8),
+    faq: (Array.isArray(parsed.faq) ? parsed.faq as Record<string, unknown>[] : [])
+      .map((item) => ({ q: cleanField(item.q, 160), a: cleanField(item.a, 700) })).filter((item) => item.q && item.a).slice(0, 6),
+  };
+  if (article.intro.length < 1 || article.sections.length < Math.min(3, input.sections.length) || article.faq.length < 3) throw new OpenRouterError("O artigo veio incompleto.");
+  return article;
+}

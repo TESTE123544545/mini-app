@@ -6,6 +6,9 @@ import { ColorModeToggle } from "@/components/ColorModeToggle";
 import { BrandLockup } from "@/components/BrandLockup";
 import { ZODIAC_SIGNS, getZodiacSign } from "@/lib/zodiacContent";
 import { brazilDayKey, getSignDaily, getSignGuide, getSignMonthly, getSignWeekly, getSkyToday, settleWithin, signSlugFromName } from "@/lib/sky";
+import { RelatedLinks, SeoFooter } from "@/components/SeoPage";
+import { SIGN_TOPICS } from "@/lib/articles";
+import { pairSlug } from "@/lib/compat";
 import { DailyBlock, GuideSections, PeriodBlock, SkyBlock, formatDay, formatMonth, formatWeek } from "../LiveSections";
 
 // The horoscope changes every day, so the page renders per request (the texts themselves are cached in D1).
@@ -167,10 +170,16 @@ export default async function ZodiacSignPage({ params }: { params: Promise<{ slu
             <div className="zodiac-compat">
               {sign.compatibleSigns.map((name) => {
                 const match = ZODIAC_SIGNS.find((item) => item.name === name);
-                return match ? <Link key={name} href={`/signos/${match.slug}`}>{`${match.symbol}\uFE0E`} {name}</Link> : null;
+                return match ? <Link key={name} href={`/compatibilidade/${pairSlug(sign, match)}`}>{`${match.symbol}\uFE0E`} {sign.name} e {name}</Link> : null;
               })}
             </div>
           </section>
+
+          <RelatedLinks title={`Leia mais sobre ${sign.name}`} links={[
+            ...SIGN_TOPICS.map((topic) => ({ href: `/signos/${sign.slug}/${topic.slug}`, label: `${sign.name} ${topic.label}` })),
+            { href: "/compatibilidade-amorosa", label: "Teste de compatibilidade amorosa" },
+            { href: "/astrologia-e-dinheiro", label: "Astrologia e dinheiro" },
+          ]}/>
 
           {guide && <GuideSections name={sign.name} guide={guide} />}
         </div>
@@ -181,15 +190,14 @@ export default async function ZodiacSignPage({ params }: { params: Promise<{ slu
           <Link href="/" className="zodiac-pill">Plantar minha árvore</Link>
         </div>
 
-        <p className="zodiac-disclaimer">
-          Astrologia é uma linguagem simbólica para autoconhecimento — não uma previsão garantida do futuro ou das finanças. O que muda sua vida são as ações que você toma.
-        </p>
-
         <nav className="zodiac-pager" aria-label="Outros signos">
           <Link href={`/signos/${previous.slug}`}><small>Anterior</small>{`${previous.symbol}\uFE0E`} {previous.name}</Link>
           <Link href={`/signos/${next.slug}`} className="next"><small>Próximo</small>{`${next.symbol}\uFE0E`} {next.name}</Link>
         </nav>
+
+        <SeoFooter/>
       </div>
+      <Link href="/" className="seo-sticky-cta">Fazer meu diagnóstico gratuito</Link>
     </main>
   );
 }

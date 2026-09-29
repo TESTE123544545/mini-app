@@ -135,3 +135,52 @@
 .zodiac-phrase p{font-stretch:normal;font-size:1.35rem!important}
 
 .zodiac-nav .brand-lockup{--logo-h:30px}
+
+/* ---- SEO pages: shared pieces (components/SeoPage.tsx) ---- */
+.seo-lede{margin:0 0 16px;color:var(--studio-ink-2);font-size:1.05rem;line-height:1.7}
+.zodiac-section h3{margin:22px 0 8px;font-size:1.08rem}
+.seo-inline-cta{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin:22px 0 4px;padding:16px 18px;border:1px solid var(--studio-line);border-radius:16px;background:rgba(202,157,68,0.1)}
+.seo-inline-cta p{flex:1 1 240px;margin:0!important;color:var(--studio-ink)!important;font-size:.92rem;line-height:1.5}
+.seo-footer{margin-top:40px;padding-top:24px;border-top:1px solid var(--studio-line)}
+.seo-footer nav{display:flex;flex-wrap:wrap;gap:8px 18px;margin:16px 0}
+.seo-footer nav a{color:var(--studio-ink-2);font-size:.86rem;font-weight:600;text-decoration:none}
+.seo-footer nav a:hover{color:var(--studio-amber)}
+.seo-footer__brand{margin:0;color:var(--studio-ink-3);font-size:.8rem}
+.seo-footer__brand a{color:inherit}
+.seo-sticky-cta{display:none}
+@media (max-width:760px){
+  .zodiac-page{padding-bottom:76px}
+  .seo-sticky-cta{position:fixed;z-index:20;left:12px;right:12px;bottom:max(12px,env(safe-area-inset-bottom));display:flex;align-items:center;justify-content:center;min-height:52px;border-radius:999px;background:linear-gradient(180deg,#f1d9a0,#d9b26a 55%,#b88f45);color:#0b1633;font-size:.8rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;text-decoration:none;box-shadow:0 14px 34px -12px rgba(0,0,0,.6)}
+}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ---- Compatibility ---- */
+.compat-hero .compat-symbols{margin:0 0 8px;font-size:2.4rem;color:var(--studio-amber)}
+.compat-hero .compat-symbols span{font-size:1.4rem;opacity:.7}
+.compat-level{margin:0 0 10px!important;color:var(--studio-ink)!important}
+.compat-level strong{color:var(--studio-amber)}
+.compat-picker{display:grid;grid-template-columns:1fr auto 1fr;align-items:end;gap:12px;margin:0 0 32px;padding:20px;border:1px solid var(--studio-line);border-radius:18px;background:rgba(255,255,255,.6)}
+.compat-picker label{display:grid;gap:6px;color:var(--studio-ink-2);font-size:.78rem;font-weight:700}
+.compat-picker select{min-height:48px;padding:0 12px;border:1px solid var(--studio-line);border-radius:12px;background:transparent;color:var(--studio-ink);font:inherit;font-size:1rem}
+.compat-picker select option{color:#0b1633}
+.compat-picker__plus{padding-bottom:12px;color:var(--studio-amber);font-size:1.4rem;font-weight:700}
+.compat-picker .zodiac-pill{grid-column:1/-1;justify-self:center;border:0;cursor:pointer}
+@media (max-width:560px){.compat-picker{grid-template-columns:1fr}.compat-picker__plus{padding:0;text-align:center}}
+.compat-elements{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:18px 0}
+.compat-elements>div{padding:16px;border:1px solid var(--studio-line);border-radius:14px}
+.compat-elements strong{display:block;color:var(--studio-ink)}
+.compat-elements small{color:var(--studio-amber);font-weight:700}
+.compat-elements p{margin:8px 0 0;font-size:.9rem}
+.compat-table-wrap{overflow-x:auto;margin:14px 0 8px}
+.compat-table{border-collapse:collapse;min-width:640px;width:100%;font-size:.86rem}
+.compat-table th{padding:6px;color:var(--studio-ink-2);font-weight:700;text-align:left;white-space:nowrap}
+.compat-table thead th{text-align:center;color:var(--studio-amber);font-size:1.05rem}
+.compat-table td{padding:0;text-align:center;border:1px solid var(--studio-line)}
+.compat-table td a{display:block;padding:7px 0;color:var(--studio-amber);text-decoration:none}
+.compat-table td a:hover{background:rgba(202,157,68,0.14)}
+.compat-legend{font-size:.82rem}
+.compat-by-sign{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:4px 18px}
+.compat-by-sign h3{margin:14px 0 4px}
+.compat-by-sign p{margin:0;font-size:.9rem}
+:root[data-mode=dark] .compat-picker{background:rgba(14,26,58,.82);border-color:rgba(217,178,106,.3)}
+:root[data-mode=dark] .seo-inline-cta{background:rgba(217,178,106,.1);border-color:rgba(217,178,106,.35)}
