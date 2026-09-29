@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   title: { absolute: `${TITLE} | Veias da Sintonia` },
   description: DESCRIPTION,
   alternates: { canonical: "/astrologia-e-dinheiro" },
-  openGraph: { title: TITLE, description: DESCRIPTION, url: "/astrologia-e-dinheiro", type: "article" },
+  openGraph: { images: ["/og-image.jpg"], title: TITLE, description: DESCRIPTION, url: "/astrologia-e-dinheiro", type: "article" },
 };
 
 const ELEMENTS = [

@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   title: { absolute: `${TITLE} | Veias da Sintonia` },
   description: DESCRIPTION,
   alternates: { canonical: "/compatibilidade-amorosa" },
-  openGraph: { title: TITLE, description: DESCRIPTION, url: "/compatibilidade-amorosa", type: "article" },
+  openGraph: { images: ["/og-image.jpg"], title: TITLE, description: DESCRIPTION, url: "/compatibilidade-amorosa", type: "article" },
 };
 
 const FAQ = [

@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!found) return {};
   const copy = COPY[found.topic](found.sign.name);
   const path = `/signos/${found.sign.slug}/${found.topic}`;
-  return { title: { absolute: `${copy.title} | Veias da Sintonia` }, description: copy.description, alternates: { canonical: path }, openGraph: { title: copy.title, description: copy.description, url: path, type: "article" } };
+  return { title: { absolute: `${copy.title} | Veias da Sintonia` }, description: copy.description, alternates: { canonical: path }, openGraph: { images: ["/og-image.jpg"], title: copy.title, description: copy.description, url: path, type: "article" } };
 }
 
 /** The sign's own short text for this topic, shown until the long article exists. */

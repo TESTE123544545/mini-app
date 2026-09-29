@@ -1009,6 +1009,7 @@ function AuthScreen({ onAuthenticated, initialMode, onBack, resetToken: linkToke
           {notice && <p className="entry-message entry-message--ok" role="status"><Check aria-hidden="true"/> {notice}</p>}
           {!(mode === "recover" && notice) && <button className="entry-pill entry-pill--solid entry-pill--wide" disabled={loading} aria-busy={loading}>{loading ? "Aguarde…" : mode === "register" ? "Criar minha conta" : mode === "login" ? "Entrar" : mode === "recover" ? "Enviar link de recuperação" : "Salvar nova senha"}{!loading && <ArrowRight aria-hidden="true"/>}</button>}
         </form>
+        {mode === "register" && <p className="entry-legal">Ao criar a conta, você confirma ter 18 anos ou mais (ou 16, com autorização dos responsáveis) e concorda com os <a href="/termos" target="_blank" rel="noopener">Termos de uso</a> e a <a href="/privacidade" target="_blank" rel="noopener">Política de Privacidade</a>.</p>}
         <p className="entry-security"><LockKeyhole aria-hidden="true"/> Sua senha é protegida e sua jornada fica vinculada à sua conta.</p>
       </section>
     </div>

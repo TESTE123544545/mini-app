@@ -3,6 +3,7 @@ import Link from "next/link";
 import "../signos/signos.css";
 import { ColorModeToggle } from "@/components/ColorModeToggle";
 import { BrandLockup } from "@/components/BrandLockup";
+import { SeoFooter } from "@/components/SeoPage";
 import { ZODIAC_SIGNS } from "@/lib/zodiacContent";
 import { brazilDayKey, getSignDaily, getSkyToday, settleWithin, signSlugFromName } from "@/lib/sky";
 import { formatDay, formatDayShort } from "../signos/LiveSections";
@@ -20,7 +21,7 @@ export async function generateMetadata(): Promise<Metadata> {
     title: { absolute: title },
     description,
     alternates: { canonical: "/horoscopo-do-dia" },
-    openGraph: { title, description, url: "/horoscopo-do-dia", type: "website" },
+    openGraph: { images: ["/og-image.jpg"], title, description, url: "/horoscopo-do-dia", type: "website" },
   };
 }
 
@@ -83,10 +84,9 @@ export default async function DailyHoroscopeIndex() {
           <p><Link href="/signos">Veja o céu completo e o guia dos 12 signos →</Link></p>
         </section>}
 
-        <p className="zodiac-disclaimer">
-          Astrologia é uma linguagem simbólica para autoconhecimento — não uma previsão garantida do futuro. O que muda sua vida são as ações que você toma, não o signo em que nasceu.
-        </p>
+        <SeoFooter/>
       </div>
+      <Link href="/" className="seo-sticky-cta">Fazer meu diagnóstico gratuito</Link>
     </main>
   );
 }

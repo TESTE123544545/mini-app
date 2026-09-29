@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import "../../signos/signos.css";
 import { ColorModeToggle } from "@/components/ColorModeToggle";
 import { BrandLockup } from "@/components/BrandLockup";
+import { InlineCta, SeoFooter } from "@/components/SeoPage";
 import { ZODIAC_SIGNS, getZodiacSign } from "@/lib/zodiacContent";
 import { brazilDayKey, getSignDaily, getSkyToday, settleWithin, signSlugFromName } from "@/lib/sky";
 import { formatDay, formatDayShort } from "../../signos/LiveSections";
@@ -27,7 +28,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     title: { absolute: title },
     description,
     alternates: { canonical: `/horoscopo-do-dia/${sign.slug}` },
-    openGraph: { title, description, url: `/horoscopo-do-dia/${sign.slug}`, type: "article", publishedTime: `${day}T00:00:00-03:00` },
+    openGraph: { images: ["/og-image.jpg"], title, description, url: `/horoscopo-do-dia/${sign.slug}`, type: "article", publishedTime: `${day}T00:00:00-03:00` },
   };
 }
 
@@ -103,6 +104,7 @@ export default async function DailyHoroscopePage({ params }: { params: Promise<{
               <h2>Horóscopo de {sign.name} hoje</h2>
               <blockquote className="zodiac-phrase"><span>Frase do dia de {sign.name}</span><p>{daily.tip}</p></blockquote>
               <p>{daily.overview}</p>
+              <InlineCta text={`Quer saber como o dia de ${sign.name} conversa com o seu momento?`}/>
             </section>
             <section className="zodiac-section">
               <h2>{sign.name} hoje no trabalho e nas metas</h2>
@@ -159,10 +161,9 @@ export default async function DailyHoroscopePage({ params }: { params: Promise<{
           <Link href="/" className="zodiac-pill">Plantar minha árvore</Link>
         </div>
 
-        <p className="zodiac-disclaimer">
-          Astrologia é uma linguagem simbólica para autoconhecimento — não uma previsão garantida do futuro ou das finanças. O que muda sua vida são as ações que você toma.
-        </p>
+        <SeoFooter/>
       </div>
+      <Link href="/" className="seo-sticky-cta">Fazer meu diagnóstico gratuito</Link>
     </main>
   );
 }

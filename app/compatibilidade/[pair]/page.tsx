@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: { params: Promise<{ pair: str
   const title = `${name}: Compatibilidade no Amor, Amizade e Trabalho`;
   const description = `${name} combinam? Veja a compatibilidade amorosa entre ${name}: sintonia dos elementos ${a.element} e ${b.element}, desafios do casal e dicas para a relação dar certo.`;
   const path = `/compatibilidade/${pairSlug(a, b)}`;
-  return { title: { absolute: `${title} | Veias da Sintonia` }, description, alternates: { canonical: path }, openGraph: { title, description, url: path, type: "article" } };
+  return { title: { absolute: `${title} | Veias da Sintonia` }, description, alternates: { canonical: path }, openGraph: { images: ["/og-image.jpg"], title, description, url: path, type: "article" } };
 }
 
 export default async function CompatibilityPage({ params }: { params: Promise<{ pair: string }> }) {

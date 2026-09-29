@@ -19,6 +19,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "daily",
       priority: 0.9,
     },
+    ...["/privacidade", "/termos"].map((path) => ({ url: `${BASE_URL}${path}`, lastModified: new Date("2026-09-28"), changeFrequency: "yearly" as const, priority: 0.2 })),
     ...["/astrologia-e-dinheiro", "/compatibilidade-amorosa"].map((path) => ({ url: `${BASE_URL}${path}`, lastModified: new Date(), changeFrequency: "weekly" as const, priority: 0.9 })),
     ...ZODIAC_SIGNS.flatMap((sign) => SIGN_TOPICS.map((topic) => ({ url: `${BASE_URL}/signos/${sign.slug}/${topic.slug}`, lastModified: new Date(), changeFrequency: "monthly" as const, priority: 0.7 }))),
     ...allPairs().map(([a, b]) => ({ url: `${BASE_URL}/compatibilidade/${pairSlug(a, b)}`, lastModified: new Date(), changeFrequency: "monthly" as const, priority: 0.6 })),

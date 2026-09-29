@@ -191,3 +191,7 @@ html:has(.entry),body:has(.entry){background:#070f24}
 /* The generated dark theme styles every heading; these screens keep their own gold titles. */
 :root .entry .entry-title{color:var(--entry-gold);font-family:var(--entry-display);font-weight:700;letter-spacing:.04em}
 :root .entry .entry-lede{color:var(--entry-ink-2);text-shadow:0 1px 12px rgba(7,15,36,.9)}
+
+/* Consent line under the sign-up form. */
+.entry-legal{margin:14px 0 0;color:var(--entry-ink-3);font-size:.76rem;line-height:1.5}
+.entry-legal a{color:var(--entry-gold);text-underline-offset:3px}

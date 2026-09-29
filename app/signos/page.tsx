@@ -3,6 +3,7 @@ import Link from "next/link";
 import "./signos.css";
 import { ColorModeToggle } from "@/components/ColorModeToggle";
 import { BrandLockup } from "@/components/BrandLockup";
+import { SeoFooter } from "@/components/SeoPage";
 import { ZODIAC_SIGNS } from "@/lib/zodiacContent";
 import { brazilDayKey, getSignDaily, getSkyToday, settleWithin, signSlugFromName } from "@/lib/sky";
 import { SkyBlock, formatDay } from "./LiveSections";
@@ -14,7 +15,7 @@ export const metadata: Metadata = {
   title: "Horóscopo de Hoje dos 12 Signos: Frase do Dia e Céu ao Vivo",
   description: "Horóscopo de hoje para os 12 signos do zodíaco: a frase do dia de cada signo, a Lua e os planetas ao vivo e os próximos eventos do céu. Guia completo de personalidade, amor e carreira de cada signo.",
   alternates: { canonical: "/signos" },
-  openGraph: {
+  openGraph: { images: ["/og-image.jpg"],
     title: "Horóscopo de Hoje dos 12 Signos: Frase do Dia e Céu ao Vivo",
     description: "A frase do dia de cada signo, a Lua e os planetas ao vivo e o guia completo dos 12 signos.",
     url: "/signos",
@@ -81,10 +82,9 @@ export default async function ZodiacIndexPage() {
           <p className="zodiac-source">{sky.source}.</p>
         </section>}
 
-        <p className="zodiac-disclaimer">
-          Astrologia é uma linguagem simbólica para autoconhecimento — não uma previsão garantida do futuro. O que muda sua vida são as ações que você toma, não o signo em que nasceu.
-        </p>
+        <SeoFooter/>
       </div>
+      <Link href="/" className="seo-sticky-cta">Fazer meu diagnóstico gratuito</Link>
     </main>
   );
 }

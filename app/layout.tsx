@@ -62,10 +62,10 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/app-icon-512.png",
-        width: 512,
-        height: 512,
-        alt: "Use Seu Signo Para Prosperar",
+        url: "/og-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Veias da Sintonia — use seu signo para prosperar: a Árvore da Vida dourada no astrolábio",
       },
     ],
   },
@@ -74,7 +74,7 @@ export const metadata: Metadata = {
     title: "Use Seu Signo Para Prosperar | Signos & Astrologia",
     description:
       "Horóscopo de prosperidade, perfil financeiro dos 12 signos e ciclos lunares em tempo real.",
-    images: ["/app-icon-512.png"],
+    images: ["/og-image.jpg"],
   },
   robots: {
     index: true,

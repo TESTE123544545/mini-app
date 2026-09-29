@@ -184,3 +184,6 @@
 .compat-by-sign p{margin:0;font-size:.9rem}
 :root[data-mode=dark] .compat-picker{background:rgba(14,26,58,.82);border-color:rgba(217,178,106,.3)}
 :root[data-mode=dark] .seo-inline-cta{background:rgba(217,178,106,.1);border-color:rgba(217,178,106,.35)}
+
+/* Legal pages */
+.legal .zodiac-section p{line-height:1.7}

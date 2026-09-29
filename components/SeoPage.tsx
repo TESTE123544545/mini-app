@@ -33,7 +33,7 @@ export function articleJsonLd({ headline, description, path, datePublished = "20
     inLanguage: "pt-BR",
     datePublished,
     dateModified: datePublished,
-    image: `${SITE}/og-image.png`,
+    image: `${SITE}/og-image.jpg`,
     author: { "@type": "Organization", name: "Veias da Sintonia", url: SITE },
     publisher: { "@type": "Organization", name: "Veias da Sintonia", url: SITE, logo: { "@type": "ImageObject", url: `${SITE}/app-icon-512.png` } },
     mainEntityOfPage: `${SITE}${path}`,
