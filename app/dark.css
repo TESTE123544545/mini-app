@@ -816,6 +816,36 @@ html[data-mode=dark],:root[data-mode=dark] body{background:#0d162e;color:var(--s
 :root[data-mode=dark] .zodiac-disclaimer{color:var(--studio-ink-3)}
 :root[data-mode=dark] .zodiac-pager a{border-radius:14px;background:rgba(20,32,67,0.72);color:var(--studio-ink)}
 :root[data-mode=dark] .zodiac-pager a small{color:var(--studio-ink-3)}
+:root[data-mode=dark] .seo-lede{color:var(--studio-ink-2)}
+:root[data-mode=dark] .seo-inline-cta{border:1px solid var(--studio-line);border-radius:16px;background:rgba(202,157,68,0.1)}
+:root[data-mode=dark] .seo-inline-cta p{color:var(--studio-ink)!important}
+:root[data-mode=dark] .seo-footer{border-top:1px solid var(--studio-line)}
+:root[data-mode=dark] .seo-footer nav a{color:var(--studio-ink-2)}
+:root[data-mode=dark] .seo-footer nav a:hover{color:var(--studio-amber)}
+:root[data-mode=dark] .seo-footer__brand{color:var(--studio-ink-3)}
+:root[data-mode=dark] .seo-footer__brand a{color:inherit}
+@media (max-width:760px){:root[data-mode=dark] .seo-sticky-cta{border-radius:999px;background:linear-gradient(180deg,#f1d9a0,#d9b26a 55%,#b88f45);color:#eef1f8;box-shadow:0 14px 34px -12px rgba(0,0,0,0.6)}
+}
+:root[data-mode=dark] .compat-hero .compat-symbols{color:var(--studio-amber)}
+:root[data-mode=dark] .compat-level{color:var(--studio-ink)!important}
+:root[data-mode=dark] .compat-level strong{color:var(--studio-amber)}
+:root[data-mode=dark] .compat-picker{border:1px solid var(--studio-line);border-radius:18px;background:rgba(20,32,67,0.6)}
+:root[data-mode=dark] .compat-picker label{color:var(--studio-ink-2)}
+:root[data-mode=dark] .compat-picker select{border:1px solid var(--studio-line);border-radius:12px;background:transparent;color:var(--studio-ink)}
+:root[data-mode=dark] .compat-picker select option{color:#eef1f8}
+:root[data-mode=dark] .compat-picker__plus{color:var(--studio-amber)}
+:root[data-mode=dark] .compat-picker .zodiac-pill{border:0}
+:root[data-mode=dark] .compat-elements>div{border:1px solid var(--studio-line);border-radius:14px}
+:root[data-mode=dark] .compat-elements strong{color:var(--studio-ink)}
+:root[data-mode=dark] .compat-elements small{color:var(--studio-amber)}
+:root[data-mode=dark] .compat-table{border-collapse:collapse}
+:root[data-mode=dark] .compat-table th{color:var(--studio-ink-2)}
+:root[data-mode=dark] .compat-table thead th{color:var(--studio-amber)}
+:root[data-mode=dark] .compat-table td{border:1px solid var(--studio-line)}
+:root[data-mode=dark] .compat-table td a{color:var(--studio-amber)}
+:root[data-mode=dark] .compat-table td a:hover{background:rgba(202,157,68,0.14)}
+:root[data-mode=dark][data-mode=dark] .compat-picker{background:rgba(14,26,58,0.82);border-color:rgba(217,178,106,0.3)}
+:root[data-mode=dark][data-mode=dark] .seo-inline-cta{background:rgba(217,178,106,0.1);border-color:rgba(217,178,106,0.35)}
 
 /* hand-tuned */
 :root[data-mode=dark] .mode-picker button[aria-checked=true]{background:#1b2c58;box-shadow:none}
