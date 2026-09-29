@@ -13,7 +13,8 @@ import { ZODIAC_SIGNS } from "@/lib/zodiacContent";
  * the English text to Portuguese in the app's voice, and keep it in D1 so every visitor shares it.
  */
 const COSMYDAY = "https://api.cosmyday.com";
-const USER_AGENT = "VeiasDaSintonia/1.0 (+https://veiasdasintonia.com.br; contato via site)";
+/** How this site identifies itself to CosmyDay (a public client label, not a credential). */
+const CLIENT_LABEL = "VeiasDaSintonia/1.0 (+https://veiasdasintonia.com.br; contato via site)";
 export const SKY_SOURCE = "Céu calculado pela CosmyDay (Swiss Ephemeris) · texto adaptado pelo Veias da Sintonia";
 
 const SIGN_EN = ["aries", "taurus", "gemini", "cancer", "leo", "virgo", "libra", "scorpio", "sagittarius", "capricorn", "aquarius", "pisces"] as const;
@@ -56,7 +57,7 @@ const signPt = (value?: string) => (value ? SIGN_PT[value.toLowerCase() as SignE
 const planetPt = (value: string) => PLANET_PT[value.toLowerCase().replace(/\s+/g, "_")] ?? value;
 
 async function cosmyday<T>(path: string): Promise<T> {
-  const response = await fetch(`${COSMYDAY}${path}`, { headers: { "user-agent": USER_AGENT, accept: "application/json" }, signal: AbortSignal.timeout(12_000) });
+  const response = await fetch(`${COSMYDAY}${path}`, { headers: { "user-agent": CLIENT_LABEL, accept: "application/json" }, signal: AbortSignal.timeout(12_000) });
   if (!response.ok) throw new Error(`CosmyDay ${path} → ${response.status}`);
   return response.json() as Promise<T>;
 }

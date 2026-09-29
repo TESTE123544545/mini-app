@@ -53,7 +53,8 @@ function validDeviceId(value: unknown): value is string {
  * date is ignored — that range already covers every real timezone offset.
  */
 function resolveDay(requested: string | null | undefined, serverDay: string) {
-  if (!requested || !/^\d{4}-\d{2}-\d{2}$/.test(requested)) return serverDay;
+  // Fixed-length, anchored pattern on a 10-character string: nothing to backtrack over.
+  if (!requested || requested.length !== 10 || !/^\d{4}-\d{2}-\d{2}$/.test(requested)) return serverDay; // nosemgrep: regex_dos
   const distance = Math.abs(Date.parse(`${requested}T00:00:00Z`) - Date.parse(`${serverDay}T00:00:00Z`));
   return Number.isFinite(distance) && distance <= 86_400_000 ? requested : serverDay;
 }

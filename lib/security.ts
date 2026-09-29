@@ -94,7 +94,7 @@ export async function enforceRateLimit(request: Request, scope: string, identifi
   const now = Date.now();
   // Expired windows are never read again; roughly one call in a hundred sweeps them so the
   // table stays the size of the active traffic instead of growing with every IP ever seen.
-  if (Math.random() < 0.01) await db.delete(rateLimits).where(lt(rateLimits.expiresAt, new Date(now).toISOString()));
+  if (crypto.getRandomValues(new Uint8Array(1))[0] < 3) await db.delete(rateLimits).where(lt(rateLimits.expiresAt, new Date(now).toISOString()));
   const [record] = await db.select().from(rateLimits).where(eq(rateLimits.key, key)).limit(1);
 
   if (!record || new Date(record.expiresAt).getTime() <= now) {

@@ -76,6 +76,8 @@
             </activity>
         
 
+        <!-- The launcher activity must be exported so Android can open the app from its icon; it only
+             opens the public site. nosemgrep -->
         <activity android:name="LauncherActivity"
             android:alwaysRetainTaskState="true"
             android:label="@string/launcherName"

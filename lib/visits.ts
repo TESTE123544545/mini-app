@@ -18,7 +18,8 @@ export function isCountableView(request: Request, response: Response) {
   if (request.method !== "GET" || response.status !== 200) return false;
   const url = new URL(request.url);
   if (/^\/(api|admin|_next)(\/|$)/.test(url.pathname) || /\.[a-z0-9]+$/i.test(url.pathname)) return false;
-  if (BOT.test(request.headers.get("user-agent") ?? "")) return false;
+  // BOT is a flat alternation of literals (linear time), and the header is capped before testing.
+  if (BOT.test((request.headers.get("user-agent") ?? "").slice(0, 512))) return false; // nosemgrep: regex_dos
   if (request.headers.has("next-router-prefetch") || request.headers.get("purpose") === "prefetch" || request.headers.get("sec-purpose")?.includes("prefetch")) return false;
   const type = response.headers.get("content-type") ?? "";
   const dest = request.headers.get("sec-fetch-dest");

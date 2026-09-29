@@ -6,7 +6,9 @@ import { waitUntil } from "cloudflare:workers";
  * /<key>.txt to prove we own the host. Google doesn't take IndexNow; it reads the sitemap.
  */
 const HOST = "veiasdasintonia.com.br";
-const KEY = "a5e52b963320f8dbc2f00f0bd100446c";
+// Not a credential: IndexNow's ownership token is public by design (the same value is served
+// at /<key>.txt for search engines to check), so it lives in the repo. gitleaks:allow
+const KEY = "a5e52b963320f8dbc2f00f0bd100446c"; // gitleaks:allow
 
 export function announceUpdated(paths: string[]) {
   const ping = fetch("https://api.indexnow.org/indexnow", {
