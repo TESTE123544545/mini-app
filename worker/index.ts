@@ -1,4 +1,5 @@
 import handler from "vinext/server/fetch-handler";
+import { runTrialEmails } from "@/lib/trialEmails";
 import { isCountableView, recordView } from "@/lib/visits";
 
 /**
@@ -21,6 +22,8 @@ const worker = {
   async scheduled(_controller: unknown, env: unknown, ctx: ExecutionContext) {
     const warm = new Request("https://veiasdasintonia.com.br/horoscopo-do-dia", { headers: { "user-agent": "VeiasDaSintonia-warmup/1.0" } });
     ctx.waitUntil(app.fetch(warm, env, ctx).then((response) => response.arrayBuffer()).catch((error) => console.error("warmup_failed", error)));
+    // Premium trial reminders and "trial ended" notes (sent only in daytime in Brasília).
+    ctx.waitUntil(runTrialEmails().catch((error) => console.error("trial_emails_failed", error)));
   },
 };
 

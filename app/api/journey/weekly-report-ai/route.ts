@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getDb } from "@/db";
 import { aiWeeklyReports, goals, journalEntries, profiles, userProgress } from "@/db/schema";
 import { getSessionUser } from "@/lib/auth";
+import { hasPremium } from "@/lib/plan";
 import { localDayKey } from "@/lib/daily";
 import { weeklyReport } from "@/lib/journey";
 import { generateWeeklyReportText, OpenRouterError } from "@/lib/openrouter";
@@ -36,7 +37,7 @@ export async function POST(request: Request) {
     const db = getDb();
     const [profile] = await db.select().from(profiles).where(eq(profiles.deviceId, deviceId)).limit(1);
     if (!profile) throw new RequestError("Perfil não encontrado.", 404);
-    if (profile.plan !== "premium") throw new RequestError("Recurso exclusivo do plano Premium.", 402);
+    if (!hasPremium(profile.plan, user)) throw new RequestError("Recurso exclusivo do plano Premium.", 402);
 
     const today = parsed.data.dayKey ?? localDayKey();
     const weekStart = weekStartMonday(today);

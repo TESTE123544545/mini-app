@@ -24,10 +24,19 @@ export const users = sqliteTable("users", {
   passwordSalt: text("password_salt").notNull(),
   passwordIterations: integer("password_iterations").notNull().default(100000),
   primaryDeviceId: text("primary_device_id"),
+  /** Free Premium trial for new accounts (ISO). Access is Premium while this is in the future. */
+  trialEndsAt: text("trial_ends_at"),
+  trialDay2SentAt: text("trial_day2_sent_at"),
+  trialReminderSentAt: text("trial_reminder_sent_at"),
+  trialEndedSentAt: text("trial_ended_sent_at"),
+  /** Secret for the one-click unsubscribe link in lifecycle e-mails. */
+  emailToken: text("email_token"),
+  emailOptOut: integer("email_opt_out", { mode: "boolean" }).notNull().default(false),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 }, (table) => [
   uniqueIndex("users_email_idx").on(table.email),
+  uniqueIndex("users_email_token_idx").on(table.emailToken),
   uniqueIndex("users_primary_device_idx").on(table.primaryDeviceId),
 ]);
 

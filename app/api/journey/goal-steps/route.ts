@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getDb } from "@/db";
 import { goalSuggestions, goals, profiles } from "@/db/schema";
 import { getSessionUser } from "@/lib/auth";
+import { hasPremium } from "@/lib/plan";
 import { generateGoalSteps, OpenRouterError } from "@/lib/openrouter";
 import { enforceRateLimit, readJsonBody, RequestError, secureErrorResponse } from "@/lib/security";
 
@@ -23,7 +24,7 @@ export async function POST(request: Request) {
     const db = getDb();
     const [profile] = await db.select().from(profiles).where(eq(profiles.deviceId, deviceId)).limit(1);
     if (!profile) throw new RequestError("Perfil não encontrado.", 404);
-    if (profile.plan !== "premium") throw new RequestError("Recurso exclusivo do plano Premium.", 402);
+    if (!hasPremium(profile.plan, user)) throw new RequestError("Recurso exclusivo do plano Premium.", 402);
 
     const [goal] = await db.select().from(goals).where(and(eq(goals.id, parsed.data.goalId), eq(goals.deviceId, deviceId))).limit(1);
     if (!goal) throw new RequestError("Meta não encontrada.", 404);

@@ -98,3 +98,20 @@ body .topbar .topbar-brand{--logo-h:28px;margin:0}
 
 /* Link from the profile funnel card to the full admin dashboard. */
 .admin-metrics__open{display:flex;justify-content:center;margin-top:12px;text-decoration:none}
+
+/* Free Premium trial banner on Home. */
+.trial-banner{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px;width:100%;padding:14px 16px;border:1px solid var(--studio-line);border-radius:18px;background:linear-gradient(135deg,rgba(217,178,106,.2),rgba(217,178,106,.06));color:var(--studio-ink);text-align:left;font:inherit;cursor:pointer}
+.trial-banner__icon{display:grid;place-items:center;width:40px;height:40px;border-radius:12px;background:var(--studio-accent);color:var(--studio-accent-ink)}
+.trial-banner__icon svg{width:20px;height:20px}
+.trial-banner strong{display:block;font-size:.95rem}
+.trial-banner small{display:block;margin-top:3px;color:var(--studio-ink-2);font-size:.8rem;line-height:1.4}
+.trial-banner>svg{width:18px;height:18px;color:var(--studio-amber)}
+:root[data-mode=dark] .trial-banner{border-color:rgba(230,196,122,.55);background:linear-gradient(135deg,rgba(217,178,106,.22),rgba(14,26,58,.92));color:#eef1f8;box-shadow:0 0 40px -22px rgba(217,178,106,.5)}
+:root[data-mode=dark] .trial-banner strong{color:#f1d9a0}
+:root[data-mode=dark] .trial-banner small{color:#c3cbe0}
+
+/* Welcome offer note on the paywall (after the free trial). */
+.welcome-offer{display:grid;gap:4px;margin:0 0 14px;padding:12px 14px;border:1px solid rgba(217,178,106,.55);border-radius:14px;background:rgba(217,178,106,.12);text-align:left}
+.welcome-offer strong{color:var(--studio-ink);font-size:.92rem}
+.welcome-offer span{color:var(--studio-ink-2);font-size:.8rem;line-height:1.45}
+:root[data-mode=dark] .welcome-offer strong{color:#f1d9a0}

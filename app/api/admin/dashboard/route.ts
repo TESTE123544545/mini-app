@@ -57,8 +57,9 @@ export async function GET(request: Request) {
       [accounts], signupsByDay, visitsByDay, activeByDay, [activeWeek], pages, referrers, countries, devices,
       funnelRows, events, recent, [missions],
     ] = await Promise.all([
-      db.all<{ total: number; premium: number; lifetime: number }>(sql`
+      db.all<{ total: number; premium: number; lifetime: number; trials: number }>(sql`
         SELECT (SELECT COUNT(*) FROM users WHERE ${REAL_USER}) AS total,
+               (SELECT COUNT(*) FROM users WHERE trial_ends_at > ${new Date().toISOString()} AND ${REAL_USER}) AS trials,
                (SELECT COUNT(*) FROM profiles p JOIN users ON users.primary_device_id = p.device_id WHERE p.plan = 'premium' AND ${REAL_USER}) AS premium,
                (SELECT COUNT(*) FROM subscriptions WHERE status = 'lifetime') AS lifetime`),
       db.all<{ day: string; n: number }>(sql`
@@ -127,6 +128,7 @@ export async function GET(request: Request) {
         accountsToday: todayRow.signups,
         premium: Number(accounts?.premium ?? 0),
         lifetime: Number(accounts?.lifetime ?? 0),
+        trials: Number(accounts?.trials ?? 0),
         viewsToday: todayRow.views,
         visitorsToday: todayRow.visitors,
         viewsYesterday: yesterdayRow?.views ?? null,

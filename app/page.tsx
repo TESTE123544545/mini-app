@@ -27,6 +27,7 @@ import { BrandLockup } from "@/components/BrandLockup";
 import { PremiumFeatures } from "@/components/PremiumFeatures";
 import { recallLogin, rememberLogin, stopSilentLogin } from "@/lib/savedLogin";
 import { loadDiagnostics, saveDiagnostic, type DiagnosticResult } from "@/lib/diagnostic";
+import { trialActive } from "@/lib/plan";
 
 type View = "home" | "premium" | "diagnostic" | "signs" | "tree" | "missions" | "journal" | "profile" | "goal" | "chat";
 type GoalKind = "financial" | "non_financial" | "partial";
@@ -45,7 +46,7 @@ type ApiMessage = { error?: string; message?: string };
 type Theme = "dourado" | "lua" | "aurora";
 type Plan = "free" | "premium";
 type Profile = { name: string; birthDate: string; objective: string; sign: string; intention: string; theme: Theme; hasAvatar?: boolean; plan?: Plan };
-type Account = { email: string; deviceId: string | null };
+type Account = { email: string; deviceId: string | null; trialEndsAt?: string | null };
 
 const emptyProfile: Profile = { name: "", birthDate: "", objective: "", sign: "Capricórnio", intention: "", theme: "dourado", hasAvatar: false, plan: "free" };
 const FREE_GOAL_LIMIT = 3;
@@ -312,6 +313,16 @@ export default function HomePage() {
     setAnswers(["", "", "", ""]);
   }, [dayKey]);
 
+  // Links from the trial e-mails (?abrir=premium) open the Premium tab once the account is loaded.
+  useEffect(() => {
+    if (!account || !syncReady) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("abrir") !== "premium") return;
+    window.history.replaceState({}, "", window.location.pathname);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setView("premium");
+  }, [account, syncReady]);
+
   // Back from Stripe Checkout: confirm right away so Premium does not wait on the webhook.
   useEffect(() => {
     if (!account || !syncReady) return;
@@ -351,7 +362,12 @@ export default function HomePage() {
     setDiagnostics(loadDiagnostics(account?.email));
   }, [account?.email]);
 
-  const isPremium = profile.plan === "premium";
+  // Paid Premium, or the free trial new accounts get (lib/plan.ts). The clock re-checks the trial's end.
+  const [clock, setClock] = useState(() => Date.now());
+  useEffect(() => { const timer = setInterval(() => setClock(Date.now()), 60_000); return () => clearInterval(timer); }, []);
+  const onTrial = profile.plan !== "premium" && trialActive(account, clock);
+  const trialEndsAt = onTrial ? account?.trialEndsAt ?? null : null;
+  const isPremium = profile.plan === "premium" || onTrial;
   const level = Math.floor(xp / 100) + 1;
   const treeStage = useMemo(() => treeStageFor(xp), [xp]);
   const stage = treeStage.stage.name;
@@ -609,8 +625,8 @@ export default function HomePage() {
 
         <div className="view-swap" key={view}>
           {!isPremium && !FREE_VIEWS.includes(view) ? <LockedView view={view} hasDiagnostic={diagnostics.length > 0} onDiagnostic={() => navigate("diagnostic")}/> : <>
-          {view === "home" && <HomeView profile={profile} plan={plan} week={week} part={part} xp={xp} level={level} stage={stage} streak={streak} fruits={goals.filter((goal) => goal.progress === 100).length} missionDone={missionDone} ritualDone={ritualDone} treeCelebrating={treeCelebrating} completeMission={completeMission} openRitual={() => { haptic(8); setRitualOpen(true); }} oracleOpen={oracleOpen} setOracleOpen={setOracleOpen} mainGoal={mainGoal} advanceGoal={advanceGoal} openGoals={() => navigate(mainGoal ? "goal" : "profile")} navigate={navigate} isPremium={isPremium} openPaywall={openPaywall} diagnostic={diagnostics[0]} openTree={(source) => openTree(source)} />}
-          {view === "premium" && <PremiumView isPremium={isPremium} />}
+          {view === "home" && <HomeView profile={profile} plan={plan} week={week} part={part} xp={xp} level={level} stage={stage} streak={streak} fruits={goals.filter((goal) => goal.progress === 100).length} missionDone={missionDone} ritualDone={ritualDone} treeCelebrating={treeCelebrating} completeMission={completeMission} openRitual={() => { haptic(8); setRitualOpen(true); }} oracleOpen={oracleOpen} setOracleOpen={setOracleOpen} mainGoal={mainGoal} advanceGoal={advanceGoal} openGoals={() => navigate(mainGoal ? "goal" : "profile")} navigate={navigate} isPremium={isPremium} openPaywall={openPaywall} diagnostic={diagnostics[0]} openTree={(source) => openTree(source)} trialEndsAt={trialEndsAt} />}
+          {view === "premium" && <PremiumView isPremium={isPremium} trialEndsAt={trialEndsAt} />}
           {view === "diagnostic" && <DiagnosticView results={diagnostics} profileSign={profile.sign || undefined} xp={xp} onComplete={(result) => setDiagnostics((current) => saveDiagnostic(account?.email, result, current))} onOpenTree={() => openTree("diagnostic_result")} lockedResult={isPremium ? undefined : <PremiumOffer reason="diagnostic_result"/>} />}
           {view === "signs" && <SignsView profile={profile} isPremium={isPremium} openPaywall={openPaywall} navigate={navigate} askSintonia={(prompt) => { setChatPrompt(prompt); navigate("chat"); }} />}
           {view === "tree" && <TreeView xp={xp} level={level} stage={stage} streak={streak} mapScores={mapScores} goals={goals} diagnostic={diagnostics[0]} openDiagnostic={() => navigate("diagnostic")} snapshot={snapshot} cares={{ missionDone, ritualDone, journaledToday }} navigate={navigate} openRitual={() => { haptic(8); setRitualOpen(true); }} />}
@@ -728,15 +744,17 @@ const formatMoney = (amount: number, currency: string) => new Intl.NumberFormat(
 function PremiumOffer({ reason }: { reason: string }) {
   const previewDay = findTrail("constancia-21")?.days[0];
   const [prices, setPrices] = useState<PremiumPrice[] | null>(null);
+  const [offer, setOffer] = useState<{ percentOff: number; endsAt: string } | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [opening, setOpening] = useState(false);
 
   useEffect(() => {
     if (prices !== null) return;
     fetch("/api/billing/stripe/plans")
-      .then((response): Promise<{ prices: PremiumPrice[] }> => response.ok ? response.json() : Promise.resolve({ prices: [] }))
-      .then(({ prices: loaded }) => {
+      .then((response): Promise<{ prices: PremiumPrice[]; offer?: { percentOff: number; endsAt: string } | null }> => response.ok ? response.json() : Promise.resolve({ prices: [] }))
+      .then(({ prices: loaded, offer: welcome }) => {
         setPrices(loaded);
+        setOffer(welcome ?? null);
         setSelected((loaded.find((price) => price.interval === "month" && price.intervalCount === 1) ?? loaded[0])?.id ?? null);
       })
       .catch(() => setPrices([]));
@@ -758,6 +776,9 @@ function PremiumOffer({ reason }: { reason: string }) {
   }
 
   const chosen = prices?.find((price) => price.id === selected);
+  // The welcome offer (lib/plan.ts) takes a percentage off the first month of a monthly plan only.
+  const offerApplies = Boolean(offer && chosen?.interval === "month" && chosen.intervalCount === 1);
+  const firstMonth = offerApplies && chosen ? Math.round(chosen.amount * (100 - offer!.percentOff) / 100) : null;
   const monthly = prices?.find((price) => price.interval === "month" && price.intervalCount === 1);
 
   return <>
@@ -771,6 +792,10 @@ function PremiumOffer({ reason }: { reason: string }) {
         {comparisonRows.map(([label, free, premium]) => <div className="paywall-compare-row" key={label}><span>{label}</span><span>{free}</span><span className="is-premium"><Check size={13}/>{premium}</span></div>)}
       </div>
 
+      {offer && <div className="welcome-offer" role="note">
+        <strong>Presente de boas-vindas: {offer.percentOff}% no 1º mês</strong>
+        <span>No plano mensal, na sua primeira assinatura. Válido até {new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", day: "numeric", month: "long" }).format(new Date(offer.endsAt))}.</span>
+      </div>}
       {prices === null && <p className="paywall-fine-print">Carregando planos…</p>}
       {prices && prices.length > 1 && <div className="paywall-plans" role="radiogroup" aria-label="Escolha seu plano">
         {prices.map((price) => {
@@ -787,8 +812,8 @@ function PremiumOffer({ reason }: { reason: string }) {
 
       {prices && prices.length > 0 && chosen
         ? <>
-            <button className="gold-button" disabled={opening} onClick={subscribe}>{opening ? "Abrindo pagamento seguro…" : chosen.interval ? `Assinar Premium · ${formatMoney(chosen.amount, chosen.currency)}${intervalLabel(chosen).period}` : `Desbloquear Premium · ${formatMoney(chosen.amount, chosen.currency)}`}</button>
-            <p className="paywall-fine-print">{chosen.interval ? "Pagamento processado com segurança pelo Stripe. Sem fidelidade: cancele quando quiser em Perfil → Gerenciar assinatura." : "Pagamento único, sem mensalidade. Processado com segurança pelo Stripe."}</p>
+            <button className="gold-button" disabled={opening} onClick={subscribe}>{opening ? "Abrindo pagamento seguro…" : firstMonth !== null ? `Assinar · ${formatMoney(firstMonth, chosen.currency)} no 1º mês` : chosen.interval ? `Assinar Premium · ${formatMoney(chosen.amount, chosen.currency)}${intervalLabel(chosen).period}` : `Desbloquear Premium · ${formatMoney(chosen.amount, chosen.currency)}`}</button>
+            <p className="paywall-fine-print">{firstMonth !== null ? `Depois, ${formatMoney(chosen.amount, chosen.currency)}${intervalLabel(chosen).period}. ` : ""}{chosen.interval ? "Pagamento processado com segurança pelo Stripe. Sem fidelidade: cancele quando quiser em Perfil → Gerenciar assinatura." : "Pagamento único, sem mensalidade. Processado com segurança pelo Stripe."}</p>
           </>
         : prices && <>
             <button className="gold-button" disabled>Assinar Premium</button>
@@ -811,8 +836,33 @@ function PaywallDialog({ reason, onOpenChange }: { reason: string | null; onOpen
 }
 
 /** The Premium tab, one tap away from every screen through the header button. */
-function PremiumView({ isPremium }: { isPremium: boolean }) {
-  useEffect(() => { track("premium_tab_viewed", { isPremium }); }, [isPremium]);
+/** "sexta, 1 de outubro, às 21:58" in Brasília time. */
+function formatTrialEnd(iso: string) {
+  return new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" }).format(new Date(iso)).replace(/ (d{2}:d{2})$/, " às $1");
+}
+
+/** Home banner while the free trial runs: how long is left, and the way to keep Premium. */
+function TrialBanner({ endsAt, onSubscribe }: { endsAt: string; onSubscribe: () => void }) {
+  const [now] = useState(() => Date.now());
+  const hoursLeft = Math.max(0, (new Date(endsAt).getTime() - now) / 3_600_000);
+  const left = hoursLeft >= 24 ? `${Math.ceil(hoursLeft / 24)} dias` : hoursLeft >= 1 ? `${Math.floor(hoursLeft)} horas` : "menos de 1 hora";
+  return <button type="button" className="trial-banner" onClick={onSubscribe}>
+    <span className="trial-banner__icon"><Gem/></span>
+    <span><strong>Premium grátis · faltam {left}</strong><small>Tudo liberado até {formatTrialEnd(endsAt)}. Toque para continuar com o Premium depois.</small></span>
+    <ChevronRight/>
+  </button>;
+}
+
+function PremiumView({ isPremium, trialEndsAt }: { isPremium: boolean; trialEndsAt: string | null }) {
+  useEffect(() => { track("premium_tab_viewed", { isPremium, onTrial: Boolean(trialEndsAt) }); }, [isPremium, trialEndsAt]);
+  if (trialEndsAt) {
+    return <div className="view-stack premium-view">
+      <section className="premium-card is-active"><div className="premium-icon"><Gem/></div><p className="eyebrow">Teste Premium grátis</p><h2>Tudo liberado até {formatTrialEnd(trialEndsAt)}</h2><p>Sem cartão e sem cobrança automática. Para continuar com o Premium depois do teste, assine abaixo — se preferir não assinar, sua conta volta sozinha ao plano grátis e sua jornada fica salva.</p></section>
+      <section className="surface-card premium-view__offer paywall-dialog">
+        <PremiumOffer reason="trial"/>
+      </section>
+    </div>;
+  }
   if (isPremium) {
     return <div className="view-stack premium-view">
       <section className="premium-card is-active"><div className="premium-icon"><Gem/></div><p className="eyebrow">Seu plano</p><h2>Premium ativo</h2><p>Trilhas ilimitadas, histórico completo, metas sem limite e todos os temas já estão liberados na sua conta.</p><button type="button" className="ghost-button" onClick={openBillingPortal}>Gerenciar assinatura</button></section>
@@ -1009,11 +1059,12 @@ function Onboarding({ step, setStep, profile, setProfile, finish, goalTitle, set
 
 type WeekDay = ReturnType<typeof weekPlan>[number];
 
-function HomeView({ profile, plan, week, part, xp, level, stage, streak, fruits, missionDone, ritualDone, treeCelebrating, completeMission, openRitual, oracleOpen, setOracleOpen, mainGoal, advanceGoal, openGoals, navigate, isPremium, openPaywall, diagnostic, openTree }: { profile: Profile; plan: DailyPlan; week: WeekDay[]; part: DayPart; xp: number; level: number; stage: string; streak: number; fruits: number; missionDone: boolean; ritualDone: boolean; treeCelebrating: boolean; completeMission: () => void; openRitual: () => void; oracleOpen: boolean; setOracleOpen: (v: boolean) => void; mainGoal?: Goal; advanceGoal: (id: number) => void; openGoals: () => void; navigate: (view: View) => void; isPremium: boolean; openPaywall: (reason: string) => void; diagnostic?: DiagnosticResult; openTree: (source: string) => void }) {
+function HomeView({ profile, plan, week, part, xp, level, stage, streak, fruits, missionDone, ritualDone, treeCelebrating, completeMission, openRitual, oracleOpen, setOracleOpen, mainGoal, advanceGoal, openGoals, navigate, isPremium, openPaywall, diagnostic, openTree, trialEndsAt }: { profile: Profile; plan: DailyPlan; week: WeekDay[]; part: DayPart; xp: number; level: number; stage: string; streak: number; fruits: number; missionDone: boolean; ritualDone: boolean; treeCelebrating: boolean; completeMission: () => void; openRitual: () => void; oracleOpen: boolean; setOracleOpen: (v: boolean) => void; mainGoal?: Goal; advanceGoal: (id: number) => void; openGoals: () => void; navigate: (view: View) => void; isPremium: boolean; openPaywall: (reason: string) => void; diagnostic?: DiagnosticResult; openTree: (source: string) => void; trialEndsAt: string | null }) {
   const firstName = profile.name.split(" ")[0];
   const tomorrow = week[1];
   return <div className="home-flow">
     <div className="home-main">
+    {trialEndsAt && <TrialBanner endsAt={trialEndsAt} onSubscribe={() => navigate("premium")}/>}
     <button type="button" className="chat-entry" onClick={() => (isPremium ? navigate("chat") : openPaywall("chat"))}>
       <span className="chat-entry-icon"><Sparkles/></span>
       <span><strong>Conversar com a IA</strong><small>Desabafe, pense em voz alta ou peça um conselho — a qualquer hora</small></span>
@@ -1049,15 +1100,14 @@ function HomeView({ profile, plan, week, part, xp, level, stage, streak, fruits,
     <section className="goal-snapshot"><div className="section-heading"><div><p className="eyebrow">Meu objetivo</p><h2>{mainGoal ? mainGoal.title : "Plante sua primeira meta"}</h2></div><button onClick={openGoals}>{mainGoal ? "Ver objetivo" : <><Plus size={16}/> Criar</>}</button></div>{mainGoal ? <><Progress value={mainGoal.progress}/><div className="goal-foot"><span>{mainGoal.category} · {mainGoal.progress}%</span>{(mainGoal.kind === "financial" || mainGoal.kind === "partial") && mainGoal.targetAmount ? <button onClick={openGoals} disabled={mainGoal.progress === 100}>{mainGoal.progress === 100 ? "Fruto conquistado" : "Adicionar valor"}</button> : <button onClick={() => advanceGoal(mainGoal.id)} disabled={mainGoal.progress === 100}>{mainGoal.progress === 100 ? "Fruto conquistado" : "Avançar +25%"}</button>}</div></> : <p>Metas concluídas se transformam em frutos na sua árvore.</p>}</section>
     <div className="tomorrow"><Sparkles/><div><strong>Amanhã: dia de {tomorrow.theme.name.toLowerCase()}</strong><span>{tomorrow.theme.guidance}</span></div></div>
     </div>
-    <AiInsightBubble profile={profile} week={week}/>
+    <AiInsightBubble isPremium={isPremium} week={week}/>
   </div>;
 }
 
 /** Floating, dismiss-once-per-week bubble surfacing the AI weekly report. Display only — no chat, no reply box. */
-function AiInsightBubble({ profile, week }: { profile: Profile; week: WeekDay[] }) {
+function AiInsightBubble({ isPremium, week }: { isPremium: boolean; week: WeekDay[] }) {
   const [report, setReport] = useState<{ summary: string; recommendation: string } | null>(null);
   const [dismissed, setDismissed] = useState(false);
-  const isPremium = profile.plan === "premium";
 
   useEffect(() => {
     if (!isPremium) return;

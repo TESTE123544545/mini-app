@@ -1,6 +1,6 @@
 import { env } from "cloudflare:workers";
 
-function escapeHtml(value: string) {
+export function escapeHtml(value: string) {
   return value.replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[character]!);
 }
 
@@ -20,7 +20,7 @@ export function emailIsConfigured() {
   return Boolean(current.EMAIL || current.RESEND_API_KEY);
 }
 
-export async function sendEmail(message: { to: string; subject: string; html: string; text: string }) {
+export async function sendEmail({ headers, ...message }: { to: string; subject: string; html: string; text: string; headers?: Record<string, string> }) {
   const current = bindings();
   if (current.EMAIL) {
     await current.EMAIL.send({ from: SENDER, ...message });
@@ -30,7 +30,7 @@ export async function sendEmail(message: { to: string; subject: string; html: st
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { authorization: `Bearer ${current.RESEND_API_KEY}`, "content-type": "application/json" },
-    body: JSON.stringify({ from: current.RESET_EMAIL_FROM || `${SENDER.name} <${SENDER.email}>`, to: [message.to], subject: message.subject, text: message.text, html: message.html }),
+    body: JSON.stringify({ from: current.RESET_EMAIL_FROM || `${SENDER.name} <${SENDER.email}>`, to: [message.to], subject: message.subject, text: message.text, html: message.html, ...(headers ? { headers } : {}) }),
   });
   if (!response.ok) throw new Error(`Falha no envio (${response.status})`);
 }

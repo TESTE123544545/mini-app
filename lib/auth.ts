@@ -134,8 +134,8 @@ export function isAdminEmail(email: string) {
   return admins.includes(normalizeEmail(email));
 }
 
-export function publicUser(user: { email: string; primaryDeviceId: string | null }) {
-  return { email: user.email, deviceId: user.primaryDeviceId };
+export function publicUser(user: { email: string; primaryDeviceId: string | null; trialEndsAt?: string | null }) {
+  return { email: user.email, deviceId: user.primaryDeviceId, trialEndsAt: user.trialEndsAt ?? null };
 }
 
 export function createSecureToken() {

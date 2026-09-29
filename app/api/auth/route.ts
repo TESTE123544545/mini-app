@@ -1,8 +1,10 @@
 import { eq } from "drizzle-orm";
 import { getDb } from "@/db";
 import { users } from "@/db/schema";
-import { createPassword, createSession, deleteSession, getSessionUser, normalizeEmail, PASSWORD_ITERATIONS, publicUser, renewSession, validEmail, validPassword, verifyPassword } from "@/lib/auth";
+import { createPassword, createSecureToken, createSession, deleteSession, getSessionUser, normalizeEmail, PASSWORD_ITERATIONS, publicUser, renewSession, validEmail, validPassword, verifyPassword } from "@/lib/auth";
 import { isBlockedEmail, signupEmailProblem } from "@/lib/emailPolicy";
+import { trialEndsAtFrom } from "@/lib/plan";
+import { sendTrialWelcome } from "@/lib/trialEmails";
 import { enforceRateLimit, readJsonBody, secureErrorResponse } from "@/lib/security";
 
 type AuthPayload = { action?: "register" | "login" | "logout"; email?: string; password?: string };
@@ -44,8 +46,10 @@ export async function POST(request: Request) {
       const problem = await signupEmailProblem(email);
       if (problem) return Response.json({ error: problem }, { status: 400 });
       const passwordData = await createPassword(password);
-      user = { id: crypto.randomUUID(), email, primaryDeviceId: null, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), ...passwordData };
+      // New accounts start with a free Premium trial; the welcome e-mail tells them so.
+      user = { id: crypto.randomUUID(), email, primaryDeviceId: null, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), trialEndsAt: trialEndsAtFrom(), trialDay2SentAt: null, trialReminderSentAt: null, trialEndedSentAt: null, emailToken: createSecureToken(), emailOptOut: false, ...passwordData };
       await db.insert(users).values(user);
+      sendTrialWelcome(user);
     } else if (payload.action === "login") {
       if (isBlockedEmail(email)) return Response.json({ error: "Contas com e-mail de teste ou temporário não têm acesso ao app." }, { status: 403 });
       if (existing) await enforceRateLimit(request, "login-account", existing.id, 7, 15 * 60);

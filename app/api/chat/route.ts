@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getDb } from "@/db";
 import { chatThreads, profiles } from "@/db/schema";
 import { getSessionUser } from "@/lib/auth";
+import { hasPremium } from "@/lib/plan";
 import { containsAbusiveLanguage } from "@/lib/moderation";
 import { generateChatReply, OpenRouterError } from "@/lib/openrouter";
 import { skyContextForChat } from "@/lib/sky";
@@ -38,7 +39,7 @@ export async function POST(request: Request) {
     const db = getDb();
     const [profile] = await db.select().from(profiles).where(eq(profiles.deviceId, deviceId)).limit(1);
     if (!profile) throw new RequestError("Perfil não encontrado.", 404);
-    if (profile.plan !== "premium") throw new RequestError("Recurso exclusivo do plano Premium.", 402);
+    if (!hasPremium(profile.plan, user)) throw new RequestError("Recurso exclusivo do plano Premium.", 402);
 
     if (containsAbusiveLanguage(parsed.data.message)) {
       await suspendFor(request, "chat", user.id, ABUSE_SUSPENSION_SECONDS);

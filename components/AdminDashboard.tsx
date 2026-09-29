@@ -12,7 +12,7 @@ type Dashboard = {
   days: number;
   today: string;
   kpis: {
-    accounts: number; accountsNew: number; accountsToday: number; premium: number; lifetime: number;
+    accounts: number; accountsNew: number; accountsToday: number; premium: number; lifetime: number; trials: number;
     viewsToday: number; visitorsToday: number; viewsYesterday: number | null; visitorsYesterday: number | null;
     views: number; visitorsPerDay: number; activeToday: number; activeWeek: number; missionsToday: number;
   };
@@ -230,6 +230,7 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
         <article className="adm-kpi"><span>Visitantes hoje</span><strong>{nf.format(k.visitorsToday)}</strong><Delta now={k.visitorsToday} before={k.visitorsYesterday}/></article>
         <article className="adm-kpi"><span>Visitas em {data.days} dias</span><strong>{nf.format(k.views)}</strong><small>média de {nf.format(k.visitorsPerDay)} visitantes/dia</small></article>
         <article className="adm-kpi"><span>Premium</span><strong>{nf.format(k.premium)}</strong><small>{k.accounts ? `${Math.round((k.premium / k.accounts) * 100)}% das contas` : "—"}{k.lifetime ? ` · ${k.lifetime} vitalício` : ""}</small></article>
+        <article className="adm-kpi"><span>Em teste Premium grátis</span><strong>{nf.format(k.trials)}</strong><small>contas novas no teste de 3 dias</small></article>
         <article className="adm-kpi"><span>Usuários ativos</span><strong>{nf.format(k.activeToday)}</strong><small>hoje · {nf.format(k.activeWeek)} nos últimos 7 dias</small></article>
         <article className="adm-kpi"><span>Missões concluídas hoje</span><strong>{nf.format(k.missionsToday)}</strong><small>no app</small></article>
       </section>

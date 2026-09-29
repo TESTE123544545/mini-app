@@ -53,8 +53,6 @@ html:has(.adm),body:has(.adm){background:radial-gradient(70% 40% at 50% -10%,rgb
 .adm-stack{display:grid;gap:16px;align-content:start}
 @media (min-width:880px){
   .adm-kpis{grid-template-columns:repeat(4,minmax(0,1fr))}
-  .adm-kpi--hero{grid-row:span 2;align-content:center}
-  .adm-kpi--hero strong{font-size:3.2rem}
   .adm-two{grid-template-columns:1fr 1fr}
   .adm-three{grid-template-columns:1.2fr 1fr 1fr}
 }

@@ -1,6 +1,7 @@
 import { getSessionUser } from "@/lib/auth";
 import { enforceRateLimit, readJsonBody, RequestError, secureErrorResponse } from "@/lib/security";
 import { sellableProductIds, SITE_ORIGIN, stripe, stripeConfigured, type StripePrice } from "@/lib/stripe";
+import { welcomeCouponId, welcomeOfferFor } from "@/lib/welcomeOffer";
 
 /** Opens a Stripe Checkout Session for one of the Premium product's prices and returns its URL. */
 export async function POST(request: Request) {
@@ -16,6 +17,11 @@ export async function POST(request: Request) {
     const price = await stripe<StripePrice>(`/prices/${priceId}`, undefined, "GET");
     if (!price.active || !(await sellableProductIds()).includes(price.product)) throw new RequestError("Plano indisponível.", 400);
     const recurring = price.type === "recurring";
+    // Welcome offer (lib/plan.ts): 50% off the first month of the first subscription, until its deadline.
+    const offer = recurring ? await welcomeOfferFor(user) : null;
+    // If the coupon can't be prepared, checkout still opens at the normal price rather than failing.
+    const coupon = offer ? await welcomeCouponId().catch((error) => { console.error("welcome_coupon_failed", error); return null; }) : null;
+    const discount = coupon ? { "discounts[0][coupon]": coupon, "metadata[offer]": "welcome50" } : { allow_promotion_codes: true };
 
     const session = await stripe<{ url: string }>("/checkout/sessions", {
       mode: recurring ? "subscription" : "payment",
@@ -24,7 +30,7 @@ export async function POST(request: Request) {
       client_reference_id: user.id,
       customer_email: user.email,
       locale: "pt-BR",
-      allow_promotion_codes: true,
+      ...discount,
       "metadata[userId]": user.id,
       "metadata[priceId]": price.id,
       ...(recurring ? { "subscription_data[metadata][userId]": user.id } : { "payment_intent_data[metadata][userId]": user.id }),
