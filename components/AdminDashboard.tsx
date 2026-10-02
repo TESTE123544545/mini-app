@@ -25,6 +25,14 @@ type Dashboard = {
   events: { name: string; count: number }[];
   recentAccounts: { email: string; name: string | null; sign: string | null; plan: string; createdAt: string }[];
   content: { views: number; readHalf: number; readMost: number; ctaClicks: { where: string; clicks: number }[] };
+  security: {
+    failed24h: number; blockedNow: number; last24h: Record<string, number>;
+    recent: { kind: string; ip: string; asn: string | null; country: string | null; detail: string; createdAt: string }[];
+  };
+};
+
+const SECURITY_LABEL: Record<string, string> = {
+  ip_blocked: "IP bloqueado", account_locked: "Conta travada", rotation_suspected: "Troca de IP / VPN suspeita", network_watched: "Rede sob vigilância",
 };
 
 const CTA_LABEL: Record<string, string> = { "barra-fixa": "Barra fixa no celular", "meio-do-texto": "No meio do texto", "fim-da-pagina": "No fim da página", topo: "Botão do topo", outro: "Outros" };
@@ -296,6 +304,27 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
             </tr>)}</tbody>
           </table>
         </div>
+      </section>
+
+      <section className="adm-card adm-card--wide" aria-label="Segurança">
+        <h3>Segurança · tentativas de invasão</h3>
+        <div className="adm-content-stats">
+          <div><strong>{nf.format(data.security.failed24h)}</strong><span>senhas erradas nas últimas 24 h</span></div>
+          <div><strong>{nf.format(data.security.blockedNow)}</strong><span>IPs bloqueados agora</span></div>
+          <div><strong>{nf.format((data.security.last24h.account_locked ?? 0) + (data.security.last24h.rotation_suspected ?? 0))}</strong><span>contas travadas em 24 h</span></div>
+          <div><strong>{nf.format(data.security.last24h.rotation_suspected ?? 0)}</strong><span>trocas de IP / VPN suspeitas em 24 h</span></div>
+        </div>
+        {data.security.recent.length > 0
+          ? <div className="adm-table-wrap">
+            <table className="adm-table">
+              <thead><tr><th>Quando</th><th>O que houve</th><th>IP</th><th>País</th><th>Detalhe</th></tr></thead>
+              <tbody>{data.security.recent.map((row) => <tr key={row.createdAt + row.ip + row.kind}>
+                <td>{new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }).format(new Date(row.createdAt))}</td>
+                <td>{SECURITY_LABEL[row.kind] ?? row.kind}</td><td>{row.ip}{row.asn ? ` · AS${row.asn}` : ""}</td><td>{row.country ? countryName(row.country) : "—"}</td><td>{row.detail}</td>
+              </tr>)}</tbody>
+            </table>
+          </div>
+          : <p className="adm-empty">Nenhuma tentativa suspeita registrada. Bom sinal.</p>}
       </section>
 
       <section className="adm-tools" aria-label="Ferramentas da equipe">

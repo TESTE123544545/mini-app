@@ -83,7 +83,7 @@ export function assertMultipartRequest(request: Request, maxBytes: number) {
 // Only Cloudflare's own header identifies the client: it is set at the edge and can't be forged.
 // Without it every caller shares one bucket, so a missing header makes limits stricter, never looser
 // (a client-sent X-Real-IP would let anyone pick a fresh bucket per request).
-function clientIp(request: Request) {
+export function clientIp(request: Request) {
   return request.headers.get("cf-connecting-ip") ?? "unknown";
 }
 

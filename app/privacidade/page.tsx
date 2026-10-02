@@ -33,7 +33,7 @@ export default function PrivacyPage() {
         <p><strong>Prestar o serviço</strong> (criar e manter sua conta, gerar suas leituras, missões e relatórios, guardar sua jornada): execução do contrato com você (art. 7º, V).</p>
         <p><strong>Pagamentos e assinatura</strong>: execução do contrato e cumprimento de obrigações legais (art. 7º, II e V).</p>
         <p><strong>E-mails sobre a sua conta</strong> (recuperação de senha, teste grátis, fim do teste): execução do contrato e legítimo interesse (art. 7º, IX). Você pode deixar de receber os e-mails do teste pelo link em cada mensagem.</p>
-        <p><strong>Segurança e prevenção de abuso</strong> (limites de tentativas, bloqueio de e-mails falsos): legítimo interesse.</p>
+        <p><strong>Segurança e prevenção de abuso</strong> (limites de tentativas, bloqueio de e-mails falsos e de tentativas de invadir contas): legítimo interesse. Para isso, quando alguém erra a senha guardamos por até 24 horas o endereço IP, a rede de origem e um código irreversível do e-mail tentado, e os bloqueios aplicados ficam registrados por até 30 dias.</p>
         <p><strong>Melhorar o app</strong> (estatísticas agregadas de uso e de visitas): legítimo interesse, sem cookies de rastreamento.</p>
         <p><strong>Foto de perfil e câmera</strong>: consentimento — você escolhe quando usar e pode apagar a foto a qualquer momento.</p></section>
 

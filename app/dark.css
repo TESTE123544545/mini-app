@@ -560,6 +560,10 @@ html[data-mode=dark]{background:#0e1730}
 :root[data-mode=dark] .admin-achievements__list>div{border:1px solid rgba(19,31,58,0.071);border-radius:12px}
 :root[data-mode=dark] .admin-achievements__list>div.is-granted{border-color:rgba(225,197,141,0.4);background:rgba(225,197,141,0.063)}
 :root[data-mode=dark] .admin-achievements__list span{color:#eef1f8}
+:root[data-mode=dark] .tutorial-icon{border-radius:999px;background:rgba(217,178,106,0.16);color:var(--studio-gold,#b88f45)}
+:root[data-mode=dark] .tutorial-dots i{border-radius:999px;background:rgba(34,50,92,0.35)}
+:root[data-mode=dark] .tutorial-dots i.is-current{background:var(--studio-gold,#b88f45)}
+:root[data-mode=dark] .tutorial-skip{border:0;background:none;color:inherit}
 
 /* from app/diagnostic.css */
 :root[data-mode=dark] .diag-hero{border:1px solid rgba(222,194,137,0.251);border-radius:28px;background:radial-gradient(circle at 50% -20%,rgba(20,32,67,0.333),transparent 60%),linear-gradient(160deg,rgba(20,32,67,0.6),rgba(15,26,53,0.72) 75%);box-shadow:0 26px 70px rgba(20,32,61,0.21),inset 0 1px rgba(255,255,255,0.013)}

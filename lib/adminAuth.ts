@@ -2,6 +2,7 @@ import { and, eq, gt, isNull, lt } from "drizzle-orm";
 import { getDb } from "@/db";
 import { adminLoginCodes, adminSessions, users } from "@/db/schema";
 import { createSecureToken, hashToken, isAdminEmail, normalizeEmail, PASSWORD_ITERATIONS, readCookie, verifyPassword } from "@/lib/auth";
+import { assertLoginAllowed, recordLoginFailure } from "@/lib/bruteforce";
 import { sendAdminCodeEmail } from "@/lib/email";
 import { enforceRateLimit, RequestError } from "@/lib/security";
 
@@ -54,13 +55,17 @@ function sixDigits() {
 export async function startAdminLogin(request: Request, rawEmail: string, password: string) {
   await enforceRateLimit(request, "admin-login", "ip", 8, 15 * 60);
   const email = normalizeEmail(rawEmail);
+  await assertLoginAllowed(request, email);
   const db = getDb();
   const [user] = isAdminEmail(email) ? await db.select().from(users).where(eq(users.email, email)).limit(1) : [];
   // Same work whether or not the account exists or is an admin, so timing reveals nothing.
   const valid = user
     ? await verifyPassword(password, user.passwordHash, user.passwordSalt, user.passwordIterations)
     : await verifyPassword(password, DUMMY_HASH, DUMMY_SALT, PASSWORD_ITERATIONS);
-  if (!user || !valid) throw new RequestError(GENERIC_LOGIN_ERROR, 401);
+  if (!user || !valid) {
+    await recordLoginFailure(request, email);
+    throw new RequestError(GENERIC_LOGIN_ERROR, 401);
+  }
   await enforceRateLimit(request, "admin-login-account", user.id, 5, 60 * 60);
 
   await db.delete(adminLoginCodes).where(lt(adminLoginCodes.expiresAt, new Date().toISOString()));

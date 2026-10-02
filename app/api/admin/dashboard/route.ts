@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import { getDb } from "@/db";
 import { requireAdmin } from "@/lib/adminAuth";
+import { securitySummary } from "@/lib/bruteforce";
 import { enforceRateLimit, secureErrorResponse } from "@/lib/security";
 import { RESERVED, RESERVED_SUFFIXES } from "@/lib/emailPolicy";
 import { brazilDayKey } from "@/lib/sky";
@@ -112,6 +113,7 @@ export async function GET(request: Request) {
                (SELECT COUNT(*) FROM analytics_events WHERE event_name = 'scroll_depth' AND json_extract(payload_json, '$.depth') = 90 AND ${brDay("created_at")} >= ${since}) AS most`),
     ]);
 
+    const security = await securitySummary();
     const signups = new Map(signupsByDay.map((row) => [row.day, Number(row.n)]));
     const visits = new Map(visitsByDay.map((row) => [row.day, row]));
     const active = new Map(activeByDay.map((row) => [row.day, Number(row.n)]));
@@ -155,6 +157,7 @@ export async function GET(request: Request) {
       funnel: FUNNEL.map(([key, label]) => ({ key, label, people: funnelCounts.get(key) ?? 0 })),
       events: events.map((row) => ({ name: row.name, count: Number(row.n) })),
       recentAccounts: recent.map((row) => ({ ...row, plan: row.plan ?? "free" })),
+      security,
       content: {
         views: Number(reading?.seoViews ?? 0),
         readHalf: Number(reading?.half ?? 0),

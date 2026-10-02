@@ -127,6 +127,13 @@
       "when": 1790944016771,
       "tag": "0017_birth_time_place",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "6",
+      "when": 1790945716200,
+      "tag": "0018_brute_force_defense",
+      "breakpoints": true
     }
   ]
 }

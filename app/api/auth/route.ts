@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { getDb } from "@/db";
 import { users } from "@/db/schema";
 import { createPassword, createSecureToken, createSession, deleteSession, getSessionUser, normalizeEmail, PASSWORD_ITERATIONS, publicUser, renewSession, validEmail, validPassword, verifyPassword } from "@/lib/auth";
+import { assertLoginAllowed, recordLoginFailure } from "@/lib/bruteforce";
 import { isBlockedEmail, signupEmailProblem } from "@/lib/emailPolicy";
 import { trialEndsAtFrom } from "@/lib/plan";
 import { sendTrialWelcome } from "@/lib/trialEmails";
@@ -52,11 +53,13 @@ export async function POST(request: Request) {
       sendTrialWelcome(user);
     } else if (payload.action === "login") {
       if (isBlockedEmail(email)) return Response.json({ error: "Contas com e-mail de teste ou temporário não têm acesso ao app." }, { status: 403 });
+      await assertLoginAllowed(request, email);
       if (existing) await enforceRateLimit(request, "login-account", existing.id, 7, 15 * 60);
       const valid = existing
         ? await verifyPassword(password, existing.passwordHash, existing.passwordSalt, existing.passwordIterations)
         : await verifyPassword(password, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=", "AAAAAAAAAAAAAAAAAAAAAA==", PASSWORD_ITERATIONS);
       if (!existing || !valid) {
+        await recordLoginFailure(request, email);
         return Response.json({ error: "E-mail ou senha incorretos." }, { status: 401 });
       }
       if (existing.passwordIterations < PASSWORD_ITERATIONS) {

@@ -75,6 +75,38 @@ export const rateLimits = sqliteTable("rate_limits", {
   expiresAt: text("expires_at").notNull(),
 }, (table) => [index("rate_limits_expires_at_idx").on(table.expiresAt)]);
 
+/** One row per wrong-password login (kept 24 h): the evidence behind IP blocks and account locks. */
+export const loginFailures = sqliteTable("login_failures", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  ip: text("ip").notNull(),
+  asn: text("asn"),
+  /** Hash of the e-mail that was tried, so unknown addresses are tracked too and nothing reveals whether one exists. */
+  account: text("account").notNull(),
+  createdAt: text("created_at").notNull(),
+}, (table) => [
+  index("login_failures_ip_idx").on(table.ip, table.createdAt),
+  index("login_failures_account_idx").on(table.account, table.createdAt),
+  index("login_failures_asn_idx").on(table.asn, table.createdAt),
+]);
+
+export const ipBlocks = sqliteTable("ip_blocks", {
+  ip: text("ip").primaryKey(),
+  until: text("until").notNull(),
+  strikes: integer("strikes").notNull().default(1),
+  updatedAt: text("updated_at").notNull(),
+});
+
+/** What the defenses did (kept 30 days), for the admin panel. */
+export const securityEvents = sqliteTable("security_events", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  kind: text("kind").notNull(),
+  ip: text("ip").notNull(),
+  asn: text("asn"),
+  country: text("country"),
+  detail: text("detail").notNull().default(""),
+  createdAt: text("created_at").notNull(),
+}, (table) => [index("security_events_created_at_idx").on(table.createdAt)]);
+
 export const goals = sqliteTable("goals", {
   id: integer("id").primaryKey(),
   deviceId: text("device_id").notNull().references(() => profiles.deviceId, { onDelete: "cascade" }),
