@@ -13,9 +13,23 @@ import { isCountableView, recordView } from "@/lib/visits";
 type Handler = { fetch(request: Request, env: unknown, ctx: ExecutionContext): Promise<Response> };
 const app = handler as unknown as Handler;
 
+/**
+ * Cloudflare knows which network (ASN) a request came from, but the framework hides `request.cf`.
+ * For the sign-in endpoints we hand it over in a header the client can never set: it is dropped first.
+ */
+function withNetwork(request: Request) {
+  const { pathname } = new URL(request.url);
+  if (!pathname.startsWith("/api/auth") && !pathname.startsWith("/api/admin")) return request;
+  const headers = new Headers(request.headers);
+  headers.delete("x-vds-asn");
+  const asn = (request as Request & { cf?: { asn?: number } }).cf?.asn;
+  if (asn) headers.set("x-vds-asn", String(asn));
+  return new Request(request, { headers });
+}
+
 const worker = {
   async fetch(request: Request, env: unknown, ctx: ExecutionContext) {
-    const response = await app.fetch(request, env, ctx);
+    const response = await app.fetch(withNetwork(request), env, ctx);
     // Page views for the admin dashboard, written after the response so visitors never wait for it.
     if (isCountableView(request, response)) ctx.waitUntil(recordView(request).catch((error) => console.error("visit_record_failed", error)));
     return response;

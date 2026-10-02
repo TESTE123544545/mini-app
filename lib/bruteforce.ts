@@ -28,8 +28,8 @@ const MESSAGE = "Muitas tentativas. Tente novamente mais tarde.";
 type Origin = { ip: string; asn: string | null; country: string | null };
 
 function originOf(request: Request): Origin {
-  const cf = (request as Request & { cf?: { asn?: number; country?: string } }).cf;
-  return { ip: clientIp(request), asn: cf?.asn ? String(cf.asn) : null, country: cf?.country ?? request.headers.get("cf-ipcountry") };
+  const cf = (request as Request & { cf?: { country?: string } }).cf;
+  return { ip: clientIp(request), asn: request.headers.get("x-vds-asn"), country: cf?.country ?? request.headers.get("cf-ipcountry") };
 }
 
 const iso = (ms: number) => new Date(ms).toISOString();
