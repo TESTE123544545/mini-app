@@ -10,6 +10,8 @@ const syncSchema = z.object({
   profile: z.object({
     name: z.string().trim().min(1).max(80),
     birthDate: z.string().min(1).max(20),
+    birthTime: z.string().regex(/^(\d{2}:\d{2})?$/).optional(),
+    birthPlace: z.string().trim().max(80).optional(),
     objective: z.string().min(1).max(80),
     sign: z.string().min(1).max(30),
     intention: z.string().max(280).optional().default(""),
@@ -91,7 +93,7 @@ export async function GET(request: Request) {
     const today = resolveDay(new URL(request.url).searchParams.get("day"), new Date().toISOString().slice(0, 10));
     const lastActive = lastActiveDay(progress?.lastMissionDate, progress?.lastRitualDate);
     const streakAlive = lastActive === today || lastActive === shiftDay(today, -1);
-    return Response.json({ deviceId, state: { profile: { name: profile.name, birthDate: profile.birthDate, objective: profile.objective, sign: profile.sign, intention: profile.intention, theme: profile.theme, hasAvatar: Boolean(profile.avatarData), plan: profile.plan === "premium" ? "premium" : "free" }, xp: progress?.xp ?? 0, missionDone: progress?.lastMissionDate === today && Boolean(progress?.missionDone), ritualDone: progress?.lastRitualDate === today && Boolean(progress?.ritualDone), streak: streakAlive ? (progress?.streak ?? 0) : 0, goals: savedGoals.map((goal) => ({
+    return Response.json({ deviceId, state: { profile: { name: profile.name, birthDate: profile.birthDate, birthTime: profile.birthTime ?? "", birthPlace: profile.birthPlace ?? "", objective: profile.objective, sign: profile.sign, intention: profile.intention, theme: profile.theme, hasAvatar: Boolean(profile.avatarData), plan: profile.plan === "premium" ? "premium" : "free" }, xp: progress?.xp ?? 0, missionDone: progress?.lastMissionDate === today && Boolean(progress?.missionDone), ritualDone: progress?.lastRitualDate === today && Boolean(progress?.ritualDone), streak: streakAlive ? (progress?.streak ?? 0) : 0, goals: savedGoals.map((goal) => ({
         id: goal.id, title: goal.title, category: goal.category, progress: goal.progress,
         isPrimary: goal.isPrimary ?? undefined, kind: (goal.kind ?? undefined) as "financial" | "non_financial" | "partial" | undefined,
         targetAmount: goal.targetAmount ?? undefined, currentAmount: goal.currentAmount ?? undefined,
@@ -121,7 +123,8 @@ export async function POST(request: Request) {
       const [owner] = await db.select({ id: users.id }).from(users).where(eq(users.primaryDeviceId, deviceId)).limit(1);
       if (owner && owner.id !== user.id) return Response.json({ error: "Esta jornada já pertence a outra conta." }, { status: 409 });
     }
-    const profileValues = { name: profile.name, birthDate: profile.birthDate, objective: profile.objective, sign: profile.sign, intention: profile.intention.trim(), theme: profile.theme, updatedAt: now };
+    // Left out when the client did not send them, so an older cached client never erases the birth details.
+    const profileValues = { name: profile.name, birthDate: profile.birthDate, ...(profile.birthTime !== undefined && { birthTime: profile.birthTime || null }), ...(profile.birthPlace !== undefined && { birthPlace: profile.birthPlace || null }), objective: profile.objective, sign: profile.sign, intention: profile.intention.trim(), theme: profile.theme, updatedAt: now };
     const [savedProgress] = await db.select().from(userProgress).where(eq(userProgress.deviceId, deviceId)).limit(1);
     const today = resolveDay(payload.dayKey, now.slice(0, 10));
     const yesterday = shiftDay(today, -1);

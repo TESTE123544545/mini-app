@@ -195,3 +195,19 @@ html:has(.entry),body:has(.entry){background:#070f24}
 /* Consent line under the sign-up form. */
 .entry-legal{margin:14px 0 0;color:var(--entry-ink-3);font-size:.76rem;line-height:1.5}
 .entry-legal a{color:var(--entry-gold);text-underline-offset:3px}
+
+/* Sign-up in steps: progress, the age + sign reveal, back, and the "already have an account" button. */
+.entry-steps{display:flex;gap:6px;margin:0 0 18px}
+.entry-steps i{flex:1;height:3px;border-radius:999px;background:rgba(217,178,106,.22);transition:background-color .3s var(--entry-ease)}
+.entry-steps i.is-done{background:var(--entry-gold)}
+.entry-reveal{display:grid;justify-items:center;gap:4px;padding:22px 16px;border:1px solid var(--entry-line);border-radius:18px;background:rgba(10,20,48,.8);text-align:center;animation:entry-rise .5s var(--entry-ease)}
+.entry-reveal span{color:var(--entry-ink-2);font-size:.9rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.entry-reveal strong{color:var(--entry-gold);font-family:var(--entry-display);font-size:clamp(1.7rem,7vw,2.3rem);letter-spacing:.04em}
+.entry-reveal small{color:var(--entry-ink-3);font-size:.82rem;line-height:1.45}
+.entry-step-back{justify-self:center;display:inline-flex;align-items:center;gap:6px;padding:6px 2px;border:0;background:none;color:var(--entry-ink-2);font:inherit;font-size:.84rem;font-weight:600;cursor:pointer}
+.entry-step-back svg{width:16px;height:16px}
+.entry-step-back:hover{color:var(--entry-gold)}
+.entry-have-account{display:grid;gap:8px;margin-top:22px;padding-top:18px;border-top:1px solid rgba(217,178,106,.2);text-align:center}
+.entry-have-account span{color:var(--entry-ink-2);font-size:.84rem}
+@keyframes entry-rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.entry-reveal{animation:none}.entry-steps i{transition:none}}

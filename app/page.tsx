@@ -28,6 +28,9 @@ import { PremiumFeatures } from "@/components/PremiumFeatures";
 import { recallLogin, rememberLogin, stopSilentLogin } from "@/lib/savedLogin";
 import { loadDiagnostics, saveDiagnostic, type DiagnosticResult } from "@/lib/diagnostic";
 import { trialActive } from "@/lib/plan";
+import { signFromDate as getSign } from "@/lib/birth";
+import { RegisterWizard, type RegisterSeed } from "@/components/RegisterWizard";
+import { AppTutorial, queueTutorial } from "@/components/AppTutorial";
 
 type View = "home" | "premium" | "diagnostic" | "signs" | "tree" | "missions" | "journal" | "profile" | "goal" | "chat";
 type GoalKind = "financial" | "non_financial" | "partial";
@@ -45,7 +48,7 @@ type CloudState = {
 type ApiMessage = { error?: string; message?: string };
 type Theme = "dourado" | "lua" | "aurora";
 type Plan = "free" | "premium";
-type Profile = { name: string; birthDate: string; objective: string; sign: string; intention: string; theme: Theme; hasAvatar?: boolean; plan?: Plan };
+type Profile = { name: string; birthDate: string; birthTime?: string; birthPlace?: string; objective: string; sign: string; intention: string; theme: Theme; hasAvatar?: boolean; plan?: Plan };
 type Account = { email: string; deviceId: string | null; trialEndsAt?: string | null };
 
 const emptyProfile: Profile = { name: "", birthDate: "", objective: "", sign: "Capricórnio", intention: "", theme: "dourado", hasAvatar: false, plan: "free" };
@@ -58,12 +61,6 @@ const TOTAL_ONBOARDING_STEPS = 10;
 const FREE_JOURNAL_HISTORY = 7;
 const FREE_THEMES: readonly Theme[] = ["dourado"];
 
-
-const zodiac = [
-  ["Capricórnio", 120], ["Aquário", 219], ["Peixes", 321], ["Áries", 420],
-  ["Touro", 521], ["Gêmeos", 621], ["Câncer", 723], ["Leão", 823],
-  ["Virgem", 923], ["Libra", 1023], ["Escorpião", 1122], ["Sagitário", 1222], ["Capricórnio", 1232],
-] as const;
 
 const signGuides: Record<string, { strengths: string[]; care: string[]; style: string }> = {
   "Áries": { strengths: ["iniciativa", "coragem", "ação"], care: ["impulsividade", "decisões precipitadas"], style: "Transforme energia em um primeiro passo claro e sustentável." },
@@ -135,14 +132,6 @@ async function signInWithSavedLogin(): Promise<Account | null> {
   }
 }
 
-function getSign(date: string) {
-  if (!date) return "Capricórnio";
-  const [, month, day] = date.split("-").map(Number);
-  const code = month * 100 + day;
-  return zodiac.find(([, end]) => code <= end)?.[0] ?? "Capricórnio";
-}
-
-
 export default function HomePage() {
   const [view, setView] = useState<View>("home");
   const [navigated, setNavigated] = useState(false);
@@ -153,6 +142,8 @@ export default function HomePage() {
   /** Token from a "Crie uma nova senha" e-mail link (?reset=…); while set, that screen wins over everything. */
   const [resetLink, setResetLink] = useState<string | null>(null);
   const [onboarding, setOnboarding] = useState(0);
+  /** True when the sign-up questions already filled name and birth, so onboarding only asks the objective. */
+  const [prefilled, setPrefilled] = useState(false);
   const [profile, setProfile] = useState<Profile>(emptyProfile);
   const [xp, setXp] = useState(0);
   const [missionDone, setMissionDone] = useState(false);
@@ -220,7 +211,7 @@ export default function HomePage() {
 
   function handleSessionExpired() {
     localStorage.removeItem("vds-state");
-    setAccount(null); setProfile(emptyProfile); setXp(0); setMissionDone(false); setRitualDone(false); setStreak(0); setGoals([]); setEntries([]); setActiveTrail(null); setOnboarding(0); setView("home"); setSyncReady(false); setUnlockedAchievements([]); setWelcomeAuthMode("login");
+    setAccount(null); setProfile(emptyProfile); setXp(0); setMissionDone(false); setRitualDone(false); setStreak(0); setGoals([]); setEntries([]); setActiveTrail(null); setOnboarding(0); setPrefilled(false); setView("home"); setSyncReady(false); setUnlockedAchievements([]); setWelcomeAuthMode("login");
     treeStageBaseline.current = null;
     notifiedAchievements.current = null;
     toast.error("Sua sessão expirou. Entre novamente para continuar sua jornada.");
@@ -255,10 +246,18 @@ export default function HomePage() {
     }
   }
 
-  async function handleAuthenticated(user: Account) {
+  async function handleAuthenticated(user: Account, mode?: "register" | "login", seed?: RegisterSeed) {
+    // A brand-new account already answered name and birth in the sign-up: go straight to the objective.
+    const applySeed = () => {
+      if (mode !== "register" || !seed) return;
+      setProfile({ ...emptyProfile, name: seed.name, birthDate: seed.birthDate, birthTime: seed.birthTime, birthPlace: seed.birthPlace, sign: getSign(seed.birthDate) });
+      setOnboarding(2); setPrefilled(true);
+    };
+    applySeed();
     setAccount(user);
     const currentId = localStorage.getItem("vds-device-id") || crypto.randomUUID();
     await loadCloudState(user, currentId);
+    applySeed();
   }
 
   async function logout() {
@@ -266,7 +265,7 @@ export default function HomePage() {
     stopSilentLogin();
     localStorage.removeItem("vds-state");
     localStorage.setItem("vds-device-id", crypto.randomUUID());
-    setAccount(null); setProfile(emptyProfile); setXp(0); setMissionDone(false); setRitualDone(false); setStreak(0); setGoals([]); setEntries([]); setActiveTrail(null); setOnboarding(0); setView("home"); setSyncReady(false); setUnlockedAchievements([]); setWelcomeAuthMode(null);
+    setAccount(null); setProfile(emptyProfile); setXp(0); setMissionDone(false); setRitualDone(false); setStreak(0); setGoals([]); setEntries([]); setActiveTrail(null); setOnboarding(0); setPrefilled(false); setView("home"); setSyncReady(false); setUnlockedAchievements([]); setWelcomeAuthMode(null);
     treeStageBaseline.current = null;
     notifiedAchievements.current = null;
     toast.success("Você saiu da sua conta.");
@@ -280,7 +279,7 @@ export default function HomePage() {
       fetch("/api/sync", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ deviceId, dayKey, profile: { name: profile.name, birthDate: profile.birthDate, objective: profile.objective, sign: profile.sign, intention: profile.intention, theme: profile.theme }, xp, missionDone, ritualDone, goals, entries, trail: activeTrail, unlockedAchievements }),
+        body: JSON.stringify({ deviceId, dayKey, profile: { name: profile.name, birthDate: profile.birthDate, birthTime: profile.birthTime ?? "", birthPlace: profile.birthPlace ?? "", objective: profile.objective, sign: profile.sign, intention: profile.intention, theme: profile.theme }, xp, missionDone, ritualDone, goals, entries, trail: activeTrail, unlockedAchievements }),
       }).then(async (response) => {
         if (response.status === 401) { handleSessionExpired(); return; }
         if (!response.ok) throw new Error("sync failed");
@@ -446,6 +445,7 @@ export default function HomePage() {
     track("signup"); track("onboarding_completed", { sign, objective: profile.objective, goalKind: kind });
     track("first_tree_created"); track("goal_created", { category: profile.objective, primary: true });
     toast.success(`Sua árvore de ${sign} foi plantada.`);
+    if (account) queueTutorial(account.email);
   }
 
   function openPaywall(reason: string) {
@@ -572,7 +572,7 @@ export default function HomePage() {
     if (!welcomeAuthMode) return <WelcomeHero onStart={() => setWelcomeAuthMode("register")} onLogin={() => setWelcomeAuthMode("login")} />;
     return <AuthScreen onAuthenticated={handleAuthenticated} initialMode={welcomeAuthMode} onBack={() => setWelcomeAuthMode(null)} />;
   }
-  if (onboarding < TOTAL_ONBOARDING_STEPS) return <Onboarding step={onboarding} setStep={setOnboarding} profile={profile} setProfile={setProfile} finish={finishOnboarding}
+  if (onboarding < TOTAL_ONBOARDING_STEPS) return <Onboarding step={onboarding} setStep={setOnboarding} prefilled={prefilled} profile={profile} setProfile={setProfile} finish={finishOnboarding}
     goalTitle={goalTitle} setGoalTitle={setGoalTitle} goalKind={obGoalKind} setGoalKind={setObGoalKind} goalAmount={obGoalAmount} setGoalAmount={setObGoalAmount}
     goalStage={obGoalStage} setGoalStage={setObGoalStage} goalBlocker={obGoalBlocker} setGoalBlocker={setObGoalBlocker}
     goalDailyMinutes={obGoalDailyMinutes} setGoalDailyMinutes={setObGoalDailyMinutes} goalMotivation={obGoalMotivation} setGoalMotivation={setObGoalMotivation} />;
@@ -645,6 +645,7 @@ export default function HomePage() {
       </section>
       <DailyRitual open={ritualOpen} onOpenChange={setRitualOpen} profile={profile} plan={plan} done={ritualDone} onComplete={completeRitual} />
       <PaywallDialog reason={paywall} onOpenChange={(open) => { if (!open) setPaywall(null); }} />
+      <AppTutorial email={account.email} />
       {xpBurst && <div className="xp-float" key={xpBurst.id} aria-hidden="true">+{xpBurst.amount} XP</div>}
       {stageUnlocked && <TreeStageUnlockedOverlay name={stageUnlocked.name} note={stageUnlocked.note} />}
       <Toaster richColors position="top-center" />
@@ -932,7 +933,7 @@ function WelcomeHero({ onStart, onLogin }: { onStart: () => void; onLogin: () =>
 
 type AuthMode = "register" | "login" | "recover" | "reset";
 
-function AuthScreen({ onAuthenticated, initialMode, onBack, resetToken: linkToken }: { onAuthenticated: (user: Account, mode: "register" | "login") => Promise<void>; initialMode?: "register" | "login"; onBack?: () => void; resetToken?: string }) {
+function AuthScreen({ onAuthenticated, initialMode, onBack, resetToken: linkToken }: { onAuthenticated: (user: Account, mode: "register" | "login", seed?: RegisterSeed) => Promise<void>; initialMode?: "register" | "login"; onBack?: () => void; resetToken?: string }) {
   const [mode, setMode] = useState<AuthMode>(linkToken ? "reset" : initialMode ?? "register");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -947,7 +948,7 @@ function AuthScreen({ onAuthenticated, initialMode, onBack, resetToken: linkToke
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     setError(""); setNotice("");
-    if ((mode === "register" || mode === "reset") && password !== confirmation) return setError("As senhas não são iguais.");
+    if (mode === "reset" && password !== confirmation) return setError("As senhas não são iguais.");
     setLoading(true);
     try {
       if (mode === "recover") {
@@ -969,13 +970,22 @@ function AuthScreen({ onAuthenticated, initialMode, onBack, resetToken: linkToke
       // Offer the browser's "Salvar senha" so the account can be recognised after history is cleared.
       if (!result.user) throw new Error("Não foi possível continuar.");
       void rememberLogin(email.trim(), password);
-      await onAuthenticated(result.user, mode as "register" | "login");
-      toast.success(mode === "register" ? "Conta criada com sucesso." : "Bem-vindo de volta.");
+      await onAuthenticated(result.user, "login");
+      toast.success("Bem-vindo de volta.");
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Não foi possível continuar.");
     } finally {
       setLoading(false);
     }
+  }
+
+  async function register({ email: newEmail, password: newPassword, seed }: { email: string; password: string; seed: RegisterSeed }) {
+    const response = await fetch("/api/auth", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "register", email: newEmail, password: newPassword }) });
+    const result = await response.json() as ApiMessage & { user?: Account };
+    if (!response.ok || !result.user) throw new Error(result.error || "Não foi possível criar a conta.");
+    void rememberLogin(newEmail, newPassword);
+    await onAuthenticated(result.user, "register", seed);
+    toast.success("Conta criada com sucesso.");
   }
 
   function switchMode(next: AuthMode) {
@@ -996,29 +1006,28 @@ function AuthScreen({ onAuthenticated, initialMode, onBack, resetToken: linkToke
       <figure className="entry-object entry-object--auth" aria-hidden="true">
         <BrandTree/>
       </figure>
-      <section className="entry-panel" aria-labelledby="entry-auth-title">
+      {mode === "register" ? <RegisterWizard onRegister={register} onLogin={() => switchMode("login")}/> : <section className="entry-panel" aria-labelledby="entry-auth-title">
         <h1 className="entry-title entry-title--panel" id="entry-auth-title">{titles[mode]}</h1>
         <p className="entry-lede">{descriptions[mode]}</p>
-        {(mode === "register" || mode === "login") && <div className="entry-switch" role="tablist" aria-label="Acesso à conta"><button type="button" role="tab" aria-selected={mode === "register"} onClick={() => switchMode("register")}>Criar conta</button><button type="button" role="tab" aria-selected={mode === "login"} onClick={() => switchMode("login")}>Já tenho conta</button></div>}
+        {mode === "login" && <div className="entry-switch" role="tablist" aria-label="Acesso à conta"><button type="button" role="tab" aria-selected="false" onClick={() => switchMode("register")}>Criar conta</button><button type="button" role="tab" aria-selected="true">Já tenho conta</button></div>}
         <form className="entry-form" onSubmit={submit}>
           {mode !== "reset" && <label className="entry-field">E-mail<span className="entry-input"><Mail aria-hidden="true"/><input type="email" name="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="voce@email.com" required/></span></label>}
           {mode !== "recover" && <label className="entry-field">{mode === "reset" ? "Nova senha" : "Senha"}<span className="entry-input"><LockKeyhole aria-hidden="true"/><input type={visible ? "text" : "password"} autoComplete={mode === "login" ? "current-password" : "new-password"} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Mínimo de 8 caracteres" minLength={8} required/><button type="button" onClick={() => setVisible(!visible)} aria-label={visible ? "Ocultar senha" : "Mostrar senha"}>{visible ? <EyeOff/> : <Eye/>}</button></span></label>}
-          {(mode === "register" || mode === "reset") && <label className="entry-field">Confirme sua senha<span className="entry-input"><LockKeyhole aria-hidden="true"/><input type={visible ? "text" : "password"} autoComplete="new-password" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} placeholder="Digite novamente" minLength={8} required/></span></label>}
+          {mode === "reset" && <label className="entry-field">Confirme sua senha<span className="entry-input"><LockKeyhole aria-hidden="true"/><input type={visible ? "text" : "password"} autoComplete="new-password" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} placeholder="Digite novamente" minLength={8} required/></span></label>}
           {mode === "login" && <button className="entry-forgot" type="button" onClick={() => switchMode("recover")}>Esqueci minha senha</button>}
           {error && <p className="entry-message entry-message--error" role="alert">{error}</p>}
           {notice && <p className="entry-message entry-message--ok" role="status"><Check aria-hidden="true"/> {notice}</p>}
-          {!(mode === "recover" && notice) && <button className="entry-pill entry-pill--solid entry-pill--wide" disabled={loading} aria-busy={loading}>{loading ? "Aguarde…" : mode === "register" ? "Criar minha conta" : mode === "login" ? "Entrar" : mode === "recover" ? "Enviar link de recuperação" : "Salvar nova senha"}{!loading && <ArrowRight aria-hidden="true"/>}</button>}
+          {!(mode === "recover" && notice) && <button className="entry-pill entry-pill--solid entry-pill--wide" disabled={loading} aria-busy={loading}>{loading ? "Aguarde…" : mode === "login" ? "Entrar" : mode === "recover" ? "Enviar link de recuperação" : "Salvar nova senha"}{!loading && <ArrowRight aria-hidden="true"/>}</button>}
         </form>
-        {mode === "register" && <p className="entry-legal">Ao criar a conta, você confirma ter 18 anos ou mais (ou 16, com autorização dos responsáveis) e concorda com os <a href="/termos" target="_blank" rel="noopener">Termos de uso</a> e a <a href="/privacidade" target="_blank" rel="noopener">Política de Privacidade</a>.</p>}
         <p className="entry-security"><LockKeyhole aria-hidden="true"/> Sua senha é protegida e sua jornada fica vinculada à sua conta.</p>
-      </section>
+      </section>}
     </div>
     <Toaster richColors position="top-center"/>
   </main>;
 }
 
 type OnboardingProps = {
-  step: number; setStep: (n: number) => void; profile: Profile; setProfile: (p: Profile) => void; finish: () => void;
+  step: number; prefilled: boolean; setStep: (n: number) => void; profile: Profile; setProfile: (p: Profile) => void; finish: () => void;
   goalTitle: string; setGoalTitle: (v: string) => void;
   goalKind: GoalKind | ""; setGoalKind: (v: GoalKind | "") => void;
   goalAmount: number | ""; setGoalAmount: (v: number | "") => void;
@@ -1028,9 +1037,10 @@ type OnboardingProps = {
   goalMotivation: string; setGoalMotivation: (v: string) => void;
 };
 
-function Onboarding({ step, setStep, profile, setProfile, finish, goalTitle, setGoalTitle, goalKind, setGoalKind, goalAmount, setGoalAmount, goalStage, setGoalStage, goalBlocker, setGoalBlocker, goalDailyMinutes, setGoalDailyMinutes, goalMotivation, setGoalMotivation }: OnboardingProps) {
+function Onboarding({ step, setStep, prefilled, profile, setProfile, finish, goalTitle, setGoalTitle, goalKind, setGoalKind, goalAmount, setGoalAmount, goalStage, setGoalStage, goalBlocker, setGoalBlocker, goalDailyMinutes, setGoalDailyMinutes, goalMotivation, setGoalMotivation }: OnboardingProps) {
   const needsAmount = goalKind === "financial" || goalKind === "partial";
   const previewSign = profile.birthDate ? getSign(profile.birthDate) : null;
+  const signedUp = prefilled;
   // Keeps the first screenful of choices within the ~4-item working-memory guideline;
   // the rest reveal on demand instead of all competing for attention at once.
   const [showAllObjectives, setShowAllObjectives] = useState(false);
@@ -1046,7 +1056,7 @@ function Onboarding({ step, setStep, profile, setProfile, finish, goalTitle, set
       {step >= 2 && <div className="onboarding-chrome">{step >= 3 && <button type="button" className="auth-back" onClick={() => setStep(step - 1)}><ArrowLeft size={16}/> Voltar</button>}<div className="onboarding-progress-bar" aria-hidden="true"><i style={{ width: `${((step - 1) / 8) * 100}%` }}/></div></div>}
       {step === 0 && <><div className="onboarding-tree onboarding-tree--brand"><BrandTree priority/></div><p className="step-count">01 · 10</p><h1>E se o seu signo pudesse ser um guia para você entender melhor a sua forma de prosperar?</h1><p>Uma jornada simbólica para transformar autoconhecimento em pequenas ações.</p><button className="gold-button" onClick={() => setStep(1)}>Começar minha jornada <ChevronRight/></button></>}
       {step === 1 && <><div className="symbol-ring"><Sparkles/><span>✦</span></div><p className="step-count">02 · 10</p><h1>Conheça seus padrões. Cultive seus hábitos.</h1><p>Descubra forças, organize objetivos e transforme intenção em ação — no seu ritmo.</p><div className="mini-pill-row"><span>Reflexão</span><span>Constância</span><span>Metas</span></div><button className="gold-button" onClick={() => setStep(2)}>Descobrir meu signo <ChevronRight/></button></>}
-      {step === 2 && <><p className="step-count">03 · 10</p><h1>Vamos começar por você.</h1><p>Esses dados personalizam sua experiência e ficam protegidos na sua conta.</p><div className="form-stack"><label>Como podemos chamar você?<input value={profile.name} onChange={(e) => setProfile({ ...profile, name: e.target.value })} placeholder="Seu nome" /></label><label>Data de nascimento<input type="date" value={profile.birthDate} onChange={(e) => setProfile({ ...profile, birthDate: e.target.value })} /></label><fieldset><legend>O que mais te chama agora?</legend><div className="choice-grid">{(objectivesExpanded ? objectives : objectives.slice(0, 4)).map((o) => <button type="button" className={profile.objective === o ? "selected" : ""} onClick={() => setProfile({ ...profile, objective: o })} key={o}>{o}</button>)}</div>{!objectivesExpanded && <button type="button" className="choice-grid-more" onClick={() => setShowAllObjectives(true)}>+{objectives.length - 4} opções</button>}</fieldset></div><button className="gold-button" disabled={!profile.name.trim() || !profile.birthDate || !profile.objective} onClick={() => setStep(3)}>Continuar <ChevronRight/></button></>}
+      {step === 2 && <><p className="step-count">03 · 10</p><h1>{signedUp ? `Prazer, ${profile.name.split(" ")[0]}.` : "Vamos começar por você."}</h1><p>{signedUp ? `Seu signo é ${previewSign}. Agora conte o que mais te chama.` : "Esses dados personalizam sua experiência e ficam protegidos na sua conta."}</p><div className="form-stack">{!signedUp && <><label>Como podemos chamar você?<input value={profile.name} onChange={(e) => setProfile({ ...profile, name: e.target.value })} placeholder="Seu nome" /></label><label>Data de nascimento<input type="date" value={profile.birthDate} onChange={(e) => setProfile({ ...profile, birthDate: e.target.value })} /></label></>}<fieldset><legend>O que mais te chama agora?</legend><div className="choice-grid">{(objectivesExpanded ? objectives : objectives.slice(0, 4)).map((o) => <button type="button" className={profile.objective === o ? "selected" : ""} onClick={() => setProfile({ ...profile, objective: o })} key={o}>{o}</button>)}</div>{!objectivesExpanded && <button type="button" className="choice-grid-more" onClick={() => setShowAllObjectives(true)}>+{objectives.length - 4} opções</button>}</fieldset></div><button className="gold-button" disabled={!profile.name.trim() || !profile.birthDate || !profile.objective} onClick={() => setStep(3)}>Continuar <ChevronRight/></button></>}
       {step === 3 && <><p className="step-count">04 · 10</p><h1>Se você pudesse conquistar UMA coisa importante nos próximos meses, o que seria?</h1><p>Pode ser específico — isso vai moldar sua árvore e seus desafios.</p><div className="form-stack"><label>Meu objetivo<input value={goalTitle} onChange={(e) => setGoalTitle(e.target.value)} placeholder="Ex: comprar meu primeiro carro" /></label></div><button className="gold-button" disabled={!goalTitle.trim()} onClick={() => setStep(4)}>Continuar <ChevronRight/></button></>}
       {step === 4 && <><p className="step-count">05 · 10</p><h1>Esse objetivo envolve dinheiro?</h1><p>Nem toda conquista é financeira — sem problema se não for.</p><div className="choice-grid">{([["financial", "Sim"], ["partial", "Parcialmente"], ["non_financial", "Não"]] as [GoalKind, string][]).map(([value, label]) => <button type="button" className={goalKind === value ? "selected" : ""} onClick={() => setGoalKind(value)} key={value}>{label}</button>)}</div>{needsAmount && <div className="form-stack"><label>Quanto você deseja alcançar?<div className="choice-grid">{(amountsExpanded ? goalAmountPresets : goalAmountPresets.slice(0, 4)).map((amount) => <button type="button" className={goalAmount === amount ? "selected" : ""} onClick={() => setGoalAmount(amount)} key={amount}>R${amount.toLocaleString("pt-BR")}</button>)}</div>{!amountsExpanded && <button type="button" className="choice-grid-more" onClick={() => setShowAllAmounts(true)}>+{goalAmountPresets.length - 4} opções</button>}</label><label>Outro valor<input type="number" min={0} value={goalAmount === "" ? "" : goalAmount} onChange={(e) => setGoalAmount(e.target.value === "" ? "" : Number(e.target.value))} placeholder="R$" /></label></div>}<button className="gold-button" disabled={!goalKind || (needsAmount && goalAmount === "")} onClick={() => setStep(5)}>Continuar <ChevronRight/></button></>}
       {step === 5 && <><p className="step-count">06 · 10</p><h1>Como você se sente hoje em relação a esse objetivo?</h1><div className="choice-grid">{stageOptions.map(([value, label]) => <button type="button" className={goalStage === value ? "selected" : ""} onClick={() => setGoalStage(value)} key={value}>{label}</button>)}</div><button className="gold-button" disabled={!goalStage} onClick={() => setStep(6)}>Continuar <ChevronRight/></button></>}

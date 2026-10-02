@@ -5,6 +5,8 @@ export const profiles = sqliteTable("profiles", {
   deviceId: text("device_id").primaryKey(),
   name: text("name").notNull(),
   birthDate: text("birth_date").notNull(),
+  birthTime: text("birth_time"),
+  birthPlace: text("birth_place"),
   sign: text("sign").notNull(),
   objective: text("objective").notNull(),
   intention: text("intention").notNull().default(""),

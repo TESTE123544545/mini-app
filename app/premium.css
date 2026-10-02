@@ -574,3 +574,16 @@ body .sign-hero-card{position:relative;overflow:hidden;isolation:isolate}
 .admin-achievements__list>div.is-granted{border-color:rgba(225,197,141,0.4);background:rgba(225,197,141,0.063)}
 .admin-achievements__list span{color:#131f3a;font-size:.88rem}
 .admin-achievements__list button{min-height:36px;padding:0 12px;width:auto;font-size:.78rem}
+
+/* First-run tutorial dialog. */
+.tutorial-dialog{max-width:400px!important;text-align:center}
+.tutorial-icon{width:56px;height:56px;margin:0 auto 6px;display:grid;place-items:center;border-radius:999px;background:rgba(217,178,106,.16);color:var(--studio-gold,#b88f45)}
+.tutorial-icon svg{width:26px;height:26px}
+.tutorial-dialog [data-slot=dialog-header]{align-items:center;text-align:center}
+.tutorial-dots{display:flex;justify-content:center;gap:6px;margin:6px 0 4px}
+.tutorial-dots i{width:7px;height:7px;border-radius:999px;background:rgba(120,120,140,.35);transition:width .25s,background-color .25s}
+.tutorial-dots i.is-current{width:20px;background:var(--studio-gold,#b88f45)}
+.tutorial-dialog .gold-button{width:100%;margin-top:10px}
+.tutorial-skip{display:block;margin:10px auto 0;padding:6px;border:0;background:none;color:inherit;opacity:.7;font:inherit;font-size:.85rem;cursor:pointer}
+.tutorial-skip:hover{opacity:1}
+@media (prefers-reduced-motion:reduce){.tutorial-dots i{transition:none}}
