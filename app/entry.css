@@ -137,7 +137,7 @@ html:has(.entry),body:has(.entry){background:#070f24}
 .entry-input>svg{width:18px;height:18px;color:var(--entry-gold-deep)}
 .entry-input input{min-width:0;height:50px;border:0;outline:0;background:transparent;color:var(--entry-ink);font:inherit;font-size:1rem;font-weight:500}
 .entry-input input::placeholder{color:var(--entry-ink-3)}
-.entry-input:focus-within input:focus-visible{outline:0}
+:root .entry .entry-input:focus-within input:focus-visible{outline:0}
 .entry-input button{width:40px;height:40px;display:grid;place-items:center;border:0;border-radius:999px;background:transparent;color:var(--entry-ink-2);cursor:pointer}
 .entry-input button:hover{background:rgba(217,178,106,.1)}
 .entry-input button svg{width:18px;height:18px}
