@@ -4,7 +4,8 @@ import { getDb } from "@/db";
 import { translations } from "@/db/schema";
 import { hashToken } from "@/lib/auth";
 import { LANG_CODES, languageEnglishName } from "@/lib/i18n";
-import { OpenRouterError, translateTexts } from "@/lib/openrouter";
+import { OpenRouterError } from "@/lib/openrouter";
+import { translateBatch } from "@/lib/translate";
 import { enforceRateLimit, readJsonBody, RequestError, secureErrorResponse } from "@/lib/security";
 
 // Anyone can reach this (the welcome screen is translated before sign-in), so it is bounded three ways:
@@ -36,7 +37,7 @@ export async function POST(request: Request) {
       const [{ n }] = await db.select({ n: sql<number>`count(*)` }).from(translations).where(gt(translations.createdAt, new Date(Date.now() - 86_400_000).toISOString()));
       if (Number(n) + missing.length > NEW_STRINGS_PER_DAY) throw new RequestError("A tradução automática está indisponível agora. Tente mais tarde.", 503);
       const sources = missing.map((key) => texts[keys.indexOf(key)]);
-      const done = await translateTexts(languageEnglishName(lang), sources);
+      const done = await translateBatch(languageEnglishName(lang), sources);
       const now = new Date().toISOString();
       const rows = missing.map((key, index) => ({ key, lang, text: done[index], createdAt: now }));
       for (let start = 0; start < rows.length; start += ROWS_PER_INSERT) await db.insert(translations).values(rows.slice(start, start + ROWS_PER_INSERT)).onConflictDoNothing();

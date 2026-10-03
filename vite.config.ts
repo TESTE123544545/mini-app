@@ -21,6 +21,8 @@ const localBindingConfig = {
   triggers: { crons: ["10 3,9,15,21 * * *", "*/15 * * * *"] },
   compatibility_flags: ["nodejs_compat"],
   routes: ["veiasdasintonia.com.br/*", "www.veiasdasintonia.com.br/*"],
+  // Workers AI: machine translation of the interface (lib/translate.ts), on the account's free daily allowance.
+  ai: { binding: "AI" },
   d1_databases: d1
     ? [
         {

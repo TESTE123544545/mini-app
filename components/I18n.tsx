@@ -15,7 +15,7 @@ const SKIP_TAGS = new Set(["SCRIPT", "STYLE", "NOSCRIPT", "TEXTAREA", "CODE", "P
 const ATTRS = ["placeholder", "aria-label", "title", "alt"];
 const OPT_OUT = '[translate="no"],.notranslate,[contenteditable="true"]';
 const MAX_TEXT = 1500;
-const BATCH_ITEMS = 50;
+const BATCH_ITEMS = 30;
 const BATCH_CHARS = 8000;
 const SAFETY_MS = 1800;
 
