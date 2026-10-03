@@ -7,6 +7,7 @@ import { hasPremium } from "@/lib/plan";
 import { containsAbusiveLanguage } from "@/lib/moderation";
 import { generateChatReply, OpenRouterError } from "@/lib/openrouter";
 import { skyContextForChat } from "@/lib/sky";
+import { LANG_CODES, languageEnglishName } from "@/lib/i18n";
 import { enforceRateLimit, readJsonBody, RequestError, secureErrorResponse, suspendFor } from "@/lib/security";
 
 const ABUSE_SUSPENSION_SECONDS = 4 * 60;
@@ -15,6 +16,7 @@ const MAX_STORED_MESSAGES = 40;
 const bodySchema = z.object({
   threadId: z.number().int().positive().optional(),
   message: z.string().trim().min(1).max(2000),
+  lang: z.enum(LANG_CODES).optional(),
 }).strict();
 
 type StoredMessage = { role: "user" | "assistant"; content: string };
@@ -57,6 +59,7 @@ export async function POST(request: Request) {
     const reply = await generateChatReply(
       { sign: profile.sign, objective: profile.objective, intention: profile.intention, sky: await skyContextForChat(profile.sign) },
       [...history, { role: "user", content: parsed.data.message }],
+      parsed.data.lang && parsed.data.lang !== "pt" ? languageEnglishName(parsed.data.lang) : undefined,
     );
 
     const nextMessages: StoredMessage[] = [

@@ -27,7 +27,8 @@ export default function PrivacyPage() {
         <p><strong>Conversas com a IA:</strong> as mensagens que você escreve no chat e as respostas, para manter o histórico das suas conversas.</p>
         <p><strong>Diagnóstico:</strong> as respostas do diagnóstico ficam guardadas no seu próprio aparelho.</p>
         <p><strong>Pagamentos:</strong> o pagamento é feito pelo Stripe; nós não recebemos nem guardamos os dados do seu cartão — apenas o status da sua assinatura.</p>
-        <p><strong>Uso do app e visitas:</strong> registramos ações dentro do app (por exemplo, “missão concluída”) e contamos visitas às páginas. A contagem de visitas não usa cookies e não guarda o seu endereço IP: usamos um código que muda todos os dias e não permite identificar você.</p></section>
+        <p><strong>Uso do app e visitas:</strong> registramos ações dentro do app (por exemplo, “missão concluída”) e contamos visitas às páginas. A contagem de visitas não usa cookies e não guarda o seu endereço IP: usamos um código que muda todos os dias e não permite identificar você.</p>
+        <p><strong>Tradução automática:</strong> se você usa o app em outro idioma que não o português, os textos do próprio app que aparecem na tela são enviados a um serviço de inteligência artificial para serem traduzidos e as traduções ficam guardadas para todos os usuários, sem ligação com você. O que você mesmo escreve (nome, metas, diário, conversas) não é enviado para esse fim; já os textos que o app gera a partir da sua jornada, como o relatório semanal, podem ser.</p></section>
 
       <section className="zodiac-section"><h2>3. Para que usamos e com qual base legal</h2>
         <p><strong>Prestar o serviço</strong> (criar e manter sua conta, gerar suas leituras, missões e relatórios, guardar sua jornada): execução do contrato com você (art. 7º, V).</p>

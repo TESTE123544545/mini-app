@@ -1,0 +1,21 @@
+/* Translated app: no flash of Portuguese while the first strings load, and right-to-left support. */
+html[data-i18n=loading] body{visibility:hidden}
+
+[dir=rtl] body{text-align:start}
+[dir=rtl] svg.lucide-arrow-right,[dir=rtl] svg.lucide-arrow-left,[dir=rtl] svg.lucide-chevron-right,[dir=rtl] svg.lucide-chevron-left{transform:scaleX(-1)}
+
+/* Language picker. */
+.lang-toggle{display:inline-flex;align-items:center;gap:6px;min-height:38px;padding:0 12px;border:1px solid var(--entry-line,rgba(120,120,140,.35));border-radius:999px;background:transparent;color:inherit;font:inherit;font-size:.72rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
+.lang-toggle svg{width:16px;height:16px}
+.lang-toggle:hover{background:rgba(217,178,106,.12)}
+.lang-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:6px}
+.lang-grid button{min-height:44px;padding:0 12px;border:1px solid rgba(120,120,140,.3);border-radius:12px;background:transparent;color:inherit;font:inherit;font-size:.92rem;font-weight:600;text-align:start;cursor:pointer}
+.lang-grid button[aria-checked=true]{border-color:#d9b26a;background:rgba(217,178,106,.16);color:inherit}
+.lang-grid button:hover{background:rgba(217,178,106,.1)}
+.lang-note{margin:10px 0 0;font-size:.8rem;opacity:.7}
+html[data-i18n=loading] body{animation:vds-reveal 0s 3s forwards}
+@keyframes vds-reveal{to{visibility:visible}}
+
+/* Arabic joins its letters: any letter-spacing breaks the words apart. */
+html[lang=ar] *{letter-spacing:normal!important}
+html[lang=ar] .entry-pill{font-size:.9rem}

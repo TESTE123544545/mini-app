@@ -107,6 +107,14 @@ export const securityEvents = sqliteTable("security_events", {
   createdAt: text("created_at").notNull(),
 }, (table) => [index("security_events_created_at_idx").on(table.createdAt)]);
 
+/** Machine translations of interface text, shared by every visitor (key = hash of language + source text). */
+export const translations = sqliteTable("translations", {
+  key: text("key").primaryKey(),
+  lang: text("lang").notNull(),
+  text: text("text").notNull(),
+  createdAt: text("created_at").notNull(),
+}, (table) => [index("translations_created_at_idx").on(table.createdAt)]);
+
 export const goals = sqliteTable("goals", {
   id: integer("id").primaryKey(),
   deviceId: text("device_id").notNull().references(() => profiles.deviceId, { onDelete: "cascade" }),

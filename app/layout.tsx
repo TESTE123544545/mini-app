@@ -7,9 +7,12 @@ import "./studio.css";
 import "./entry.css";
 import "./dark.css";
 import "./celestial.css";
+import "./i18n.css";
 import { PwaRegister } from "./pwa-register";
 import { headers } from "next/headers";
 import { COLOR_MODE_BOOT } from "@/lib/colorModeBoot";
+import { LANG_BOOT } from "@/lib/i18n";
+import { I18n } from "@/components/I18n";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://veiasdasintonia.com.br"),
@@ -134,6 +137,8 @@ export default async function RootLayout({
       <head>
         {/* Applies the saved light/dark choice before the first paint. */}
         <script nonce={nonce} dangerouslySetInnerHTML={{ __html: COLOR_MODE_BOOT }} />
+        {/* Picks the saved or browser language (lang, dir) before the first paint. */}
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: LANG_BOOT }} />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -145,6 +150,7 @@ export default async function RootLayout({
         <link rel="preload" href="/fonts/cinzel-latin.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
         {children}
         <PwaRegister />
+        <I18n />
       </body>
     </html>
   );

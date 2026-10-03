@@ -10,7 +10,7 @@ export type RegisterSeed = { name: string; birthDate: string; birthTime: string;
 type Step = "name" | "date" | "time" | "place" | "reveal" | "email" | "password";
 const STEPS: Step[] = ["name", "date", "time", "place", "reveal", "email", "password"];
 
-const COPY: Record<Step, { title: string; lede: string }> = {
+const COPY: Record<Step, { title: React.ReactNode; lede: string }> = {
   name: { title: "Como podemos chamar você?", lede: "Vamos montar o seu mapa de prosperidade, uma pergunta por vez." },
   date: { title: "Qual é a sua data de nascimento?", lede: "Com ela descobrimos a sua idade e o seu signo." },
   time: { title: "Que horas você nasceu?", lede: "Se não souber o horário exato, tudo bem: um palpite ou pular funciona." },
@@ -70,7 +70,7 @@ export function RegisterWizard({ onRegister, onLogin }: { onRegister: (data: { e
   }
 
   const copy = step === "reveal"
-    ? { title: `Prazer, ${firstName}.`, lede: "Veja o que a sua data de nascimento já nos conta. Falta só criar o seu acesso." }
+    ? { title: <>Prazer, <span translate="no">{firstName}</span>.</>, lede: "Veja o que a sua data de nascimento já nos conta. Falta só criar o seu acesso." }
     : COPY[step];
 
   return <section className="entry-panel" aria-labelledby="entry-auth-title">
@@ -101,7 +101,7 @@ export function RegisterWizard({ onRegister, onLogin }: { onRegister: (data: { e
       {step === "reveal" && sign && age !== null && <div className="entry-reveal">
         <span>{age} {age === 1 ? "ano" : "anos"}</span>
         <strong>Signo de {sign}</strong>
-        <small>{[birthTime && `nascido(a) às ${birthTime}`, birthPlace.trim() && `em ${birthPlace.trim()}`].filter(Boolean).join(" ") || "Sua leitura diária parte daqui."}</small>
+        <small>{birthTime || birthPlace.trim() ? <>{birthTime && `nascido(a) às ${birthTime}`}{birthTime && birthPlace.trim() ? " " : ""}{birthPlace.trim() && <>em <span translate="no">{birthPlace.trim()}</span></>}</> : "Sua leitura diária parte daqui."}</small>
       </div>}
 
       {step === "email" && <label className="entry-field">E-mail<span className="entry-input"><Mail aria-hidden="true"/><input type="email" name="email" autoComplete="username" autoFocus value={email} onChange={edit(setEmail)} placeholder="voce@email.com"/></span></label>}

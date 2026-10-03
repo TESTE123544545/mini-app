@@ -31,7 +31,7 @@ export function ProsperityProfile({ profileId }: { profileId: ProfileId }) {
   const profile = PROFILES[profileId];
   return <div className="diag-profile">
     <p className="eyebrow">Seu perfil de prosperidade</p>
-    <h3>{profile.name}</h3>
+    <h3 translate="no">{profile.name}</h3>
     <p className="diag-profile__tagline">{profile.tagline}</p>
     <p>{profile.description}</p>
   </div>;
