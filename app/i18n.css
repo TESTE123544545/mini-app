@@ -19,3 +19,8 @@ html[data-i18n=loading] body{animation:vds-reveal 0s 3s forwards}
 /* Arabic joins its letters: any letter-spacing breaks the words apart. */
 html[lang=ar] *{letter-spacing:normal!important}
 html[lang=ar] .entry-pill{font-size:.9rem}
+
+/* The app header is already full on a phone: the language lives in Perfil there (and on the welcome/sign-in screens). */
+.lang-toggle--compact span{display:none}
+.lang-toggle--compact{width:40px;padding:0;justify-content:center}
+@media (max-width:480px){.lang-toggle--compact{display:none}}
