@@ -1,5 +1,7 @@
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
+import { runWorkersAi } from "@/lib/workersAi";
+
 export class OpenRouterError extends Error {}
 
 const SYSTEM_PROMPT = `Você escreve o resumo semanal do app de autoconhecimento e hábitos "Veias da Sintonia".
@@ -98,6 +100,21 @@ async function callOpenRouterRaw(messages: ChatTurn[], maxTokens: number, jsonMo
   return raw;
 }
 
+/** The features a person is waiting on (chat, report, goal steps): Cloudflare's own AI first, OpenRouter only as a fallback. */
+async function callInteractive(messages: ChatTurn[], maxTokens: number, jsonMode: boolean, temperature = 0.7): Promise<string> {
+  return (await runWorkersAi(messages, maxTokens, temperature)) ?? callOpenRouterRaw(messages, maxTokens, jsonMode, temperature);
+}
+
+/** JSON from a model reply, tolerating a code fence or a sentence around it. */
+function parseLoose(raw: string): unknown {
+  try { return JSON.parse(raw); } catch { /* try the braces */ }
+  try { return JSON.parse(raw.slice(raw.indexOf("{"), raw.lastIndexOf("}") + 1)); } catch { throw new OpenRouterError("A resposta da IA não veio em formato válido."); }
+}
+
+async function callInteractiveJson(systemPrompt: string, userPrompt: string, maxTokens: number): Promise<unknown> {
+  return parseLoose(await callInteractive([{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }], maxTokens, true));
+}
+
 async function callOpenRouterJson(systemPrompt: string, userPrompt: string, maxTokens: number, temperature?: number, modelOverride?: string): Promise<unknown> {
   const raw = await callOpenRouterRaw([{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }], maxTokens, true, temperature, modelOverride);
   try {
@@ -108,7 +125,7 @@ async function callOpenRouterJson(systemPrompt: string, userPrompt: string, maxT
 }
 
 export async function generateWeeklyReportText(input: WeeklyReportInput): Promise<{ summary: string; recommendation: string }> {
-  const parsed = await callOpenRouterJson(SYSTEM_PROMPT, buildUserPrompt(input), 300);
+  const parsed = await callInteractiveJson(SYSTEM_PROMPT, buildUserPrompt(input), 400);
   if (!isGeneratedReport(parsed)) throw new OpenRouterError("A resposta da IA veio incompleta.");
   return { summary: parsed.summary.trim().slice(0, 600), recommendation: parsed.recommendation.trim().slice(0, 400) };
 }
@@ -147,7 +164,7 @@ function isGeneratedSteps(value: unknown): value is { steps: string[] } {
 }
 
 export async function generateGoalSteps(input: GoalStepsInput): Promise<string[]> {
-  const parsed = await callOpenRouterJson(GOAL_STEPS_SYSTEM_PROMPT, buildGoalStepsPrompt(input), 400);
+  const parsed = await callInteractiveJson(GOAL_STEPS_SYSTEM_PROMPT, buildGoalStepsPrompt(input), 500);
   if (!isGeneratedSteps(parsed)) throw new OpenRouterError("A resposta da IA veio incompleta.");
   return parsed.steps.slice(0, 7).map((step) => step.trim().slice(0, 160));
 }
@@ -176,7 +193,7 @@ export async function generateChatReply(context: { sign: string; objective: stri
     content: `Contexto da pessoa — signo: ${oneLine(context.sign, 40)}; objetivo: ${oneLine(context.objective, 80)}; intenção pessoal: ${oneLine(context.intention) || "não informada"}.`,
   };
   const trimmedHistory = history.slice(-20).map((turn): ChatTurn => ({ role: turn.role, content: turn.content.slice(0, 2000) }));
-  const raw = await callOpenRouterRaw(
+  const raw = await callInteractive(
     [{ role: "system", content: CHAT_SYSTEM_PROMPT }, contextLine, ...(context.sky ? [{ role: "system" as const, content: context.sky }] : []), ...(language ? [{ role: "system" as const, content: `Reply in ${language}, in the same tone, even though the rules above are written in Portuguese. For crisis situations, point to local emergency services or a crisis line in the person's country.` }] : []), ...trimmedHistory],
     350,
     false,
