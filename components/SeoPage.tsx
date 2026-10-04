@@ -1,3 +1,4 @@
+import { safeJsonLd } from "@/lib/jsonLd";
 import Link from "next/link";
 import { BrandLockup } from "@/components/BrandLockup";
 import { ColorModeToggle } from "@/components/ColorModeToggle";
@@ -44,7 +45,7 @@ export function articleJsonLd({ headline, description, path, datePublished = "20
 export function SeoPage({ crumbs, jsonLd, children }: { crumbs: Crumb[]; jsonLd: object[]; children: React.ReactNode }) {
   const all = [{ name: "Início", href: "/" }, ...crumbs];
   return <main className="zodiac-page">
-    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify([...jsonLd, breadcrumbJsonLd(all)]) }}/>
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd([...jsonLd, breadcrumbJsonLd(all)]) }}/>
     <div className="zodiac-shell">
       <nav className="zodiac-nav">
         <Link href="/" aria-label="Veias da Sintonia — início"><BrandLockup/></Link>

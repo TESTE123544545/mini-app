@@ -1,3 +1,4 @@
+import { safeJsonLd } from "@/lib/jsonLd";
 import type { Metadata } from "next";
 import Link from "next/link";
 import "./signos.css";
@@ -47,7 +48,7 @@ export default async function ZodiacIndexPage() {
 
   return (
     <main className="zodiac-page">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }} />
       <div className="zodiac-shell">
         <nav className="zodiac-nav">
           <Link href="/" aria-label="Veias da Sintonia — início"><BrandLockup/></Link>

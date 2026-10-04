@@ -69,3 +69,6 @@ next-env.d.ts
 /app-nativo/android/build/
 /app-nativo/android/local.properties
 /app-nativo/android/capacitor-cordova-android-plugins/build/
+
+# local security audit notes: never commit (the repository is public)
+security_best_practices_report.md
