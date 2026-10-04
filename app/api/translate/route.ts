@@ -3,7 +3,7 @@ import { z } from "zod";
 import { getDb } from "@/db";
 import { translations } from "@/db/schema";
 import { hashToken } from "@/lib/auth";
-import { LANG_CODES, languageEnglishName } from "@/lib/i18n";
+import { LANG_CODES, languageEnglishName, TRANSLATION_VERSION } from "@/lib/i18n";
 import { OpenRouterError } from "@/lib/openrouter";
 import { translateBatch } from "@/lib/translate";
 import { enforceRateLimit, readJsonBody, RequestError, secureErrorResponse } from "@/lib/security";
@@ -26,10 +26,10 @@ export async function POST(request: Request) {
     const { lang, texts } = parsed.data;
     if (lang === "pt") return Response.json({ translations: texts });
     if (texts.reduce((total, text) => total + text.length, 0) > MAX_BATCH_CHARS) throw new RequestError("Lote grande demais.", 413);
-    await enforceRateLimit(request, "translate", "batch", 40, 60);
+    await enforceRateLimit(request, "translate", "batch", 120, 60);
 
     const db = getDb();
-    const keys = await Promise.all(texts.map((text) => hashToken(`${lang}\n${text}`)));
+    const keys = await Promise.all(texts.map((text) => hashToken(`${TRANSLATION_VERSION}\n${lang}\n${text}`)));
     const known = new Map((await db.select().from(translations).where(inArray(translations.key, [...new Set(keys)]))).map((row) => [row.key, row.text]));
 
     const missing = [...new Set(keys.filter((key) => !known.has(key)))];

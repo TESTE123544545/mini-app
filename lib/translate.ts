@@ -3,7 +3,7 @@ import { cleanTranslation, OpenRouterError, translatePrompt, translateTexts as t
 
 /**
  * Interface translation. Workers AI (the account's own free daily allowance, no extra key) goes first;
- * OpenRouter, which needs paid credits, is the fallback when the binding is missing or fails.
+ * OpenRouter, which needs paid credits, is the fallback when the binding is missing.
  * Gemma 4 with its "thinking" switched off: fast (1-6 s per batch) and accurate across all our languages.
  */
 const WORKERS_AI_MODEL = "@cf/google/gemma-4-26b-a4b-it";
@@ -32,10 +32,10 @@ function toStrings(answer: unknown, count: number): string[] | null {
   return strings.every((item) => item !== null) ? (strings as string[]) : null;
 }
 
-async function translateWithWorkersAi(ai: AiBinding, language: string, texts: string[]): Promise<string[]> {
+async function translateWithWorkersAi(ai: AiBinding, language: string, texts: string[], force: boolean): Promise<string[]> {
   const size = texts.reduce((total, text) => total + text.length, 0);
   const result = await ai.run(WORKERS_AI_MODEL, {
-    messages: [{ role: "system", content: translatePrompt(language) }, { role: "user", content: JSON.stringify({ texts }) }],
+    messages: [{ role: "system", content: translatePrompt(language, force) }, { role: "user", content: JSON.stringify({ texts: texts.map(soften) }) }],
     max_tokens: Math.min(8000, 500 + size * 3),
     temperature: 0.2,
     chat_template_kwargs: { enable_thinking: false },
@@ -48,10 +48,47 @@ async function translateWithWorkersAi(ai: AiBinding, language: string, texts: st
   return strings.map((item, index) => cleanTranslation(item, texts[index]));
 }
 
-export async function translateBatch(language: string, texts: string[]): Promise<string[]> {
+/**
+ * The app's own section names are capitalised in the Portuguese text, which makes the model treat them as
+ * proper nouns and leave them untranslated ("o seu Jornada"). Lower-cased, they are ordinary words again.
+ */
+const SECTION_WORDS = /\b(Jornada|Ritual|Perfil|Árvore|Diário|Missão|Raízes|Momento|Signos|Início|Conquistas)\b/g;
+const soften = (text: string) => text.replace(SECTION_WORDS, (word) => word.toLowerCase());
+
+/** Names the model is right to leave alone. */
+const KEEP = /^(Veias da Sintonia|Sintonia|Premium|XP)$/i;
+/** Scripts without accented Latin letters: any ã, ç, é… in the answer is Portuguese the model left behind. */
+const NON_LATIN = new Set(["Japanese", "Simplified Chinese", "Korean", "Arabic", "Hindi", "Thai", "Russian"]);
+const BRANDS = /Veias da Sintonia|Sintonia|Premium/g;
+const stillPortuguese = (language: string, source: string, out: string) =>
+  (out === source && /\p{L}{3,}/u.test(source) && !KEEP.test(source.trim()))
+  || (NON_LATIN.has(language) && (/[ãõçáàâéêíóôú]/i.test(out.replace(BRANDS, "")) || (source.replace(BRANDS, "").match(/[A-Za-zÀ-ú]{4,}/g) ?? []).some((word) => out.toLowerCase().includes(word.toLowerCase()))));
+
+async function once(language: string, texts: string[], force = false): Promise<string[]> {
   const ai = (env as unknown as { AI?: AiBinding }).AI;
-  if (ai) {
-    try { return await translateWithWorkersAi(ai, language, texts); } catch (error) { console.error("workers_ai_translate_failed", error instanceof Error ? error.message : error); }
+  return ai ? translateWithWorkersAi(ai, language, texts, force) : translateWithOpenRouter(language, texts);
+}
+
+/**
+ * A batch the model answers badly (wrong count) is split in halves until each piece lines up, so one
+ * bad answer never costs the other strings; items it hands back unchanged get a second, firmer try.
+ */
+export async function translateBatch(language: string, texts: string[]): Promise<string[]> {
+  let result: string[];
+  try {
+    result = await once(language, texts);
+  } catch (error) {
+    if (texts.length === 1) throw error;
+    const middle = Math.ceil(texts.length / 2);
+    const [left, right] = await Promise.all([translateBatch(language, texts.slice(0, middle)), translateBatch(language, texts.slice(middle))]);
+    return [...left, ...right];
   }
-  return translateWithOpenRouter(language, texts);
+  const retry = result.flatMap((out, index) => (stillPortuguese(language, texts[index], out) ? [index] : []));
+  if (retry.length) {
+    try {
+      const fixed = await once(language, retry.map((index) => texts[index]), true);
+      retry.forEach((index, position) => { result[index] = fixed[position]; });
+    } catch { /* keep what we have: it is still better than nothing */ }
+  }
+  return result;
 }

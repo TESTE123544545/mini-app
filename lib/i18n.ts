@@ -24,6 +24,8 @@ export type LangCode = (typeof LANGUAGES)[number]["code"];
 export const LANG_CODES = LANGUAGES.map((language) => language.code) as unknown as readonly [LangCode, ...LangCode[]];
 export const DEFAULT_LANG: LangCode = "pt";
 export const LANG_STORAGE_KEY = "vds-lang";
+/** Bump when the translation prompt changes: older cached translations (server and browser) are then ignored. */
+export const TRANSLATION_VERSION = "5";
 const RTL: readonly string[] = ["ar"];
 
 /** Search and preview crawlers keep seeing the Portuguese page: it is the one that is indexed. */

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { type LangCode } from "@/lib/i18n";
+import { TRANSLATION_VERSION, type LangCode } from "@/lib/i18n";
 import { paintLanguage, useLanguage } from "@/lib/language";
 
 /**
@@ -30,12 +30,13 @@ const pending = new Set<string>();
 const requested = new Set<string>();
 const failedUntil = new Map<string, number>();
 let inflight = 0;
+let retries = 0;
 let flushTimer = 0;
 let scanTimer = 0;
 let persistTimer = 0;
 const dirty = new Map<Node, boolean>();
 
-const storageKey = (code: string) => `vds-i18n:${code}`;
+const storageKey = (code: string) => `vds-i18n${TRANSLATION_VERSION}:${code}`;
 
 function loadCache(code: LangCode) {
   try { return new Map<string, string>(JSON.parse(localStorage.getItem(storageKey(code)) ?? "[]")); } catch { return new Map<string, string>(); }
@@ -152,9 +153,12 @@ async function send(code: LangCode, batch: string[]) {
     if (code !== lang) return;
     batch.forEach((key, index) => { if (typeof translations[index] === "string" && translations[index]) cache.set(key, translations[index]); });
     persist(code);
+    retries = 0;
     scanSoon(document.body, true);
   } catch {
     batch.forEach((key) => failedUntil.set(key, Date.now() + 30_000));
+    // A busy or failed request is asked again once its pause is over, a few times, instead of staying in Portuguese.
+    if (retries < 4) { retries += 1; window.setTimeout(() => { if (code === lang) scanSoon(document.body, true); }, 31_000); }
   } finally {
     batch.forEach((key) => requested.delete(key));
   }
@@ -186,6 +190,7 @@ function start(code: LangCode) {
   cache = loadCache(lang);
   pending.clear();
   requested.clear();
+  retries = 0;
   if (lang === "pt") root.removeAttribute("data-i18n");
   const safety = window.setTimeout(() => root.removeAttribute("data-i18n"), SAFETY_MS);
 
