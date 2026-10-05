@@ -1,6 +1,6 @@
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
-import { runWorkersAi } from "@/lib/workersAi";
+import { runWorkersAi, streamWorkersAi } from "@/lib/workersAi";
 
 export class OpenRouterError extends Error {}
 
@@ -187,21 +187,35 @@ Responda só com texto corrido, como uma fala direta para a pessoa — sem JSON,
 
 export type ChatMessage = { role: "user" | "assistant"; content: string };
 
-export async function generateChatReply(context: { sign: string; objective: string; intention: string; sky?: string | null }, history: ChatMessage[], language?: string): Promise<string> {
+type ChatContext = { sign: string; objective: string; intention: string; sky?: string | null };
+
+function chatMessages(context: ChatContext, history: ChatMessage[], language?: string): ChatTurn[] {
   const contextLine: ChatTurn = {
     role: "system",
     content: `Contexto da pessoa — signo: ${oneLine(context.sign, 40)}; objetivo: ${oneLine(context.objective, 80)}; intenção pessoal: ${oneLine(context.intention) || "não informada"}.`,
   };
   const trimmedHistory = history.slice(-20).map((turn): ChatTurn => ({ role: turn.role, content: turn.content.slice(0, 2000) }));
-  const raw = await callInteractive(
-    [{ role: "system", content: CHAT_SYSTEM_PROMPT }, contextLine, ...(context.sky ? [{ role: "system" as const, content: context.sky }] : []), ...(language ? [{ role: "system" as const, content: `Reply in ${language}, in the same tone, even though the rules above are written in Portuguese. For crisis situations, point to local emergency services or a crisis line in the person's country.` }] : []), ...trimmedHistory],
-    350,
-    false,
-  );
+  return [{ role: "system", content: CHAT_SYSTEM_PROMPT }, contextLine, ...(context.sky ? [{ role: "system" as const, content: context.sky }] : []), ...(language ? [{ role: "system" as const, content: `Reply in ${language}, in the same tone, even though the rules above are written in Portuguese. For crisis situations, point to local emergency services or a crisis line in the person's country.` }] : []), ...trimmedHistory];
+}
+
+/** The reply as sent to the person: bounded, and never the instructions themselves. */
+export function finalizeChatReply(raw: string) {
   const reply = raw.trim().slice(0, 1200);
   // If the model was talked into reciting its instructions, send a neutral line instead.
   if (reply.includes("Regras inegociáveis") || reply.includes(`Você se chama ${CHAT_ASSISTANT_NAME}`)) return "Prefiro seguir conversando sobre a sua jornada. Como você está agora?";
   return reply;
+}
+
+export async function generateChatReply(context: ChatContext, history: ChatMessage[], language?: string): Promise<string> {
+  return finalizeChatReply(await callInteractive(chatMessages(context, history, language), 350, false));
+}
+
+/** The reply in pieces, as the model writes it (Workers AI); one single piece when only the fallback is available. */
+export async function* chatReplyPieces(context: ChatContext, history: ChatMessage[], language?: string): AsyncGenerator<string> {
+  const messages = chatMessages(context, history, language);
+  let any = false;
+  for await (const piece of streamWorkersAi(messages, 350, 0.7)) { any = true; yield piece; }
+  if (!any) yield await callOpenRouterRaw(messages, 350, false);
 }
 
 const SKY_ADAPT_RULES = `Você adapta textos de astrologia do inglês para o português do Brasil para o app de autoconhecimento e hábitos "Veias da Sintonia".

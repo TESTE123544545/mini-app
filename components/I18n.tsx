@@ -13,7 +13,7 @@ import { paintLanguage, useLanguage } from "@/lib/language";
 
 const SKIP_TAGS = new Set(["SCRIPT", "STYLE", "NOSCRIPT", "TEXTAREA", "CODE", "PRE", "TITLE"]);
 const ATTRS = ["placeholder", "aria-label", "title", "alt"];
-const OPT_OUT = '[translate="no"],.notranslate,[contenteditable="true"]';
+const OPT_OUT = '[translate="no"],.notranslate,[contenteditable="true"],ins.adsbygoogle,.google-auto-placed,[data-adsbygoogle-status]';
 const MAX_TEXT = 1500;
 const BATCH_ITEMS = 30;
 const BATCH_CHARS = 8000;
@@ -167,7 +167,7 @@ async function send(code: LangCode, batch: string[]) {
 function flush() {
   flushTimer = 0;
   if (lang === "pt") { pending.clear(); return; }
-  while (pending.size && inflight < 2) {
+  while (pending.size && inflight < 4) {
     const batch: string[] = [];
     let chars = 0;
     for (const key of pending) {

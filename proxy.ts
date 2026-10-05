@@ -5,17 +5,25 @@ import { isLoopbackHost } from "@/lib/hosts";
 // Scripts run only from this origin or when they carry this request's nonce: no inline script
 // an attacker manages to inject can execute. vinext reads the nonce from this header and stamps
 // it on its own bootstrap scripts; the layout stamps it on the colour-mode script.
-const contentSecurityPolicy = (nonce: string) => [
+//
+// The public content pages (signs, daily horoscope) also carry Google AdSense. Only those pages get the
+// wider policy below: a script with the nonce may load the scripts it needs (strict-dynamic), and Google's
+// ad frames, images and beacons are allowed. The signed-in app keeps the strict policy and never loads ads.
+const ADS_PAGES = /^\/(signos|horoscopo-do-dia)(\/|$)/;
+const GOOGLE_ADS_HOSTS = "https://*.google.com https://*.google.com.br https://*.googlesyndication.com https://*.doubleclick.net https://*.googleadservices.com https://*.adtrafficquality.google https://*.googletagservices.com";
+
+const contentSecurityPolicy = (nonce: string, ads: boolean) => [
   "default-src 'self'",
   "base-uri 'self'",
   "object-src 'none'",
   "frame-ancestors 'none'",
   "form-action 'self'",
-  `script-src 'self' 'nonce-${nonce}'`,
+  ads ? `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https:` : `script-src 'self' 'nonce-${nonce}'`,
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob:",
+  ads ? "img-src 'self' data: blob: https:" : "img-src 'self' data: blob:",
   "font-src 'self' data:",
-  "connect-src 'self'",
+  ads ? `connect-src 'self' ${GOOGLE_ADS_HOSTS}` : "connect-src 'self'",
+  ...(ads ? [`frame-src ${GOOGLE_ADS_HOSTS}`] : []),
   "media-src 'self' blob:",
   "worker-src 'self' blob:",
   "manifest-src 'self'",
@@ -36,9 +44,12 @@ export function proxy(request: NextRequest) {
   }
 
   const nonce = btoa(crypto.randomUUID());
-  const csp = contentSecurityPolicy(nonce);
+  const ads = ADS_PAGES.test(request.nextUrl.pathname) && request.method === "GET";
+  const csp = contentSecurityPolicy(nonce, ads);
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-nonce", nonce);
+  requestHeaders.delete("x-ads");
+  if (ads) requestHeaders.set("x-ads", "1");
   requestHeaders.set("content-security-policy", csp);
   const response = NextResponse.next({ request: { headers: requestHeaders } });
   response.headers.set("Content-Security-Policy", csp);

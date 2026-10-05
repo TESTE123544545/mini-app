@@ -3,7 +3,7 @@ import { z } from "zod";
 import { getDb } from "../../../db";
 import { achievements, goals, journalEntries, profiles, trailProgress, userProgress, users } from "../../../db/schema";
 import { getSessionUser } from "@/lib/auth";
-import { enforceRateLimit, readJsonBody, RequestError, secureErrorResponse } from "@/lib/security";
+import { enforceFastLimit, readJsonBody, RequestError, secureErrorResponse } from "@/lib/security";
 
 const syncSchema = z.object({
   deviceId: z.string().regex(/^[a-zA-Z0-9-]{16,64}$/),
@@ -43,6 +43,8 @@ const syncSchema = z.object({
     startedAt: z.string().min(1).max(20),
     completedDays: z.array(z.number().int().min(1).max(30)).max(30),
   }).strict().nullable().optional().default(null),
+  // Sections the app already saved and did not change: the server leaves them as they are instead of rewriting them.
+  skip: z.array(z.enum(["goals", "entries", "trail", "achievements"])).max(4).optional().default([]),
 }).strict();
 
 function validDeviceId(value: unknown): value is string {
@@ -111,7 +113,7 @@ export async function POST(request: Request) {
     const payload = parsed.data;
     const user = await getSessionUser(request);
     if (!user) return Response.json({ error: "Entre na sua conta." }, { status: 401 });
-    await enforceRateLimit(request, "sync", user.id, 120, 60);
+    await enforceFastLimit(request, "LIMIT_120", "sync", user.id, 120, 60);
     const requestedDeviceId = payload.deviceId;
     const deviceId = user.primaryDeviceId ?? requestedDeviceId;
     if (!validDeviceId(deviceId)) return Response.json({ error: "deviceId inválido" }, { status: 400 });
@@ -148,21 +150,22 @@ export async function POST(request: Request) {
       lastRitualDate: payload.ritualDone ? (ritualAlreadyCompletedToday ? savedProgress.lastRitualDate : today) : savedProgress?.lastRitualDate ?? null,
       updatedAt: now,
     };
+    const skip = new Set(payload.skip);
     const operations = [
       ...(user.primaryDeviceId ? [] : [db.update(users).set({ primaryDeviceId: deviceId, updatedAt: now }).where(eq(users.id, user.id))]),
       db.insert(profiles).values({ deviceId, ...profileValues }).onConflictDoUpdate({ target: profiles.deviceId, set: profileValues }),
       db.insert(userProgress).values({ deviceId, ...progressValues }).onConflictDoUpdate({ target: userProgress.deviceId, set: progressValues }),
-      db.delete(goals).where(eq(goals.deviceId, deviceId)),
-      ...(payload.goals.length ? [db.insert(goals).values(payload.goals.map((goal) => ({ ...goal, deviceId, status: "active" })))] : []),
-      db.delete(journalEntries).where(eq(journalEntries.deviceId, deviceId)),
-      ...(payload.entries.length ? [db.insert(journalEntries).values(payload.entries.map((entry) => ({ deviceId, entryDate: entry.date, answersJson: JSON.stringify(entry.answers) })))] : []),
-      ...(payload.trail
+      ...(skip.has("goals") ? [] : [db.delete(goals).where(eq(goals.deviceId, deviceId))]),
+      ...(skip.has("goals") || !payload.goals.length ? [] : [db.insert(goals).values(payload.goals.map((goal) => ({ ...goal, deviceId, status: "active" })))]),
+      ...(skip.has("entries") ? [] : [db.delete(journalEntries).where(eq(journalEntries.deviceId, deviceId))]),
+      ...(skip.has("entries") || !payload.entries.length ? [] : [db.insert(journalEntries).values(payload.entries.map((entry) => ({ deviceId, entryDate: entry.date, answersJson: JSON.stringify(entry.answers) })))]),
+      ...(skip.has("trail") ? [] : payload.trail
         ? [db.insert(trailProgress).values({ deviceId, trailId: payload.trail.trailId, startedAt: payload.trail.startedAt, completedDaysJson: JSON.stringify(payload.trail.completedDays), updatedAt: now }).onConflictDoUpdate({ target: trailProgress.deviceId, set: { trailId: payload.trail.trailId, startedAt: payload.trail.startedAt, completedDaysJson: JSON.stringify(payload.trail.completedDays), updatedAt: now } })]
         : [db.delete(trailProgress).where(eq(trailProgress.deviceId, deviceId))]),
       // Exclusive achievements are granted only by the team (app/api/admin/achievements); a client never adds them.
-      ...(earnedAchievements.length
-        ? [db.insert(achievements).values(earnedAchievements.map((key) => ({ deviceId, achievementKey: key }))).onConflictDoNothing()]
-        : []),
+      ...(skip.has("achievements") || !earnedAchievements.length
+        ? []
+        : [db.insert(achievements).values(earnedAchievements.map((key) => ({ deviceId, achievementKey: key }))).onConflictDoNothing()]),
     ];
     await db.batch(operations as unknown as Parameters<typeof db.batch>[0]);
     return Response.json({ saved: true, savedAt: now, deviceId, streak });

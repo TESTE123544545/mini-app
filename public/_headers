@@ -1,0 +1,16 @@
+# Cloudflare Workers Assets: files whose names do not change with their content still get long caches,
+# so a returning visitor stops re-asking for the same images and fonts on every page.
+/fonts/*
+  Cache-Control: public, max-age=31536000, immutable
+/brand/*
+  Cache-Control: public, max-age=2592000, stale-while-revalidate=86400
+/zodiac/*
+  Cache-Control: public, max-age=2592000, stale-while-revalidate=86400
+/app-icon-*
+  Cache-Control: public, max-age=2592000
+/apple-touch-icon.png
+  Cache-Control: public, max-age=2592000
+/favicon.png
+  Cache-Control: public, max-age=2592000
+/og-image.jpg
+  Cache-Control: public, max-age=2592000

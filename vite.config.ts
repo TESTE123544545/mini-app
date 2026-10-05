@@ -23,6 +23,11 @@ const localBindingConfig = {
   routes: ["veiasdasintonia.com.br/*", "www.veiasdasintonia.com.br/*"],
   // Workers AI: machine translation of the interface (lib/translate.ts), on the account's free daily allowance.
   ai: { binding: "AI" },
+  // Edge rate limiters for the busiest endpoints (lib/security.ts enforceFastLimit): no database write per request.
+  ratelimits: [
+    { name: "LIMIT_30", namespace_id: "1001", simple: { limit: 30, period: 60 as const } },
+    { name: "LIMIT_120", namespace_id: "1002", simple: { limit: 120, period: 60 as const } },
+  ],
   d1_databases: d1
     ? [
         {

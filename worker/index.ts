@@ -27,9 +27,49 @@ function withNetwork(request: Request) {
   return new Request(request, { headers });
 }
 
+/**
+ * The public sign and horoscope pages are the same for everyone and cost seconds to build (live sky,
+ * AI texts, several database reads), so they are kept at the edge: served in milliseconds, rebuilt in the
+ * background when older than ten minutes. The key carries the Brasília date so a new day never shows
+ * yesterday's reading. Signed-in app traffic, client navigations (RSC) and anything with a query string
+ * never go through here.
+ */
+const EDGE_PAGES = /^\/(signos|horoscopo-do-dia)(\/|$)/;
+const EDGE_FRESH_MS = 10 * 60_000;
+
+async function edgePage(request: Request, env: unknown, ctx: ExecutionContext): Promise<Response | null> {
+  const url = new URL(request.url);
+  if (request.method !== "GET" || url.search || !EDGE_PAGES.test(url.pathname)) return null;
+  if (request.headers.has("rsc") || request.headers.has("next-router-state-tree") || request.headers.has("next-router-prefetch")) return null;
+  if (!(request.headers.get("accept") ?? "").includes("text/html")) return null;
+
+  const cache = (caches as unknown as { default: Cache }).default;
+  const day = new Date(Date.now() - 3 * 3_600_000).toISOString().slice(0, 10);
+  const key = new Request(`${url.origin}${url.pathname}?edge-day=${day}`);
+
+  const rebuild = async () => {
+    const fresh = await app.fetch(request, env, ctx);
+    if (fresh.status === 200 && (fresh.headers.get("content-type") ?? "").includes("text/html")) {
+      const headers = new Headers(fresh.headers);
+      headers.set("cache-control", "public, max-age=0, s-maxage=86400");
+      headers.set("x-cached-at", String(Date.now()));
+      await cache.put(key, new Response(fresh.clone().body, { status: 200, headers }));
+    }
+    return fresh;
+  };
+
+  const hit = await cache.match(key);
+  if (!hit) return rebuild();
+  if (Date.now() - Number(hit.headers.get("x-cached-at") ?? 0) > EDGE_FRESH_MS) ctx.waitUntil(rebuild().then((response) => response.arrayBuffer()).catch((error) => console.error("edge_rebuild_failed", error)));
+  const out = new Response(hit.body, hit);
+  out.headers.set("cache-control", "public, max-age=0, must-revalidate");
+  out.headers.set("x-edge-cache", "HIT");
+  return out;
+}
+
 const worker = {
   async fetch(request: Request, env: unknown, ctx: ExecutionContext) {
-    const response = await app.fetch(withNetwork(request), env, ctx);
+    const response = (await edgePage(request, env, ctx)) ?? (await app.fetch(withNetwork(request), env, ctx));
     // Page views for the admin dashboard, written after the response so visitors never wait for it.
     if (isCountableView(request, response)) ctx.waitUntil(recordView(request).catch((error) => console.error("visit_record_failed", error)));
     return response;

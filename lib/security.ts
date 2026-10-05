@@ -1,3 +1,4 @@
+import { env } from "cloudflare:workers";
 import { eq, lt } from "drizzle-orm";
 import { getDb } from "@/db";
 import { rateLimits } from "@/db/schema";
@@ -112,6 +113,20 @@ export async function enforceRateLimit(request: Request, scope: string, identifi
     throw new RequestError("Muitas tentativas. Aguarde alguns minutos e tente novamente.", 429, retryAfter);
   }
   await db.update(rateLimits).set({ count: record.count + 1 }).where(eq(rateLimits.key, key));
+}
+
+type EdgeLimiter = { limit(options: { key: string }): Promise<{ success: boolean }> };
+
+/**
+ * For the endpoints called all day long (sync, analytics, sky, translation): Cloudflare's own rate limiter
+ * at the edge, which costs no database write per request. The database limiter above is the fallback
+ * when the binding is not there. The limit and window come from the binding (vite.config.ts).
+ */
+export async function enforceFastLimit(request: Request, binding: "LIMIT_30" | "LIMIT_120", scope: string, identifier: string, limit: number, windowSeconds: number) {
+  const limiter = (env as unknown as Record<string, EdgeLimiter | undefined>)[binding];
+  if (!limiter) return enforceRateLimit(request, scope, identifier, limit, windowSeconds);
+  const { success } = await limiter.limit({ key: `${scope}:${clientIp(request)}:${identifier}` });
+  if (!success) throw new RequestError("Muitas tentativas. Aguarde alguns minutos e tente novamente.", 429, 30);
 }
 
 /**

@@ -163,6 +163,8 @@ export default function HomePage() {
   /** A question handed over from the Signs tab; the chat sends it as soon as it opens. */
   const [chatPrompt, setChatPrompt] = useState<string | null>(null);
   const treeStageBaseline = useRef<number | null>(null);
+  const lastSyncedBody = useRef("");
+  const lastSyncedSections = useRef<Record<string, string>>({});
   const lastDay = useRef(dayKey);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [goalTitle, setGoalTitle] = useState("");
@@ -216,6 +218,8 @@ export default function HomePage() {
     setAccount(null); setProfile(emptyProfile); setXp(0); setMissionDone(false); setRitualDone(false); setStreak(0); setGoals([]); setEntries([]); setActiveTrail(null); setOnboarding(0); setPrefilled(false); setView("home"); setSyncReady(false); setUnlockedAchievements([]); setWelcomeAuthMode("login");
     treeStageBaseline.current = null;
     notifiedAchievements.current = null;
+    lastSyncedBody.current = "";
+    lastSyncedSections.current = {};
     toast.error("Sua sessão expirou. Entre novamente para continuar sua jornada.");
   }
 
@@ -270,6 +274,8 @@ export default function HomePage() {
     setAccount(null); setProfile(emptyProfile); setXp(0); setMissionDone(false); setRitualDone(false); setStreak(0); setGoals([]); setEntries([]); setActiveTrail(null); setOnboarding(0); setPrefilled(false); setView("home"); setSyncReady(false); setUnlockedAchievements([]); setWelcomeAuthMode(null);
     treeStageBaseline.current = null;
     notifiedAchievements.current = null;
+    lastSyncedBody.current = "";
+    lastSyncedSections.current = {};
     toast.success("Você saiu da sua conta.");
   }
 
@@ -278,18 +284,22 @@ export default function HomePage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSyncStatus("loading");
     const timer = window.setTimeout(() => {
-      fetch("/api/sync", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ deviceId, dayKey, profile: { name: profile.name, birthDate: profile.birthDate, birthTime: profile.birthTime ?? "", birthPlace: profile.birthPlace ?? "", objective: profile.objective, sign: profile.sign, intention: profile.intention, theme: profile.theme }, xp, missionDone, ritualDone, goals, entries, trail: activeTrail, unlockedAchievements }),
-      }).then(async (response) => {
+      const body = JSON.stringify({ deviceId, dayKey, profile: { name: profile.name, birthDate: profile.birthDate, birthTime: profile.birthTime ?? "", birthPlace: profile.birthPlace ?? "", objective: profile.objective, sign: profile.sign, intention: profile.intention, theme: profile.theme }, xp, missionDone, ritualDone, goals, entries, trail: activeTrail, unlockedAchievements });
+      // Nothing changed since the last save: no request, no database write.
+      if (body === lastSyncedBody.current) { setSyncStatus("saved"); return; }
+      // Goals, diary, trail and achievements the server already has are not rewritten: it is told to skip them.
+      const sections = { goals: JSON.stringify(goals), entries: JSON.stringify(entries), trail: JSON.stringify(activeTrail), achievements: JSON.stringify(unlockedAchievements) };
+      const skip = (Object.keys(sections) as (keyof typeof sections)[]).filter((name) => sections[name] === lastSyncedSections.current[name]);
+      fetch("/api/sync", { method: "POST", headers: { "content-type": "application/json" }, body: skip.length ? JSON.stringify({ ...JSON.parse(body), skip }) : body }).then(async (response) => {
         if (response.status === 401) { handleSessionExpired(); return; }
         if (!response.ok) throw new Error("sync failed");
+        lastSyncedBody.current = body;
+        lastSyncedSections.current = sections;
         const result = await response.json().catch(() => null) as { streak?: number } | null;
         if (result && typeof result.streak === "number") setStreak(result.streak);
         setSyncStatus("saved");
       }).catch(() => setSyncStatus("offline"));
-    }, 700);
+    }, 1500);
     return () => window.clearTimeout(timer);
   // dayKey is read but deliberately left out: a rollover must first clear the daily
   // flags below, otherwise this would persist yesterday's mission as today's.
@@ -1694,14 +1704,37 @@ function ChatView({ profile, isPremium, navigate, openPaywall, onSessionExpired,
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ threadId: threadId ?? undefined, message: text, lang: getLanguage() }),
+        body: JSON.stringify({ threadId: threadId ?? undefined, message: text, lang: getLanguage(), stream: true }),
       });
       if (response.status === 401) { onSessionExpired(); return; }
-      const data = await response.json().catch(() => ({})) as ApiMessage & { reply?: string; threadId?: number };
-      if (!response.ok || !data.reply) throw new Error(data.error ?? "Não foi possível responder agora.");
-      const reply = data.reply;
-      const savedThreadId = data.threadId;
-      setMessages((current) => [...current, { role: "assistant", content: reply }]);
+      if (!response.ok || !response.body) {
+        const failure = await response.json().catch(() => ({})) as ApiMessage;
+        throw new Error(failure.error ?? "Não foi possível responder agora.");
+      }
+      // The answer arrives as it is written: text, then a NUL and a JSON tail ({ threadId } or { error }).
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let written = "";
+      let tail = "";
+      let inTail = false;
+      let bubble = false;
+      const show = (content: string) => setMessages((current) => (bubble ? [...current.slice(0, -1), { role: "assistant", content }] : [...current, { role: "assistant", content }]));
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        const cut = inTail ? -1 : chunk.indexOf("\u0000");
+        if (inTail) tail += chunk;
+        else if (cut >= 0) { written += chunk.slice(0, cut); tail += chunk.slice(cut + 1); inTail = true; }
+        else written += chunk;
+        if (written.trim()) { show(written); bubble = true; }
+      }
+      tail += decoder.decode();
+      const info = (() => { try { return JSON.parse(tail) as { threadId?: number; replace?: string; error?: string }; } catch { return {} as { threadId?: number; replace?: string; error?: string }; } })();
+      if (info.error) throw new Error(info.error);
+      if (!written.trim()) throw new Error("Não foi possível responder agora.");
+      if (info.replace) show(info.replace);
+      const savedThreadId = info.threadId;
       if (typeof savedThreadId === "number") {
         const now = new Date().toISOString();
         const isNew = savedThreadId !== threadId;

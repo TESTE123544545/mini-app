@@ -6,7 +6,7 @@ import { hashToken } from "@/lib/auth";
 import { LANG_CODES, languageEnglishName, TRANSLATION_VERSION } from "@/lib/i18n";
 import { OpenRouterError } from "@/lib/openrouter";
 import { translateBatch } from "@/lib/translate";
-import { enforceRateLimit, readJsonBody, RequestError, secureErrorResponse } from "@/lib/security";
+import { enforceFastLimit, readJsonBody, RequestError, secureErrorResponse } from "@/lib/security";
 
 // Anyone can reach this (the welcome screen is translated before sign-in), so it is bounded three ways:
 // small batches, a per-IP limit, and a daily cap on strings that are not in the shared cache yet.
@@ -26,7 +26,7 @@ export async function POST(request: Request) {
     const { lang, texts } = parsed.data;
     if (lang === "pt") return Response.json({ translations: texts });
     if (texts.reduce((total, text) => total + text.length, 0) > MAX_BATCH_CHARS) throw new RequestError("Lote grande demais.", 413);
-    await enforceRateLimit(request, "translate", "batch", 120, 60);
+    await enforceFastLimit(request, "LIMIT_120", "translate", "batch", 120, 60);
 
     const db = getDb();
     const keys = await Promise.all(texts.map((text) => hashToken(`${TRANSLATION_VERSION}\n${lang}\n${text}`)));

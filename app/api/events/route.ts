@@ -2,7 +2,7 @@ import { z } from "zod";
 import { getDb } from "@/db";
 import { analyticsEvents } from "@/db/schema";
 import { getSessionUser } from "@/lib/auth";
-import { enforceRateLimit, readJsonBody, RequestError, secureErrorResponse } from "@/lib/security";
+import { enforceFastLimit, readJsonBody, RequestError, secureErrorResponse } from "@/lib/security";
 
 const bodySchema = z.object({
   events: z.array(z.object({
@@ -17,7 +17,7 @@ export async function POST(request: Request) {
   try {
     const parsed = bodySchema.safeParse(await readJsonBody<unknown>(request, 16 * 1024));
     if (!parsed.success) throw new RequestError("Dados inválidos.", 400);
-    await enforceRateLimit(request, "events", "batch", 240, 3600);
+    await enforceFastLimit(request, "LIMIT_30", "events", "batch", 30, 60);
     const user = await getSessionUser(request).catch(() => null);
     const deviceId = user?.primaryDeviceId ?? null;
     await getDb().insert(analyticsEvents).values(parsed.data.events.map((item) => ({

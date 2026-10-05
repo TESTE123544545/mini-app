@@ -1,5 +1,5 @@
 import { getSignDaily, getSignMonthly, getSignWeekly, getSkyToday, signSlugFromName } from "@/lib/sky";
-import { enforceRateLimit, secureErrorResponse } from "@/lib/security";
+import { enforceFastLimit, secureErrorResponse } from "@/lib/security";
 
 /**
  * GET /api/sky?sign=Leão — today's live sky plus that sign's day, week and month, in Portuguese.
@@ -7,7 +7,7 @@ import { enforceRateLimit, secureErrorResponse } from "@/lib/security";
  */
 export async function GET(request: Request) {
   try {
-    await enforceRateLimit(request, "sky", "read", 240, 3600);
+    await enforceFastLimit(request, "LIMIT_30", "sky", "read", 30, 60);
     const signParam = new URL(request.url).searchParams.get("sign") ?? "";
     const slug = signParam ? signSlugFromName(signParam) : null;
     const [sky, sign, week, month] = await Promise.allSettled([

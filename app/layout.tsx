@@ -16,6 +16,8 @@ import { I18n } from "@/components/I18n";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://veiasdasintonia.com.br"),
+  // Ties the site to the AdSense account (one of the ownership checks); it does not show any ad by itself.
+  other: { "google-adsense-account": "ca-pub-2475304135325161" },
   title: {
     default: "Use Seu Signo Para Prosperar | Signos, Astrologia e Prosperidade",
     template: "%s | Use Seu Signo Para Prosperar",
@@ -116,7 +118,10 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   // The per-request CSP nonce set by proxy.ts; without it the inline script below would be blocked.
-  const nonce = (await headers()).get("x-nonce") ?? undefined;
+  const requestHeaders = await headers();
+  const nonce = requestHeaders.get("x-nonce") ?? undefined;
+  // proxy.ts marks the public content pages; the signed-in app never loads the ads script.
+  const showAds = requestHeaders.get("x-ads") === "1";
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebApplication",
@@ -139,6 +144,7 @@ export default async function RootLayout({
         <script nonce={nonce} dangerouslySetInnerHTML={{ __html: COLOR_MODE_BOOT }} />
         {/* Picks the saved or browser language (lang, dir) before the first paint. */}
         <script nonce={nonce} dangerouslySetInnerHTML={{ __html: LANG_BOOT }} />
+        {showAds && <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2475304135325161" crossOrigin="anonymous" nonce={nonce} />}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

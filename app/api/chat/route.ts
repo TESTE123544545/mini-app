@@ -5,8 +5,8 @@ import { chatThreads, profiles } from "@/db/schema";
 import { getSessionUser } from "@/lib/auth";
 import { hasPremium } from "@/lib/plan";
 import { containsAbusiveLanguage } from "@/lib/moderation";
-import { generateChatReply, OpenRouterError } from "@/lib/openrouter";
-import { skyContextForChat } from "@/lib/sky";
+import { chatReplyPieces, finalizeChatReply, OpenRouterError } from "@/lib/openrouter";
+import { settleWithin, skyContextForChat } from "@/lib/sky";
 import { LANG_CODES, languageEnglishName } from "@/lib/i18n";
 import { enforceRateLimit, readJsonBody, RequestError, secureErrorResponse, suspendFor } from "@/lib/security";
 
@@ -17,6 +17,8 @@ const bodySchema = z.object({
   threadId: z.number().int().positive().optional(),
   message: z.string().trim().min(1).max(2000),
   lang: z.enum(LANG_CODES).optional(),
+  // The answer is sent as it is written (text, then a NUL and a JSON tail) instead of all at once.
+  stream: z.boolean().optional(),
 }).strict();
 
 type StoredMessage = { role: "user" | "assistant"; content: string };
@@ -56,33 +58,53 @@ export async function POST(request: Request) {
     }
 
     const history: StoredMessage[] = thread ? JSON.parse(thread.messagesJson) : [];
-    const reply = await generateChatReply(
-      { sign: profile.sign, objective: profile.objective, intention: profile.intention, sky: await skyContextForChat(profile.sign) },
-      [...history, { role: "user", content: parsed.data.message }],
-      parsed.data.lang && parsed.data.lang !== "pt" ? languageEnglishName(parsed.data.lang) : undefined,
-    );
+    // Today's sky helps, but the answer never waits more than a second and a half for it.
+    const sky = (await settleWithin(skyContextForChat(profile.sign), 1500)) ?? null;
+    const context = { sign: profile.sign, objective: profile.objective, intention: profile.intention, sky };
+    const turns = [...history, { role: "user" as const, content: parsed.data.message }];
+    const language = parsed.data.lang && parsed.data.lang !== "pt" ? languageEnglishName(parsed.data.lang) : undefined;
 
-    const nextMessages: StoredMessage[] = [
-      ...history,
-      { role: "user" as const, content: parsed.data.message },
-      { role: "assistant" as const, content: reply },
-    ].slice(-MAX_STORED_MESSAGES);
-    const now = new Date().toISOString();
+    const save = async (reply: string) => {
+      const nextMessages: StoredMessage[] = [...turns, { role: "assistant" as const, content: reply }].slice(-MAX_STORED_MESSAGES);
+      const now = new Date().toISOString();
+      if (thread) {
+        await db.update(chatThreads).set({ messagesJson: JSON.stringify(nextMessages), updatedAt: now }).where(eq(chatThreads.id, thread.id));
+        return thread.id;
+      }
+      const [created] = await db.insert(chatThreads).values({ deviceId, title: threadTitle(parsed.data.message), messagesJson: JSON.stringify(nextMessages), updatedAt: now }).returning({ id: chatThreads.id });
+      return created.id;
+    };
 
-    let threadId = thread?.id;
-    if (thread) {
-      await db.update(chatThreads).set({ messagesJson: JSON.stringify(nextMessages), updatedAt: now }).where(eq(chatThreads.id, thread.id));
-    } else {
-      const [created] = await db.insert(chatThreads).values({
-        deviceId,
-        title: threadTitle(parsed.data.message),
-        messagesJson: JSON.stringify(nextMessages),
-        updatedAt: now,
-      }).returning({ id: chatThreads.id });
-      threadId = created.id;
+    if (parsed.data.stream) {
+      const encoder = new TextEncoder();
+      const body = new ReadableStream<Uint8Array>({
+        async start(controller) {
+          let written = "";
+          try {
+            for await (const piece of chatReplyPieces(context, turns, language)) {
+              written += piece;
+              controller.enqueue(encoder.encode(piece));
+            }
+            if (!written.trim()) throw new OpenRouterError("A IA não retornou conteúdo.");
+            const reply = finalizeChatReply(written);
+            const threadId = await save(reply);
+            controller.enqueue(encoder.encode("\u0000" + JSON.stringify({ threadId, ...(reply !== written.trim() ? { replace: reply } : {}) })));
+          } catch (error) {
+            const message = error instanceof OpenRouterError ? error.message : "Não foi possível responder agora.";
+            if (!(error instanceof OpenRouterError)) console.error("chat_stream_failed", error);
+            controller.enqueue(encoder.encode("\u0000" + JSON.stringify({ error: message })));
+          }
+          controller.close();
+        },
+      });
+      return new Response(body, { headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store", "x-accel-buffering": "no" } });
     }
 
-    return Response.json({ reply, threadId });
+    let reply = "";
+    for await (const piece of chatReplyPieces(context, turns, language)) reply += piece;
+    if (!reply.trim()) throw new OpenRouterError("A IA não retornou conteúdo.");
+    reply = finalizeChatReply(reply);
+    return Response.json({ reply, threadId: await save(reply) });
   } catch (error) {
     if (error instanceof OpenRouterError) return Response.json({ error: error.message }, { status: 502 });
     return secureErrorResponse(error, "Não foi possível responder agora.");
