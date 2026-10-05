@@ -1,0 +1,7 @@
+/* A Premium account sees no ads: anything Google may already have placed is hidden while the page cleans it up. */
+html[data-ad-free] ins.adsbygoogle,
+html[data-ad-free] .google-auto-placed,
+html[data-ad-free] iframe[id^="aswift"],
+html[data-ad-free] iframe[id^="google_ads_iframe"],
+html[data-ad-free] [id^="google_vignette"],
+html[data-ad-free] div[id^="google_ads_top_frame"]{display:none!important}

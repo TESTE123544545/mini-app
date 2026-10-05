@@ -8,11 +8,13 @@ import "./entry.css";
 import "./dark.css";
 import "./celestial.css";
 import "./i18n.css";
+import "./ads.css";
 import { PwaRegister } from "./pwa-register";
 import { headers } from "next/headers";
 import { COLOR_MODE_BOOT } from "@/lib/colorModeBoot";
 import { LANG_BOOT } from "@/lib/i18n";
 import { I18n } from "@/components/I18n";
+import { Ads } from "@/components/Ads";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://veiasdasintonia.com.br"),
@@ -120,7 +122,8 @@ export default async function RootLayout({
   // The per-request CSP nonce set by proxy.ts; without it the inline script below would be blocked.
   const requestHeaders = await headers();
   const nonce = requestHeaders.get("x-nonce") ?? undefined;
-  // proxy.ts marks the public content pages; the signed-in app never loads the ads script.
+  // proxy.ts sets this for pages without a session: visitors and crawlers get the script in the HTML. A signed-in
+  // browser gets it from components/Ads.tsx only if the account is not Premium.
   const showAds = requestHeaders.get("x-ads") === "1";
   const jsonLd = {
     "@context": "https://schema.org",
@@ -157,6 +160,7 @@ export default async function RootLayout({
         {children}
         <PwaRegister />
         <I18n />
+        <Ads />
       </body>
     </html>
   );

@@ -1,10 +1,10 @@
 import { eq } from "drizzle-orm";
 import { getDb } from "@/db";
-import { users } from "@/db/schema";
+import { profiles, users } from "@/db/schema";
 import { createPassword, createSecureToken, createSession, deleteSession, getSessionUser, normalizeEmail, PASSWORD_ITERATIONS, publicUser, renewSession, validEmail, validPassword, verifyPassword } from "@/lib/auth";
 import { assertLoginAllowed, recordLoginFailure } from "@/lib/bruteforce";
 import { isBlockedEmail, signupEmailProblem } from "@/lib/emailPolicy";
-import { trialEndsAtFrom } from "@/lib/plan";
+import { trialActive, trialEndsAtFrom } from "@/lib/plan";
 import { sendTrialWelcome } from "@/lib/trialEmails";
 import { enforceRateLimit, readJsonBody, secureErrorResponse } from "@/lib/security";
 
@@ -18,7 +18,13 @@ export async function GET(request: Request) {
   try {
     const user = await getSessionUser(request);
     const renewed = user ? await renewSession(request) : null;
-    return Response.json({ user: user ? publicUser(user) : null }, renewed ? { headers: { "set-cookie": renewed } } : undefined);
+    // Premium (paid, or the free trial) accounts see no ads: the browser reads this flag (components/Ads.tsx).
+    let adFree = user ? trialActive(user) : false;
+    if (user && !adFree && user.primaryDeviceId) {
+      const [profile] = await getDb().select({ plan: profiles.plan }).from(profiles).where(eq(profiles.deviceId, user.primaryDeviceId)).limit(1);
+      adFree = profile?.plan === "premium";
+    }
+    return Response.json({ user: user ? publicUser(user) : null, adFree }, renewed ? { headers: { "set-cookie": renewed } } : undefined);
   } catch (error) {
     return errorResponse(error);
   }

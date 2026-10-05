@@ -25,6 +25,7 @@ import { LibraryReader } from "@/components/LibraryReader";
 import { ColorModePicker, ColorModeToggle } from "@/components/ColorModeToggle";
 import { LanguageButton, LanguageList } from "@/components/LanguagePicker";
 import { getLanguage } from "@/lib/language";
+import { AD_FREE_EVENT } from "@/components/Ads";
 import { BrandLockup } from "@/components/BrandLockup";
 import { PremiumFeatures } from "@/components/PremiumFeatures";
 import { recallLogin, rememberLogin, stopSilentLogin } from "@/lib/savedLogin";
@@ -379,6 +380,11 @@ export default function HomePage() {
   const onTrial = profile.plan !== "premium" && trialActive(account, clock);
   const trialEndsAt = onTrial ? account?.trialEndsAt ?? null : null;
   const isPremium = profile.plan === "premium" || onTrial;
+  // Premium (paid or trial) accounts see no ads: tell the ads loader once the plan is known, and again when it changes.
+  useEffect(() => {
+    if (!ready || (account && !syncReady)) return;
+    window.dispatchEvent(new CustomEvent(AD_FREE_EVENT, { detail: Boolean(account && isPremium) }));
+  }, [ready, account, syncReady, isPremium]);
   const level = Math.floor(xp / 100) + 1;
   const treeStage = useMemo(() => treeStageFor(xp), [xp]);
   const stage = treeStage.stage.name;

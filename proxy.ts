@@ -6,10 +6,11 @@ import { isLoopbackHost } from "@/lib/hosts";
 // an attacker manages to inject can execute. vinext reads the nonce from this header and stamps
 // it on its own bootstrap scripts; the layout stamps it on the colour-mode script.
 //
-// The public content pages (signs, daily horoscope) also carry Google AdSense. Only those pages get the
-// wider policy below: a script with the nonce may load the scripts it needs (strict-dynamic), and Google's
-// ad frames, images and beacons are allowed. The signed-in app keeps the strict policy and never loads ads.
-const ADS_PAGES = /^\/(signos|horoscopo-do-dia)(\/|$)/;
+// Every page except the team panel and the API can carry Google AdSense (Premium accounts switch it off in
+// the browser). Those pages get the wider policy below: a script with the nonce may load the scripts it
+// needs (strict-dynamic), and Google's ad frames, images and beacons are allowed. Scripts without the
+// nonce still cannot run, so an injected script stays blocked.
+const NO_ADS = /^\/(admin|api)(\/|$)/;
 const GOOGLE_ADS_HOSTS = "https://*.google.com https://*.google.com.br https://*.googlesyndication.com https://*.doubleclick.net https://*.googleadservices.com https://*.adtrafficquality.google https://*.googletagservices.com";
 
 const contentSecurityPolicy = (nonce: string, ads: boolean) => [
@@ -44,12 +45,15 @@ export function proxy(request: NextRequest) {
   }
 
   const nonce = btoa(crypto.randomUUID());
-  const ads = ADS_PAGES.test(request.nextUrl.pathname) && request.method === "GET";
+  // Ads run everywhere except the team panel and the API. Without a session the HTML carries the AdSense script itself
+  // (visitors, crawlers); a signed-in browser is asked first whether the account is Premium (components/Ads.tsx).
+  const ads = request.method === "GET" && !NO_ADS.test(request.nextUrl.pathname);
+  const signedIn = (request.headers.get("cookie") ?? "").includes("vds_session=");
   const csp = contentSecurityPolicy(nonce, ads);
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-nonce", nonce);
   requestHeaders.delete("x-ads");
-  if (ads) requestHeaders.set("x-ads", "1");
+  if (ads && !signedIn) requestHeaders.set("x-ads", "1");
   requestHeaders.set("content-security-policy", csp);
   const response = NextResponse.next({ request: { headers: requestHeaders } });
   response.headers.set("Content-Security-Policy", csp);

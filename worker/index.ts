@@ -45,7 +45,9 @@ async function edgePage(request: Request, env: unknown, ctx: ExecutionContext): 
 
   const cache = (caches as unknown as { default: Cache }).default;
   const day = new Date(Date.now() - 3 * 3_600_000).toISOString().slice(0, 10);
-  const key = new Request(`${url.origin}${url.pathname}?edge-day=${day}`);
+  // Signed-in browsers get the variant without the ads script (components/Ads.tsx decides for them).
+  const variant = (request.headers.get("cookie") ?? "").includes("vds_session=") ? "auth" : "anon";
+  const key = new Request(`${url.origin}${url.pathname}?edge-day=${day}&v=${variant}`);
 
   const rebuild = async () => {
     const fresh = await app.fetch(request, env, ctx);
