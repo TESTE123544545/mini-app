@@ -1,0 +1,40 @@
+/* "Sinais do Universo": colours come only from the theme variables, so the dark mode needs no extra rules. */
+.signals-view .eyebrow,.signal-daily--home .eyebrow{display:flex;align-items:center;gap:6px}
+.signal-now{text-align:center}
+.signal-clock{font-size:clamp(2.6rem,14vw,3.6rem);font-weight:800;letter-spacing:.04em;color:var(--studio-amber,#c9a254);line-height:1.1;margin:6px 0 8px;font-variant-numeric:tabular-nums}
+.signal-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px}
+@media (min-width:480px){.signal-grid{grid-template-columns:repeat(6,1fr)}}
+.signal-grid button{min-height:44px;border-radius:12px;border:1px solid var(--studio-line);background:transparent;color:var(--studio-ink);font-weight:700;font-variant-numeric:tabular-nums}
+.signal-grid button[aria-pressed=true]{background:var(--studio-amber);color:#0b1633;border-color:var(--studio-amber)}
+.signal-grid button.is-now:not([aria-pressed=true]){box-shadow:0 0 0 2px var(--studio-amber)}
+.signal-hour h2,.signal-daily h2,.signal-combo h2{margin:6px 0 10px}
+.signal-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.signal-tags b{font-size:.74rem;padding:3px 10px;border-radius:999px;border:1px solid var(--studio-line);color:var(--studio-ink-2);font-weight:600}
+.signal-short{font-weight:600}
+.signal-full{display:grid;gap:12px;margin-top:12px}
+.signal-full article{border-left:2px solid var(--studio-amber);padding-left:12px}
+.signal-full h3{display:flex;align-items:center;gap:6px;font-size:.9rem;margin:0 0 4px}
+.signal-full p,.signal-lock p,.signal-numerology p,.signal-history p{margin:0;line-height:1.55}
+.signal-lock{display:grid;gap:10px;justify-items:start;margin-top:14px;padding:14px;border-radius:16px;border:1px dashed var(--studio-line)}
+.signal-lock .gold-button{width:100%;padding:0 14px;text-align:center}
+.signal-note,.signal-meta{font-size:.78rem;color:var(--studio-ink-3);margin:10px 0 0}
+.signal-meta{margin:0 0 8px}
+.signal-path{display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center;margin-bottom:12px}
+.signal-path>span{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;font-size:1.5rem;font-weight:800;border:1px solid var(--studio-amber);color:var(--studio-amber)}
+.signal-path h3{margin:0 0 4px;font-size:1rem}
+.signal-numbers{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0;text-align:center}
+.signal-numbers div{padding:10px 4px;border-radius:14px;border:1px solid var(--studio-line)}
+.signal-numbers b{display:block;font-size:1.5rem;color:var(--studio-amber)}
+.signal-numbers span{font-size:.74rem;color:var(--studio-ink-3)}
+.signal-cycles{list-style:none;margin:0;padding:0;display:grid;gap:8px;font-size:.88rem;line-height:1.5}
+.signal-cycles b{display:block}
+.signal-birth{display:grid;gap:10px}
+.signal-birth label{display:grid;gap:4px;font-size:.85rem}
+.signal-history ul{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
+.signal-history li button{padding:8px 12px;border-radius:999px;border:1px solid var(--studio-line);background:transparent;color:var(--studio-ink);font-size:.85rem}
+.signal-history li span{color:var(--studio-ink-3);margin-left:4px}
+.signal-links{display:flex;flex-wrap:wrap;gap:8px 16px;justify-content:center;font-size:.85rem;padding-bottom:8px}
+.signal-links a{color:var(--studio-ink-2);text-decoration:underline}
+.signal-skeleton{display:grid;gap:10px}
+.signal-skeleton span{height:14px;border-radius:7px;background:var(--studio-line);opacity:.4}
+.signal-daily--home .ghost-button{margin-top:10px}

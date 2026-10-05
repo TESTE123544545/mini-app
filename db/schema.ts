@@ -252,3 +252,13 @@ export const adminLoginCodes = sqliteTable("admin_login_codes", {
   usedAt: text("used_at"),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 });
+
+/** "Meus Sinais": every equal-hour reading a user opened, so it can be reopened later. One row per hour per day. */
+export const signalReadings = sqliteTable("signal_readings", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  deviceId: text("device_id").notNull().references(() => profiles.deviceId, { onDelete: "cascade" }),
+  time: text("time").notNull(),
+  dayKey: text("day_key").notNull(),
+  sign: text("sign"),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [uniqueIndex("signal_readings_unique_idx").on(table.deviceId, table.dayKey, table.time), index("signal_readings_device_idx").on(table.deviceId, table.createdAt)]);

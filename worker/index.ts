@@ -34,7 +34,7 @@ function withNetwork(request: Request) {
  * yesterday's reading. Signed-in app traffic, client navigations (RSC) and anything with a query string
  * never go through here.
  */
-const EDGE_PAGES = /^\/(signos|horoscopo-do-dia)(\/|$)/;
+const EDGE_PAGES = /^\/(signos|horoscopo-do-dia|horas-iguais|numerologia|numerologia-dos-signos)(\/|$)/;
 const EDGE_FRESH_MS = 10 * 60_000;
 
 async function edgePage(request: Request, env: unknown, ctx: ExecutionContext): Promise<Response | null> {

@@ -23,7 +23,7 @@ export default function PrivacyPage() {
 
       <section className="zodiac-section"><h2>2. Quais dados coletamos</h2>
         <p><strong>Conta:</strong> e-mail e senha (guardamos apenas uma versão cifrada da senha, nunca a senha em si).</p>
-        <p><strong>Perfil e jornada:</strong> nome, data de nascimento, signo, objetivo e intenção que você informa; metas, missões, reflexões do diário, conquistas e progresso da sua árvore; foto de perfil, se você escolher enviar uma.</p>
+        <p><strong>Perfil e jornada:</strong> nome, data de nascimento, signo, objetivo e intenção que você informa; metas, missões, reflexões do diário, conquistas e progresso da sua árvore; histórico dos sinais (horas iguais) que você abre na aba Sinais; foto de perfil, se você escolher enviar uma.</p>
         <p><strong>Conversas com a IA:</strong> as mensagens que você escreve no chat e as respostas, para manter o histórico das suas conversas.</p>
         <p><strong>Diagnóstico:</strong> as respostas do diagnóstico ficam guardadas no seu próprio aparelho.</p>
         <p><strong>Pagamentos:</strong> o pagamento é feito pelo Stripe; nós não recebemos nem guardamos os dados do seu cartão — apenas o status da sua assinatura.</p>

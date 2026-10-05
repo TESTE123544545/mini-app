@@ -129,7 +129,7 @@ const journalRotating: readonly string[] = [
   "Qual decisão pequena mudaria minha próxima semana?",
 ];
 
-function hash(seed: string) {
+export function hash(seed: string) {
   let value = 2166136261;
   for (let index = 0; index < seed.length; index += 1) {
     value ^= seed.charCodeAt(index);
@@ -138,7 +138,7 @@ function hash(seed: string) {
   return value >>> 0;
 }
 
-function pick<T>(list: readonly T[], seed: string) {
+export function pick<T>(list: readonly T[], seed: string) {
   return list[hash(seed) % list.length];
 }
 

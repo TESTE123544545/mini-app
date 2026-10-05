@@ -85,6 +85,8 @@ export function SeoFooter() {
       <Link href="/horoscopo-do-dia">Horóscopo do dia</Link>
       <Link href="/signos">Os 12 signos</Link>
       <Link href="/compatibilidade-amorosa">Compatibilidade amorosa</Link>
+      <Link href="/horas-iguais">Horas iguais</Link>
+      <Link href="/numerologia">Numerologia</Link>
       <Link href="/astrologia-e-dinheiro">Astrologia e dinheiro</Link>
       <Link href="/privacidade">Privacidade</Link>
       <Link href="/termos">Termos de uso</Link>

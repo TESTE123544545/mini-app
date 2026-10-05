@@ -14,8 +14,10 @@ import { ACHIEVEMENT_CATEGORIES, achievementState, weeklyReport, type Achievemen
 import { findTrail, trailStatus, trails, type Trail, type TrailProgress } from "@/lib/trails";
 import { TREE_PART_HOTSPOTS, TREE_STAGES, treeStageFor, type TreePartHotspot } from "@/lib/treeStages";
 import { ProsperityTree } from "@/components/ProsperityTree";
+import { SignalsDailyCard } from "@/components/views/SignalsDailyCard";
 import dynamic from "next/dynamic";
 // The Signs tab (sign data, tarot, wheel, live sky) is the heaviest view; it loads on first open.
+const SignalsView = dynamic(() => import("@/components/views/SignalsView").then((module) => module.SignalsView), { ssr: false, loading: () => <div className="live-skeleton" aria-label="Carregando"><span/><span/><span/></div> });
 const SignsView = dynamic(() => import("@/components/views/SignsView").then((module) => module.SignsView), { ssr: false, loading: () => <div className="live-skeleton" aria-label="Carregando"><span/><span/><span/></div> });
 import { DiagnosticView } from "@/components/diagnostic/DiagnosticView";
 import { DiagnosticHomeCards, DiagnosticTreeFocus } from "@/components/diagnostic/DiagnosticEntryPoints";
@@ -35,7 +37,7 @@ import { signFromDate as getSign } from "@/lib/birth";
 import { RegisterWizard, type RegisterSeed } from "@/components/RegisterWizard";
 import { AppTutorial, queueTutorial } from "@/components/AppTutorial";
 
-type View = "home" | "premium" | "diagnostic" | "signs" | "tree" | "missions" | "journal" | "profile" | "goal" | "chat";
+type View = "home" | "premium" | "diagnostic" | "signs" | "signals" | "tree" | "missions" | "journal" | "profile" | "goal" | "chat";
 type GoalKind = "financial" | "non_financial" | "partial";
 type Goal = {
   id: number; title: string; category: string; progress: number; isPrimary?: boolean;
@@ -647,6 +649,7 @@ export default function HomePage() {
           {view === "home" && <HomeView profile={profile} plan={plan} week={week} part={part} xp={xp} level={level} stage={stage} streak={streak} fruits={goals.filter((goal) => goal.progress === 100).length} missionDone={missionDone} ritualDone={ritualDone} treeCelebrating={treeCelebrating} completeMission={completeMission} openRitual={() => { haptic(8); setRitualOpen(true); }} oracleOpen={oracleOpen} setOracleOpen={setOracleOpen} mainGoal={mainGoal} advanceGoal={advanceGoal} openGoals={() => navigate(mainGoal ? "goal" : "profile")} navigate={navigate} isPremium={isPremium} openPaywall={openPaywall} diagnostic={diagnostics[0]} openTree={(source) => openTree(source)} trialEndsAt={trialEndsAt} />}
           {view === "premium" && <PremiumView isPremium={isPremium} trialEndsAt={trialEndsAt} />}
           {view === "diagnostic" && <DiagnosticView results={diagnostics} profileSign={profile.sign || undefined} xp={xp} onComplete={(result) => setDiagnostics((current) => saveDiagnostic(account?.email, result, current))} onOpenTree={() => openTree("diagnostic_result")} lockedResult={isPremium ? undefined : <PremiumOffer reason="diagnostic_result"/>} />}
+          {view === "signals" && <SignalsView openPaywall={openPaywall} navigate={navigate} />}
           {view === "signs" && <SignsView profile={profile} isPremium={isPremium} openPaywall={openPaywall} navigate={navigate} askSintonia={(prompt) => { setChatPrompt(prompt); navigate("chat"); }} />}
           {view === "tree" && <TreeView xp={xp} level={level} stage={stage} streak={streak} mapScores={mapScores} goals={goals} diagnostic={diagnostics[0]} openDiagnostic={() => navigate("diagnostic")} snapshot={snapshot} cares={{ missionDone, ritualDone, journaledToday }} navigate={navigate} openRitual={() => { haptic(8); setRitualOpen(true); }} />}
           {view === "missions" && <JourneyView profile={profile} plan={plan} snapshot={snapshot} week={week} missionDone={missionDone} ritualDone={ritualDone} completeMission={completeMission} openRitual={() => { haptic(8); setRitualOpen(true); }} activeTrail={activeTrail} startTrail={startTrail} completeTrailDay={completeTrailDay} abandonTrail={abandonTrail} isPremium={isPremium} openPaywall={openPaywall} />}
@@ -677,14 +680,15 @@ const navTabs: { view: View; label: string; icon: React.ReactNode }[] = [
   // "Diagnóstico" does not fit a seven-column bar on phones; the screen itself is titled "Meu Diagnóstico".
   { view: "diagnostic", label: "Momento", icon: <Telescope/> },
   { view: "signs", label: "Signos", icon: <Sparkles/> },
+  { view: "signals", label: "Sinais", icon: <Orbit/> },
   { view: "tree", label: "Árvore", icon: <Leaf/> },
   { view: "missions", label: "Jornada", icon: <Route/> },
   { view: "journal", label: "Diário", icon: <BookOpen/> },
   { view: "profile", label: "Perfil", icon: <UserRound/> },
 ];
 const tabOrder = navTabs.map((tab) => tab.view);
-/** A free account can take the diagnostic, see the offer and manage its account — nothing else. */
-const FREE_VIEWS: View[] = ["diagnostic", "premium", "profile"];
+/** A free account can take the diagnostic, see the offer, manage its account and open the basic "Sinais do Universo" — nothing else. */
+const FREE_VIEWS: View[] = ["diagnostic", "premium", "profile", "signals"];
 
 const lockedCopy: Partial<Record<View, { title: string; text: string }>> = {
   home: { title: "Seu dia completo", text: "A leitura diária do seu signo, a missão do dia, o ritual de 3 minutos, o oráculo e o céu ao vivo." },
@@ -715,7 +719,7 @@ function LockedView({ view, hasDiagnostic, onDiagnostic }: { view: View; hasDiag
   </div>;
 }
 let activeNavTransition: ViewTransition | null = null;
-const viewLabels: Record<View, string> = { home: "Início", premium: "Premium", diagnostic: "Meu Diagnóstico", signs: "Signos & Astrologia", tree: "Sua Árvore", missions: "Sua Jornada", journal: "Seu Diário", profile: "Seu Caminho", goal: "Meu Objetivo", chat: "Conversar" };
+const viewLabels: Record<View, string> = { home: "Início", premium: "Premium", diagnostic: "Meu Diagnóstico", signs: "Signos & Astrologia", signals: "Sinais do Universo", tree: "Sua Árvore", missions: "Sua Jornada", journal: "Seu Diário", profile: "Seu Caminho", goal: "Meu Objetivo", chat: "Conversar" };
 
 function AppSplash() {
   return <main className="app-splash" aria-busy="true"><div><BrandLockup stacked className="splash-brand"/><div className="splash-bar" aria-hidden="true"><i/></div></div></main>;
@@ -732,6 +736,11 @@ const paywallHeadline: Record<string, string> = {
   chat: "Converse com a IA sempre que precisar",
   goal_steps: "Passos personalizados pro seu objetivo",
   signs_weekly: "Previsão astrológica completa para o seu signo prosperar",
+  signals_hour: "A interpretação completa deste sinal está pronta para você",
+  signals_numerology: "Descubra o que seus números dizem sobre você",
+  signals_combo: "A combinação do seu signo com o seu Caminho de Vida",
+  signals_daily: "Sua mensagem do dia, completa e personalizada",
+  signals_history: "Seu histórico completo de sinais",
   wheel: "A Roda da Fortuna é um ritual diário do Premium",
   tarot: "Sua carta do dia é exclusiva do Premium",
   content_library: "Guias completos da sua biblioteca",
@@ -1115,6 +1124,7 @@ function HomeView({ profile, plan, week, part, xp, level, stage, streak, fruits,
       <div className="briefing-voice" onClick={() => navigate("signs")} role="button" tabIndex={0} style={{ cursor: "pointer" }}><em>“{plan.voice}”</em><span>Leitura de hoje para {profile.sign} · Toque para ver mapa de prosperidade ➔</span></div>
       <button className={`ritual-button ${ritualDone ? "done" : ""}`} onClick={openRitual}>{ritualDone ? <Check/> : <Play/>}<span><strong>{ritualDone ? "Ritual concluído" : "Começar ritual de 3 minutos"}</strong><small>{ritualDone ? "Sua árvore foi nutrida hoje" : "Check-in · respiração · ação"}</small></span><ChevronRight/></button>
     </section>
+    <SignalsDailyCard onOpen={() => navigate("signals")}/>
     <section className={`mission-card ${missionDone ? "done" : ""}`}><div className="mission-icon">{missionDone ? <Check/> : <Target/>}</div><div className="mission-copy"><p className="eyebrow">Missão do dia · {missionDone ? "concluída" : "+20 XP"}</p><h2>{missionDone ? "Intenção em movimento" : plan.theme.verb}</h2><p>{plan.mission}</p></div><button className="gold-button" disabled={missionDone} onClick={completeMission}>{missionDone ? <><Check/> Missão concluída</> : <><Target/> Começar missão</>}</button></section>
     {diagnostic && <DiagnosticHomeCards result={diagnostic} onOpenDiagnostic={() => navigate("diagnostic")} onOpenTree={() => openTree("home")}/>}
     </div>

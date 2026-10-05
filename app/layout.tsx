@@ -9,6 +9,7 @@ import "./dark.css";
 import "./celestial.css";
 import "./i18n.css";
 import "./ads.css";
+import "./signals.css";
 import { PwaRegister } from "./pwa-register";
 import { headers } from "next/headers";
 import { COLOR_MODE_BOOT } from "@/lib/colorModeBoot";
