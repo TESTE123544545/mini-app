@@ -9,6 +9,7 @@ import { AppProvider, useApp } from "./src/store";
 import { C, F } from "./src/theme";
 import { FREE_VIEWS, TABS, type View as TabView } from "./src/nav";
 import { Toast } from "./src/ui";
+import { watchForUpdates } from "./src/updates";
 import { AuthFlow } from "./src/screens/Auth";
 import { Onboarding } from "./src/screens/Onboarding";
 import { HomeScreen, RitualModal } from "./src/screens/Home";
@@ -87,6 +88,7 @@ function Shell() {
 }
 
 export default function App() {
+  useEffect(() => watchForUpdates(), []);
   const [loaded] = useFonts({ Cinzel_600SemiBold, Manrope_500Medium, Manrope_700Bold, Manrope_800ExtraBold });
   if (!loaded) return <View style={{ flex: 1, backgroundColor: C.bg }}/>;
   return <SafeAreaProvider>

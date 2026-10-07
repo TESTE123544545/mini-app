@@ -1,0 +1,123 @@
+{
+  "1": {
+    "android": {
+      "id": "3f2da879-ea86-ee24-c740-5049243f8b61",
+      "createdAt": "2026-10-07T13:17:45.950Z",
+      "runtimeVersion": "1",
+      "launchAsset": {
+        "hash": "oAcHXgFphlWdn0D_4GAsnepNoTnxJb1usRzfnuxs7kY",
+        "key": "2b76a1dd78ddb2654b22bafc02cdb4fc",
+        "url": "https://veiasdasintonia.com.br/ota/files/2b76a1dd78ddb2654b22bafc02cdb4fc.hbc",
+        "contentType": "application/javascript"
+      },
+      "assets": [
+        {
+          "hash": "bmekQNGaIuehRjHn-477cc30P96K3wQLeTWsKzhRmrA",
+          "key": "1751891facafee36e80586cfed227fc1",
+          "url": "https://veiasdasintonia.com.br/ota/files/1751891facafee36e80586cfed227fc1.ttf",
+          "fileExtension": ".ttf",
+          "contentType": "font/ttf"
+        },
+        {
+          "hash": "y84mQBymTxO9wvUk5DuOWMwSK6IIObTmfMa0d-LTGFs",
+          "key": "18f1755ffc108cbec9ac27c7a98c0b18",
+          "url": "https://veiasdasintonia.com.br/ota/files/18f1755ffc108cbec9ac27c7a98c0b18.ttf",
+          "fileExtension": ".ttf",
+          "contentType": "font/ttf"
+        },
+        {
+          "hash": "ohX9XGHaPLsNBsM7XU2M97ND-rKAWztT7ypr5DzQkr4",
+          "key": "3b46e60e610c5f493298d3815ad999d4",
+          "url": "https://veiasdasintonia.com.br/ota/files/3b46e60e610c5f493298d3815ad999d4.ttf",
+          "fileExtension": ".ttf",
+          "contentType": "font/ttf"
+        },
+        {
+          "hash": "9garOooKdYYwImdupJZHi7D01SCujEC2BQ3z1tv_rSA",
+          "key": "7fa8033ca19d3d9dea10e6f019712228",
+          "url": "https://veiasdasintonia.com.br/ota/files/7fa8033ca19d3d9dea10e6f019712228.ttf",
+          "fileExtension": ".ttf",
+          "contentType": "font/ttf"
+        },
+        {
+          "hash": "_aohlfHQSSsHFrvl8Vp1gf4pTfJ6N_gRMBmBfbcAcsk",
+          "key": "b12572c89966dc70008bf37a6e6cf5be",
+          "url": "https://veiasdasintonia.com.br/ota/files/b12572c89966dc70008bf37a6e6cf5be.ttf",
+          "fileExtension": ".ttf",
+          "contentType": "font/ttf"
+        },
+        {
+          "hash": "9rRhL-IsTXbP-Q1v_8mN2BhaZHTrWAi8Nu4Jhn6rfk4",
+          "key": "2c9b9deb7c974178ecfc54e6425de4ff",
+          "url": "https://veiasdasintonia.com.br/ota/files/2c9b9deb7c974178ecfc54e6425de4ff.ttf",
+          "fileExtension": ".ttf",
+          "contentType": "font/ttf"
+        },
+        {
+          "hash": "9YJUEgS9xotR3jwv5QuZ7CDDwDGWkhd8v0J3GZKaqRY",
+          "key": "ec4a6e976cec7c2fa377e9f24e292338",
+          "url": "https://veiasdasintonia.com.br/ota/files/ec4a6e976cec7c2fa377e9f24e292338.ttf",
+          "fileExtension": ".ttf",
+          "contentType": "font/ttf"
+        },
+        {
+          "hash": "2Ea_T_BCotn_JxCa6vZCKMlNiKts97pKxrrP8BjnPzQ",
+          "key": "7c8bdfd65f2d0d081069e438f953359f",
+          "url": "https://veiasdasintonia.com.br/ota/files/7c8bdfd65f2d0d081069e438f953359f.ttf",
+          "fileExtension": ".ttf",
+          "contentType": "font/ttf"
+        },
+        {
+          "hash": "Y4O9n4HlbWETmITY5Cy3shRqEd3k795VyL_x5MLAu-g",
+          "key": "8ca1a84037fdb644723129315c390ad9",
+          "url": "https://veiasdasintonia.com.br/ota/files/8ca1a84037fdb644723129315c390ad9.ttf",
+          "fileExtension": ".ttf",
+          "contentType": "font/ttf"
+        },
+        {
+          "hash": "iNP47wBLU0g6ICdy0JrKqxfKmd1BkF2bSrB6xjVjI3g",
+          "key": "de7b3026c153d63d5732582887fecbf4",
+          "url": "https://veiasdasintonia.com.br/ota/files/de7b3026c153d63d5732582887fecbf4.ttf",
+          "fileExtension": ".ttf",
+          "contentType": "font/ttf"
+        },
+        {
+          "hash": "q776H1jHNVtmPBnyn_5M1_yMk6nl-LaPCNHpuivEug0",
+          "key": "80cb1b1a8ba262608706cb7f2b017835",
+          "url": "https://veiasdasintonia.com.br/ota/files/80cb1b1a8ba262608706cb7f2b017835.ttf",
+          "fileExtension": ".ttf",
+          "contentType": "font/ttf"
+        },
+        {
+          "hash": "Su1dGApPQe0h8H5nhIb4ibtA6w3fX0c3abYwL1B9HjY",
+          "key": "8e8fe178c0f147b91ed2a2b3097ad8a4",
+          "url": "https://veiasdasintonia.com.br/ota/files/8e8fe178c0f147b91ed2a2b3097ad8a4.ttf",
+          "fileExtension": ".ttf",
+          "contentType": "font/ttf"
+        },
+        {
+          "hash": "W-bZsh0jmBq1IPC_x4AMQ0ydCTRn7yS4WxaHfncJsDs",
+          "key": "f8f555c6d9efacc1b0af255e815a97da",
+          "url": "https://veiasdasintonia.com.br/ota/files/f8f555c6d9efacc1b0af255e815a97da.ttf",
+          "fileExtension": ".ttf",
+          "contentType": "font/ttf"
+        },
+        {
+          "hash": "dM_mE0KW_Qr2CH_bAkvt2KQKJsKcFZvPAsvlNMqCuZg",
+          "key": "efac709e1a6bb29ff728329bd587a3ab",
+          "url": "https://veiasdasintonia.com.br/ota/files/efac709e1a6bb29ff728329bd587a3ab.png",
+          "fileExtension": ".png",
+          "contentType": "image/png"
+        }
+      ],
+      "metadata": {},
+      "extra": {
+        "expoClient": {
+          "name": "Seu Signo",
+          "slug": "veias-da-sintonia",
+          "version": "2.0.0"
+        }
+      }
+    }
+  }
+}

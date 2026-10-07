@@ -14,7 +14,8 @@
     "deploy:cloudflare": "pnpm build && wrangler deploy --config dist/server/wrangler.json --name use-seu-signo-para-prosperar",
     "build:android": "cd android && gradlew.bat assembleDebug",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
-    "db:generate": "drizzle-kit generate"
+    "db:generate": "drizzle-kit generate",
+    "ota": "node mobile/scripts/publish-ota.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

@@ -81,3 +81,5 @@ security_best_practices_report.md
 /mobile/android/app/.cxx/
 /mobile/dist/
 /mobile/node_modules/
+
+/mobile/.ota-tmp/

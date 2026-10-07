@@ -14,7 +14,7 @@
     },
     "android": {
       "package": "br.com.veiasdasintonia.prosperar",
-      "versionCode": 3,
+      "versionCode": 4,
       "adaptiveIcon": {
         "backgroundColor": "#070F24",
         "foregroundImage": "./assets/android-icon-foreground.png"
@@ -34,8 +34,16 @@
     "plugins": [
       "expo-secure-store",
       "expo-font",
+      "expo-updates",
       "expo-iap",
       "./plugins/withReleaseSigning"
-    ]
+    ],
+    "runtimeVersion": "1",
+    "updates": {
+      "url": "https://veiasdasintonia.com.br/api/ota/manifest",
+      "enabled": true,
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 3000
+    }
   }
 }
