@@ -15,6 +15,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     ".cache-trash/**",
     "android/**",
+    "mobile/**",
+    "app-nativo/**",
     ".wrangler/**",
     ".vinext/**",
   ]),

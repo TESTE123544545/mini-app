@@ -72,3 +72,12 @@ next-env.d.ts
 
 # local security audit notes: never commit (the repository is public)
 security_best_practices_report.md
+
+# Native Android app (Expo)
+/mobile/android/local.properties
+/mobile/android/.gradle/
+/mobile/android/build/
+/mobile/android/app/build/
+/mobile/android/app/.cxx/
+/mobile/dist/
+/mobile/node_modules/

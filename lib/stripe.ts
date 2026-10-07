@@ -34,7 +34,7 @@ export function premiumProductId() {
 
 type Params = Record<string, string | number | boolean | undefined>;
 
-export async function stripe<T>(path: string, params?: Params, method: "GET" | "POST" = params ? "POST" : "GET"): Promise<T> {
+export async function stripe<T>(path: string, params?: Params, method: "GET" | "POST" | "DELETE" = params ? "POST" : "GET"): Promise<T> {
   const key = process.env.STRIPE_SECRET_KEY;
   if (!key) throw new Error("stripe_not_configured");
   const body = params
@@ -152,7 +152,7 @@ async function refreshPlan(deviceId: string) {
   return plan;
 }
 
-async function saveRecord(deviceId: string, record: { id: string; productId: string; status: string; expiresAt?: number; autoRenewing: boolean }) {
+export async function saveRecord(deviceId: string, record: { id: string; productId: string; status: string; expiresAt?: number; autoRenewing: boolean }) {
   const now = new Date().toISOString();
   const values = {
     productId: record.productId, status: record.status, autoRenewing: record.autoRenewing, updatedAt: now,

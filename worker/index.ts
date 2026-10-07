@@ -1,6 +1,7 @@
 import handler from "vinext/server/fetch-handler";
 import { buildMissingArticles } from "@/lib/articles";
 import { runTrialEmails } from "@/lib/trialEmails";
+import { refreshGoogleSubscriptions } from "@/lib/googlePlay";
 import { isCountableView, recordView } from "@/lib/visits";
 
 /**
@@ -87,6 +88,8 @@ const worker = {
     ctx.waitUntil(app.fetch(warm, env, ctx).then((response) => response.arrayBuffer()).catch((error) => console.error("warmup_failed", error)));
     // Premium trial e-mails (sent only in daytime in Brasília).
     ctx.waitUntil(runTrialEmails().catch((error) => console.error("trial_emails_failed", error)));
+    // Google Play subscriptions that end soon: renewals extend Premium, cancellations and failed payments end it.
+    ctx.waitUntil(refreshGoogleSubscriptions().catch((error) => console.error("google_refresh_failed", error)));
   },
 };
 
