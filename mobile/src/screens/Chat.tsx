@@ -86,7 +86,7 @@ export function ChatScreen({ go, initialPrompt, onPromptUsed }: { go: (view: Tab
   sendRef.current = send;
 
   return <Screen scroll={false}>
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
       <Pressable onPress={() => go("home")}><Text style={{ color: C.gold, fontFamily: F.bold }}>← Voltar</Text></Pressable>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0, marginVertical: 10 }} contentContainerStyle={{ gap: 8 }}>
         <Pressable onPress={newChat} style={{ flexDirection: "row", alignItems: "center", gap: 4, borderWidth: 1, borderColor: threadId === null ? C.gold : C.line, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 8 }}><Plus size={14} color={C.gold}/><Text style={{ fontFamily: F.bold, color: C.ink, fontSize: 13 }}>Novo chat</Text></Pressable>

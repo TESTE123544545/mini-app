@@ -48,7 +48,7 @@ function Login({ onBack, onRegister }: { onBack: () => void; onRegister: () => v
     try { await signIn(email.trim(), password); } catch (e) { setError(e instanceof Error ? e.message : "Não foi possível entrar."); setBusy(false); }
   }
   return <Screen>
-    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined}>
+    <KeyboardAvoidingView behavior="padding">
       <Pressable onPress={onBack}><Text style={{ color: C.gold, fontFamily: F.bold }}>← Voltar</Text></Pressable>
       <Gap/>
       <Eyebrow>Entrar</Eyebrow>
@@ -90,7 +90,7 @@ function Register({ onBack, onLogin }: { onBack: () => void; onLogin: () => void
   }
 
   return <Screen>
-    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined}>
+    <KeyboardAvoidingView behavior="padding">
       <Pressable onPress={step === 0 ? onBack : () => setStep(step - 1)}><Text style={{ color: C.gold, fontFamily: F.bold }}>← Voltar</Text></Pressable>
       <Gap/>
       <Eyebrow>{`Passo ${step + 1} de 3`}</Eyebrow>

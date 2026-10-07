@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import React, { useEffect, useState } from "react";
+import { ActivityIndicator, BackHandler, Pressable, Text, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFonts, Cinzel_600SemiBold } from "@expo-google-fonts/cinzel";
@@ -25,10 +25,21 @@ import { Locked, PaywallModal, PremiumScreen } from "./src/screens/Premium";
 const ICONS: Record<string, React.ComponentType<{ size?: number; color?: string }>> = { home: Home, diagnostic: Telescope, signs: Sparkles, signals: Orbit, tree: Leaf, missions: Route, journal: BookOpen, profile: UserRound };
 
 function Shell() {
-  const { phase, isPremium, toast, openRitual } = useApp();
+  const { phase, isPremium, toast, openRitual, paywall, closePaywall, ritualOpen, closeRitual } = useApp();
   const [view, setView] = useState<TabView>("home");
   const [chatPrompt, setChatPrompt] = useState<string | null>(null);
   const insets = useSafeAreaInsets();
+
+  // Android back button: close what is open, then go back to Início, and only then leave the app.
+  useEffect(() => {
+    const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
+      if (paywall) { closePaywall(); return true; }
+      if (ritualOpen) { closeRitual(); return true; }
+      if (phase === "ready" && view !== "home") { setView("home"); return true; }
+      return false;
+    });
+    return () => subscription.remove();
+  }, [paywall, ritualOpen, phase, view, closePaywall, closeRitual]);
   let body: React.ReactNode;
 
   if (phase === "loading") body = <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}><ActivityIndicator color={C.gold} size="large"/></View>;
