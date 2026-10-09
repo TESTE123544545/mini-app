@@ -11,6 +11,7 @@ import "./i18n.css";
 import "./ads.css";
 import "./signals.css";
 import "./radar.css";
+import "./community.css";
 import { PwaRegister } from "./pwa-register";
 import { headers } from "next/headers";
 import { COLOR_MODE_BOOT } from "@/lib/colorModeBoot";

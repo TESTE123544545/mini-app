@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
+import { MessagesSquare } from "lucide-react";
 import { Anchor, Apple, ArrowLeft, ArrowRight, Star, BookOpen, BriefcaseBusiness, CalendarDays, Camera, CameraOff, Check, ChevronRight, CircleDollarSign, Cloud, Compass, Crown, Eye, EyeOff, Flame, Flower2, Gem, Home, ImagePlus, Leaf, LockKeyhole, LogOut, Mail, MoonStar, Orbit, Pencil, Play, Plus, Rocket, Route, Save, Send, Settings2, ShieldCheck, Sparkles, Sprout, Sun, Sunrise, Sunset, Target, Telescope, TreeDeciduous, Trophy, UserRound, Wind, X } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
@@ -18,6 +19,7 @@ import { SignalsDailyCard } from "@/components/views/SignalsDailyCard";
 import dynamic from "next/dynamic";
 // The Signs tab (sign data, tarot, wheel, live sky) is the heaviest view; it loads on first open.
 const SignalsView = dynamic(() => import("@/components/views/SignalsView").then((module) => module.SignalsView), { ssr: false, loading: () => <div className="live-skeleton" aria-label="Carregando"><span/><span/><span/></div> });
+const CommunityView = dynamic(() => import("@/components/views/CommunityView").then((module) => module.CommunityView), { ssr: false, loading: () => <div className="live-skeleton" aria-label="Carregando"><span/><span/><span/></div> });
 const RadarView = dynamic(() => import("@/components/views/RadarView").then((module) => module.RadarView), { ssr: false, loading: () => <div className="live-skeleton" aria-label="Carregando"><span/><span/><span/></div> });
 const SignsView = dynamic(() => import("@/components/views/SignsView").then((module) => module.SignsView), { ssr: false, loading: () => <div className="live-skeleton" aria-label="Carregando"><span/><span/><span/></div> });
 import { DiagnosticView } from "@/components/diagnostic/DiagnosticView";
@@ -38,7 +40,7 @@ import { signFromDate as getSign } from "@/lib/birth";
 import { RegisterWizard, type RegisterSeed } from "@/components/RegisterWizard";
 import { AppTutorial, queueTutorial } from "@/components/AppTutorial";
 
-type View = "home" | "premium" | "diagnostic" | "signs" | "signals" | "radar" | "tree" | "missions" | "journal" | "profile" | "goal" | "chat";
+type View = "home" | "premium" | "diagnostic" | "signs" | "signals" | "radar" | "community" | "tree" | "missions" | "journal" | "profile" | "goal" | "chat";
 type GoalKind = "financial" | "non_financial" | "partial";
 type Goal = {
   id: number; title: string; category: string; progress: number; isPrimary?: boolean;
@@ -650,6 +652,7 @@ export default function HomePage() {
           {view === "home" && <HomeView profile={profile} plan={plan} week={week} part={part} xp={xp} level={level} stage={stage} streak={streak} fruits={goals.filter((goal) => goal.progress === 100).length} missionDone={missionDone} ritualDone={ritualDone} treeCelebrating={treeCelebrating} completeMission={completeMission} openRitual={() => { haptic(8); setRitualOpen(true); }} oracleOpen={oracleOpen} setOracleOpen={setOracleOpen} mainGoal={mainGoal} advanceGoal={advanceGoal} openGoals={() => navigate(mainGoal ? "goal" : "profile")} navigate={navigate} isPremium={isPremium} openPaywall={openPaywall} diagnostic={diagnostics[0]} openTree={(source) => openTree(source)} trialEndsAt={trialEndsAt} />}
           {view === "premium" && <PremiumView isPremium={isPremium} trialEndsAt={trialEndsAt} />}
           {view === "diagnostic" && <DiagnosticView results={diagnostics} profileSign={profile.sign || undefined} xp={xp} onComplete={(result) => setDiagnostics((current) => saveDiagnostic(account?.email, result, current))} onOpenTree={() => openTree("diagnostic_result")} lockedResult={isPremium ? undefined : <PremiumOffer reason="diagnostic_result"/>} />}
+          {view === "community" && <CommunityView />}
           {view === "radar" && <RadarView sign={profile.sign} openPaywall={openPaywall} />}
           {view === "signals" && <SignalsView openPaywall={openPaywall} navigate={navigate} />}
           {view === "signs" && <SignsView profile={profile} isPremium={isPremium} openPaywall={openPaywall} navigate={navigate} askSintonia={(prompt) => { setChatPrompt(prompt); navigate("chat"); }} />}
@@ -685,12 +688,12 @@ const navTabs: { view: View; label: string; icon: React.ReactNode }[] = [
   { view: "signals", label: "Sinais", icon: <Orbit/> },
   { view: "tree", label: "Árvore", icon: <Leaf/> },
   { view: "missions", label: "Jornada", icon: <Route/> },
-  { view: "journal", label: "Diário", icon: <BookOpen/> },
+  { view: "community", label: "Social", icon: <MessagesSquare/> },
   { view: "profile", label: "Perfil", icon: <UserRound/> },
 ];
 const tabOrder = navTabs.map((tab) => tab.view);
 /** A free account can take the diagnostic, see the offer, manage its account and open the basic "Sinais do Universo" — nothing else. */
-const FREE_VIEWS: View[] = ["diagnostic", "premium", "profile", "signals"];
+const FREE_VIEWS: View[] = ["diagnostic", "premium", "profile", "signals", "community"];
 
 const lockedCopy: Partial<Record<View, { title: string; text: string }>> = {
   home: { title: "Seu dia completo", text: "A leitura diária do seu signo, a missão do dia, o ritual de 3 minutos, o oráculo e o céu ao vivo." },
@@ -722,7 +725,7 @@ function LockedView({ view, hasDiagnostic, onDiagnostic }: { view: View; hasDiag
   </div>;
 }
 let activeNavTransition: ViewTransition | null = null;
-const viewLabels: Record<View, string> = { home: "Início", premium: "Premium", diagnostic: "Meu Diagnóstico", signs: "Signos & Astrologia", signals: "Sinais do Universo", radar: "Radar da Prosperidade", tree: "Sua Árvore", missions: "Sua Jornada", journal: "Seu Diário", profile: "Seu Caminho", goal: "Meu Objetivo", chat: "Conversar" };
+const viewLabels: Record<View, string> = { home: "Início", premium: "Premium", diagnostic: "Meu Diagnóstico", signs: "Signos & Astrologia", signals: "Sinais do Universo", radar: "Radar da Prosperidade", community: "Comunidade da Sintonia", tree: "Sua Árvore", missions: "Sua Jornada", journal: "Seu Diário", profile: "Seu Caminho", goal: "Meu Objetivo", chat: "Conversar" };
 
 function AppSplash() {
   return <main className="app-splash" aria-busy="true"><div><BrandLockup stacked className="splash-brand"/><div className="splash-bar" aria-hidden="true"><i/></div></div></main>;
@@ -1129,6 +1132,7 @@ function HomeView({ profile, plan, week, part, xp, level, stage, streak, fruits,
       <button className={`ritual-button ${ritualDone ? "done" : ""}`} onClick={openRitual}>{ritualDone ? <Check/> : <Play/>}<span><strong>{ritualDone ? "Ritual concluído" : "Começar ritual de 3 minutos"}</strong><small>{ritualDone ? "Sua árvore foi nutrida hoje" : "Check-in · respiração · ação"}</small></span><ChevronRight/></button>
     </section>
     <SignalsDailyCard onOpen={() => navigate("signals")}/>
+    <section className="surface-card radar-promo"><p className="eyebrow">Seu diário</p><h2>Uma reflexão por dia</h2><p>Escreva o que você percebeu hoje e acompanhe a sua evolução.</p><button type="button" className="ghost-button" onClick={() => navigate("journal")}>Abrir o diário</button></section>
     <section className="surface-card radar-promo"><p className="eyebrow">Novo · Premium</p><h2>Radar da Prosperidade</h2><p>Descubra como transformar o que você gosta de fazer em oportunidades reais de renda, e quantas horas da sua vida cada venda pode adiantar.</p><button type="button" className="gold-button" onClick={() => { track("radar_home_card"); navigate("radar"); }}>Abrir o Radar</button></section>
     <section className={`mission-card ${missionDone ? "done" : ""}`}><div className="mission-icon">{missionDone ? <Check/> : <Target/>}</div><div className="mission-copy"><p className="eyebrow">Missão do dia · {missionDone ? "concluída" : "+20 XP"}</p><h2>{missionDone ? "Intenção em movimento" : plan.theme.verb}</h2><p>{plan.mission}</p></div><button className="gold-button" disabled={missionDone} onClick={completeMission}>{missionDone ? <><Check/> Missão concluída</> : <><Target/> Começar missão</>}</button></section>
     {diagnostic && <DiagnosticHomeCards result={diagnostic} onOpenDiagnostic={() => navigate("diagnostic")} onOpenTree={() => openTree("home")}/>}

@@ -1,13 +1,13 @@
 {
   "1": {
     "android": {
-      "id": "af25e269-ba53-4e9b-c742-1ccb731a4b82",
-      "createdAt": "2026-10-09T03:05:59.809Z",
+      "id": "04fea9f5-fa7a-1bf8-49ff-37a7bddab4c2",
+      "createdAt": "2026-10-09T11:45:16.433Z",
       "runtimeVersion": "1",
       "launchAsset": {
-        "hash": "k7mF-PTRyqLOmDYJmDv0QYS0zUASD71PL_mYHBbhj-Y",
-        "key": "6b0d7b4699f5e36e072219509ea985c6",
-        "url": "https://veiasdasintonia.com.br/ota/files/6b0d7b4699f5e36e072219509ea985c6.hbc",
+        "hash": "FK7igSSWxOMnIMRDiRLk46cqlW_5CRDBPdn5S_wvUTI",
+        "key": "0b4ad36e71f7bc513ba60b8378a9cc20",
+        "url": "https://veiasdasintonia.com.br/ota/files/0b4ad36e71f7bc513ba60b8378a9cc20.hbc",
         "contentType": "application/javascript"
       },
       "assets": [

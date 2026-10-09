@@ -1,4 +1,4 @@
-export type View = "home" | "premium" | "diagnostic" | "signs" | "signals" | "radar" | "tree" | "missions" | "journal" | "profile" | "goal" | "chat";
+export type View = "home" | "premium" | "diagnostic" | "signs" | "signals" | "radar" | "community" | "tree" | "missions" | "journal" | "profile" | "goal" | "chat";
 
 /** Tabs in the bottom bar, in the same order as the site. */
 export const TABS: { view: View; label: string }[] = [
@@ -8,12 +8,12 @@ export const TABS: { view: View; label: string }[] = [
   { view: "signals", label: "Sinais" },
   { view: "tree", label: "Árvore" },
   { view: "missions", label: "Jornada" },
-  { view: "journal", label: "Diário" },
+  { view: "community", label: "Social" },
   { view: "profile", label: "Perfil" },
 ];
 
 /** A free account can take the diagnostic, see the offer, manage its account and open the basic "Sinais". */
-export const FREE_VIEWS: View[] = ["diagnostic", "premium", "profile", "signals"];
+export const FREE_VIEWS: View[] = ["diagnostic", "premium", "profile", "signals", "community"];
 
 export const LOCKED_COPY: Partial<Record<View, { title: string; text: string }>> = {
   home: { title: "Seu dia completo", text: "A leitura diária do seu signo, a missão do dia, o ritual de 3 minutos, o oráculo e o céu ao vivo." },

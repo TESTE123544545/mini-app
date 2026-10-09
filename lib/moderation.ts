@@ -1,4 +1,4 @@
-const ABUSIVE_PATTERNS = [
+export const ABUSIVE_PATTERNS = [
   "caralho", "porra", "merda", "buceta", "piroca", "pinto", "rola",
   "viado", "veado", "corno", "otario", "otária", "otaria", "idiota", "imbecil", "retardado", "retardada",
   "vagabundo", "vagabunda", "vadia", "puta", "putaria", "safado", "safada",
@@ -8,7 +8,7 @@ const ABUSIVE_PATTERNS = [
   "toma no cu", "vai se fuder", "vai tomar no cu", "filho da puta", "filha da puta",
 ];
 
-function normalize(value: string) {
+export function normalize(value: string) {
   return value
     .toLowerCase()
     .normalize("NFD")

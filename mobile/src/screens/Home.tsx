@@ -64,6 +64,13 @@ export function HomeScreen({ go }: { go: (view: TabView) => void }) {
     </Card>}
 
     <Card>
+      <Eyebrow>Seu diário</Eyebrow>
+      <H2>Uma reflexão por dia</H2>
+      <P>Escreva o que você percebeu hoje e acompanhe a sua evolução.</P>
+      <Button kind="ghost" label="Abrir o diário" onPress={() => go("journal")}/>
+    </Card>
+
+    <Card>
       <Eyebrow>Novo · Premium</Eyebrow>
       <H2>Radar da Prosperidade</H2>
       <P>Descubra como transformar o que você gosta de fazer em oportunidades reais de renda, e quantas horas da sua vida cada venda pode adiantar.</P>

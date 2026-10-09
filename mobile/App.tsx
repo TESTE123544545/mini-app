@@ -4,7 +4,7 @@ import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFonts, Cinzel_600SemiBold } from "@expo-google-fonts/cinzel";
 import { Manrope_500Medium, Manrope_700Bold, Manrope_800ExtraBold } from "@expo-google-fonts/manrope";
-import { BookOpen, Home, Leaf, Orbit, Route, Sparkles, Telescope, UserRound, Lock } from "lucide-react-native";
+import { Home, Leaf, MessagesSquare, Orbit, Route, Sparkles, Telescope, UserRound, Lock } from "lucide-react-native";
 import { AppProvider, useApp } from "./src/store";
 import { C, F } from "./src/theme";
 import { FREE_VIEWS, TABS, type View as TabView } from "./src/nav";
@@ -20,11 +20,12 @@ import { JournalScreen } from "./src/screens/Journal";
 import { DiagnosticScreen } from "./src/screens/Diagnostic";
 import { ChatScreen } from "./src/screens/Chat";
 import { RadarScreen } from "./src/screens/Radar";
+import { CommunityScreen } from "./src/screens/Community";
 import { SignalsScreen } from "./src/screens/Signals";
 import { ProfileScreen } from "./src/screens/Profile";
 import { Locked, PaywallModal, PremiumScreen } from "./src/screens/Premium";
 
-const ICONS: Record<string, React.ComponentType<{ size?: number; color?: string }>> = { home: Home, diagnostic: Telescope, signs: Sparkles, signals: Orbit, tree: Leaf, missions: Route, journal: BookOpen, profile: UserRound };
+const ICONS: Record<string, React.ComponentType<{ size?: number; color?: string }>> = { home: Home, diagnostic: Telescope, signs: Sparkles, signals: Orbit, tree: Leaf, missions: Route, community: MessagesSquare, profile: UserRound };
 
 function Shell() {
   const { phase, isPremium, toast, openRitual, paywall, closePaywall, ritualOpen, closeRitual } = useApp();
@@ -59,6 +60,7 @@ function Shell() {
           : view === "missions" ? <JourneyScreen/>
           : view === "journal" ? <JournalScreen/>
           : view === "diagnostic" ? <DiagnosticScreen go={setView}/>
+          : view === "community" ? <CommunityScreen/>
           : view === "radar" ? <RadarScreen go={setView}/>
           : view === "chat" ? <ChatScreen go={setView} initialPrompt={chatPrompt} onPromptUsed={() => setChatPrompt(null)}/>
           : view === "profile" ? <ProfileScreen go={setView}/>

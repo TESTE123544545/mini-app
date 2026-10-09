@@ -272,3 +272,63 @@ export const radarReports = sqliteTable("radar_reports", {
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 }, (table) => [index("radar_reports_device_idx").on(table.deviceId, table.createdAt)]);
+
+/* --- Comunidade da Sintonia (stage 1: global room, sign clubs, profiles, reports, blocks) ------------------ */
+
+/** One public identity per member. `sign` is fixed at joining from the birth date; roles are never stored (the founder is decided by the server). */
+export const communityProfiles = sqliteTable("community_profiles", {
+  deviceId: text("device_id").primaryKey().references(() => profiles.deviceId, { onDelete: "cascade" }),
+  username: text("username").notNull(),
+  displayName: text("display_name").notNull(),
+  bio: text("bio").notNull().default(""),
+  sign: text("sign").notNull(),
+  joinedAt: text("joined_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  suspendedUntil: text("suspended_until"),
+  strikes: integer("strikes").notNull().default(0),
+}, (table) => [uniqueIndex("community_profiles_username_idx").on(table.username)]);
+
+export const communityMessages = sqliteTable("community_messages", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  room: text("room").notNull(),
+  deviceId: text("device_id").notNull().references(() => communityProfiles.deviceId, { onDelete: "cascade" }),
+  body: text("body").notNull(),
+  replyTo: integer("reply_to"),
+  pinned: integer("pinned", { mode: "boolean" }).notNull().default(false),
+  /** Removed by the team: kept only as a tombstone so replies and reports still make sense. */
+  removed: integer("removed", { mode: "boolean" }).notNull().default(false),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [index("community_messages_room_idx").on(table.room, table.id), index("community_messages_device_idx").on(table.deviceId)]);
+
+/** Last message each member has seen in each room (unread counters). */
+export const communityReads = sqliteTable("community_reads", {
+  deviceId: text("device_id").notNull().references(() => communityProfiles.deviceId, { onDelete: "cascade" }),
+  room: text("room").notNull(),
+  lastId: integer("last_id").notNull().default(0),
+}, (table) => [primaryKey({ columns: [table.deviceId, table.room] })]);
+
+export const communityBlocks = sqliteTable("community_blocks", {
+  blockerId: text("blocker_id").notNull().references(() => communityProfiles.deviceId, { onDelete: "cascade" }),
+  blockedId: text("blocked_id").notNull().references(() => communityProfiles.deviceId, { onDelete: "cascade" }),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [primaryKey({ columns: [table.blockerId, table.blockedId] })]);
+
+export const communityReports = sqliteTable("community_reports", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  reporterId: text("reporter_id").notNull().references(() => communityProfiles.deviceId, { onDelete: "cascade" }),
+  messageId: integer("message_id").notNull(),
+  reason: text("reason").notNull(),
+  status: text("status").notNull().default("open"),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  handledAt: text("handled_at"),
+}, (table) => [uniqueIndex("community_reports_once_idx").on(table.reporterId, table.messageId), index("community_reports_status_idx").on(table.status, table.id)]);
+
+/** Every action of the team, with who did it and why. */
+export const communityModLog = sqliteTable("community_mod_log", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  actor: text("actor").notNull(),
+  action: text("action").notNull(),
+  targetUsername: text("target_username"),
+  messageId: integer("message_id"),
+  note: text("note").notNull().default(""),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+});
