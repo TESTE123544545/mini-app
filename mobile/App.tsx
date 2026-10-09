@@ -19,6 +19,7 @@ import { JourneyScreen } from "./src/screens/Journey";
 import { JournalScreen } from "./src/screens/Journal";
 import { DiagnosticScreen } from "./src/screens/Diagnostic";
 import { ChatScreen } from "./src/screens/Chat";
+import { RadarScreen } from "./src/screens/Radar";
 import { SignalsScreen } from "./src/screens/Signals";
 import { ProfileScreen } from "./src/screens/Profile";
 import { Locked, PaywallModal, PremiumScreen } from "./src/screens/Premium";
@@ -58,6 +59,7 @@ function Shell() {
           : view === "missions" ? <JourneyScreen/>
           : view === "journal" ? <JournalScreen/>
           : view === "diagnostic" ? <DiagnosticScreen go={setView}/>
+          : view === "radar" ? <RadarScreen go={setView}/>
           : view === "chat" ? <ChatScreen go={setView} initialPrompt={chatPrompt} onPromptUsed={() => setChatPrompt(null)}/>
           : view === "profile" ? <ProfileScreen go={setView}/>
           : view === "premium" ? <PremiumScreen/>

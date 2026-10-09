@@ -1,4 +1,4 @@
-export type View = "home" | "premium" | "diagnostic" | "signs" | "signals" | "tree" | "missions" | "journal" | "profile" | "goal" | "chat";
+export type View = "home" | "premium" | "diagnostic" | "signs" | "signals" | "radar" | "tree" | "missions" | "journal" | "profile" | "goal" | "chat";
 
 /** Tabs in the bottom bar, in the same order as the site. */
 export const TABS: { view: View; label: string }[] = [
@@ -22,6 +22,7 @@ export const LOCKED_COPY: Partial<Record<View, { title: string; text: string }>>
   missions: { title: "Sua Jornada", text: "Missões diárias, trilhas guiadas de 7 e 21 dias e o relatório semanal lido pela IA." },
   journal: { title: "Seu Diário", text: "Uma reflexão guiada por dia e o histórico completo da sua evolução." },
   goal: { title: "Seu Objetivo", text: "Metas sem limite, com passos personalizados pela IA para o seu objetivo." },
+  radar: { title: "Radar da Prosperidade", text: "Descubra oportunidades reais de renda a partir do que você gosta de fazer, com simulador, plano de vendas e as horas da sua vida que cada venda pode adiantar." },
   chat: { title: "Conversar com a IA", text: "A Sintonia conversa com você sobre o seu dia, com o céu de hoje e o seu signo como contexto." },
 };
 
@@ -34,6 +35,7 @@ export const PAYWALL_HEADLINE: Record<string, string> = {
   chat: "Converse com a IA sempre que precisar",
   goal_steps: "Passos personalizados pro seu objetivo",
   signs_weekly: "Previsão astrológica completa para o seu signo prosperar",
+  radar: "O Radar da Prosperidade é exclusivo do Premium",
   signals_hour: "A interpretação completa deste sinal está pronta para você",
   signals_numerology: "Descubra o que seus números dizem sobre você",
   signals_combo: "A combinação do seu signo com o seu Caminho de Vida",

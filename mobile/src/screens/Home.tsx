@@ -63,6 +63,13 @@ export function HomeScreen({ go }: { go: (view: TabView) => void }) {
       <Button kind="ghost" label="Ver meus sinais" onPress={() => go("signals")}/>
     </Card>}
 
+    <Card>
+      <Eyebrow>Novo · Premium</Eyebrow>
+      <H2>Radar da Prosperidade</H2>
+      <P>Descubra como transformar o que você gosta de fazer em oportunidades reais de renda, e quantas horas da sua vida cada venda pode adiantar.</P>
+      <Button label="Abrir o Radar" onPress={() => go("radar")}/>
+    </Card>
+
     <Card style={missionDone ? { borderColor: "rgba(112,203,160,0.4)" } : undefined}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>{missionDone ? <Check size={16} color={C.ok}/> : <Target size={16} color={C.gold}/>}<Eyebrow>{`Missão do dia · +20 XP`}</Eyebrow></View>
       <H2>{plan.theme.verb}</H2>

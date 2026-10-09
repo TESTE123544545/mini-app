@@ -1,0 +1,88 @@
+/* Radar da Prosperidade: colours come only from the theme variables, so dark and light modes both follow. */
+.radar .eyebrow{display:flex;align-items:center;gap:6px}
+.radar h2{margin:6px 0 8px}
+.radar h3{font-size:.92rem;margin:14px 0 4px;color:var(--studio-ink)}
+.radar p,.radar li{line-height:1.55}
+.radar ul{margin:4px 0 0;padding-left:18px;display:grid;gap:4px}
+.radar label{display:grid;gap:6px;font-size:.84rem;font-weight:700;color:var(--studio-ink-2)}
+.radar input,.radar textarea{width:100%;font:inherit;font-weight:500;color:var(--studio-ink);background:transparent;border:1px solid var(--studio-line);border-radius:14px;padding:11px 13px}
+.radar textarea{resize:vertical}
+.radar input[type=range]{padding:0;accent-color:var(--studio-amber)}
+.radar fieldset{border:0;margin:0;padding:0}
+.radar legend{font-size:.84rem;font-weight:700;margin-bottom:8px;color:var(--studio-ink-2)}
+.radar-hero{text-align:center;display:grid;gap:10px;justify-items:center}
+.radar-hero__icon{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--studio-amber);color:var(--studio-amber)}
+.radar-hero__icon svg{width:30px;height:30px}
+.radar-lede{font-weight:700;color:var(--studio-ink)}
+.radar-quote{margin:4px 0;padding:12px 14px;border-left:2px solid var(--studio-amber);font-style:italic;text-align:left;color:var(--studio-ink-2)}
+.radar-form{display:grid;gap:14px}
+.radar-steps{display:flex;gap:6px}
+.radar-steps i{flex:1;height:4px;border-radius:2px;background:var(--studio-line);opacity:.5}
+.radar-steps i.on{background:var(--studio-amber);opacity:1}
+.radar-nav{display:flex;gap:10px;justify-content:space-between}
+.radar-nav .gold-button{flex:1}
+.radar-error{color:#c0504d;font-weight:700}
+.radar-hourbox{border:1px dashed var(--studio-line);border-radius:16px;padding:14px;display:grid;gap:10px}
+.radar-hourbox p{margin:0;font-size:.86rem}
+.radar-or{color:var(--studio-ink-3)}
+.radar-two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.radar-calc{color:var(--studio-ink)}
+.radar-scan{text-align:center;display:grid;gap:8px;justify-items:center}
+.radar-sweep{position:relative;width:120px;height:120px;border-radius:50%;border:1px solid var(--studio-line);margin:8px 0}
+.radar-sweep i{position:absolute;inset:14px;border-radius:50%;border:1px solid var(--studio-line);opacity:.7}
+.radar-sweep i:nth-child(2){inset:34px}
+.radar-sweep i:nth-child(3){inset:0;border:0;background:conic-gradient(from 0deg,transparent 0 300deg,var(--studio-amber) 360deg);opacity:.55;animation:radar-spin 2.4s linear infinite}
+@keyframes radar-spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.radar-sweep i:nth-child(3){animation:none}}
+.radar-ready p,.radar-insight p{margin:0}
+.radar-hours{display:grid;gap:8px}
+.radar-hours__big{font-size:1.7rem;font-weight:800;color:var(--studio-amber);margin:2px 0}
+.radar-hours__big small{font-size:.8rem;color:var(--studio-ink-3);font-weight:600}
+.radar-emotion{font-style:italic;color:var(--studio-ink)}
+.radar-list{display:grid;gap:14px}
+.radar-card{display:grid;gap:10px;text-align:left;width:100%;cursor:pointer;color:inherit;font:inherit}
+.radar-card__rank{font-size:.72rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--studio-amber)}
+.radar-card__head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.radar-card__head strong{font-size:1.08rem;line-height:1.3}
+.radar-card__summary{font-size:.9rem;color:var(--studio-ink-2);line-height:1.5}
+.radar-card__go{display:flex;align-items:center;gap:4px;font-weight:800;color:var(--studio-amber);font-size:.88rem}
+.radar-ring{width:56px;height:56px;flex:none}
+.radar-ring__track{fill:none;stroke:var(--studio-line);stroke-width:5;opacity:.5}
+.radar-ring__fill{fill:none;stroke:var(--studio-amber);stroke-width:5;stroke-linecap:round}
+.radar-ring text{font-size:20px;font-weight:800;fill:var(--studio-ink)}
+.radar-metrics,.radar-facts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0}
+.radar-metrics div,.radar-facts div{display:grid;gap:2px;padding:10px;border:1px solid var(--studio-line);border-radius:12px}
+.radar-facts{grid-template-columns:1fr}
+.radar-metrics dt,.radar-facts dt{font-size:.7rem;color:var(--studio-ink-3);font-weight:600}
+.radar-metrics dd,.radar-facts dd{margin:0;font-weight:700;font-size:.88rem;color:var(--studio-ink)}
+.radar-sign p{margin:0}
+.radar-philosophy p{margin:0;font-style:italic;color:var(--studio-ink-2)}
+.radar-again{display:flex;align-items:center;justify-content:center;gap:8px}
+.radar-tabs{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.radar-tabs::-webkit-scrollbar{display:none}
+.radar-tabs button{flex:none;border:1px solid var(--studio-line);background:transparent;color:var(--studio-ink-2);border-radius:999px;padding:9px 14px;font-weight:700;font-size:.82rem}
+.radar-tabs button.active{background:var(--studio-amber);border-color:var(--studio-amber);color:#0b1633}
+.radar-block{display:grid;gap:6px}
+.radar-block p{margin:0}
+.radar-msg{padding:10px 12px;border-radius:12px;border:1px solid var(--studio-line);white-space:pre-wrap}
+.radar-copy{justify-self:start;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--studio-line);background:transparent;color:var(--studio-ink-2);border-radius:999px;padding:6px 12px;font-weight:700;font-size:.8rem}
+.radar-path{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.radar-path li{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start}
+.radar-path span{font-size:.72rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--studio-amber);border:1px solid var(--studio-line);border-radius:999px;padding:4px 10px;white-space:nowrap}
+.radar-path p{margin:2px 0 0;color:var(--studio-ink-2)}
+.radar-lever{padding:12px;border:1px solid var(--studio-line);border-radius:14px;display:grid;gap:4px}
+.radar-lever small{color:var(--studio-ink-3)}
+.radar-scenarios{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.radar-scenarios button{display:grid;gap:2px;justify-items:center;padding:10px 6px;border:1px solid var(--studio-line);border-radius:14px;background:transparent;color:var(--studio-ink)}
+.radar-scenarios button.active{border-color:var(--studio-amber);box-shadow:inset 0 0 0 1px var(--studio-amber)}
+.radar-scenarios small{color:var(--studio-ink-3)}
+.radar-equation{display:grid;gap:8px}
+.radar-equation>div{display:grid;gap:2px;padding:10px 12px;border:1px solid var(--studio-line);border-radius:12px}
+.radar-equation span{font-size:.78rem;color:var(--studio-ink-3);font-weight:600}
+.radar-equation strong{font-size:1.15rem;color:var(--studio-ink)}
+.radar-equation small{color:var(--studio-ink-3);font-size:.72rem}
+.radar-equation .pos strong{color:var(--studio-amber)}
+.radar-equation .neg strong{color:#c0504d}
+.radar-warn{padding:10px 12px;border-radius:12px;border:1px dashed var(--studio-amber);font-size:.86rem}
+.radar-promo{display:grid;gap:8px}
+.radar-promo p{margin:0}

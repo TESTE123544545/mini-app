@@ -47,7 +47,7 @@ const pageName = (path: string) => (path === "/" ? "Início (app)" : path);
 const EVENT_LABEL: Record<string, string> = {
   signup: "Cadastro", onboarding_completed: "Cadastro inicial concluído", diagnostic_completed: "Diagnóstico concluído",
   diagnostic_question_answered: "Pergunta do diagnóstico", diagnostic_result_viewed: "Resultado do diagnóstico visto",
-  paywall_viewed: "Oferta Premium vista", signal_hour_opened: "Sinais: hora aberta", signal_hour_detected: "Sinais: hora igual detectada", signal_upsell_clicked: "Sinais: clique para desbloquear", premium_tab_viewed: "Aba Premium vista", checkout_started: "Pagamento aberto",
+  paywall_viewed: "Oferta Premium vista", radar_started: "Radar: começou", radar_analyze_done: "Radar: análise concluída", radar_opportunity_opened: "Radar: oportunidade aberta", radar_piece_loaded: "Radar: plano/oferta gerado", radar_home_card: "Radar: clique no card da Início", signal_hour_opened: "Sinais: hora aberta", signal_hour_detected: "Sinais: hora igual detectada", signal_upsell_clicked: "Sinais: clique para desbloquear", premium_tab_viewed: "Aba Premium vista", checkout_started: "Pagamento aberto",
   checkout_completed: "Assinatura concluída", daily_mission_completed: "Missão do dia", daily_ritual_completed: "Ritual de 3 minutos",
   journal_entry_created: "Reflexão no diário", goal_created: "Meta criada", goal_completed: "Meta concluída",
   oracle_revealed: "Oráculo revelado", tarot_drawn: "Carta do tarô", wheel_spun: "Roda da Fortuna",

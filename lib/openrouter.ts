@@ -111,7 +111,7 @@ function parseLoose(raw: string): unknown {
   try { return JSON.parse(raw.slice(raw.indexOf("{"), raw.lastIndexOf("}") + 1)); } catch { throw new OpenRouterError("A resposta da IA não veio em formato válido."); }
 }
 
-async function callInteractiveJson(systemPrompt: string, userPrompt: string, maxTokens: number): Promise<unknown> {
+export async function callInteractiveJson(systemPrompt: string, userPrompt: string, maxTokens: number): Promise<unknown> {
   return parseLoose(await callInteractive([{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }], maxTokens, true));
 }
 

@@ -262,3 +262,13 @@ export const signalReadings = sqliteTable("signal_readings", {
   sign: text("sign"),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 }, (table) => [uniqueIndex("signal_readings_unique_idx").on(table.deviceId, table.dayKey, table.time), index("signal_readings_device_idx").on(table.deviceId, table.createdAt)]);
+
+/** Radar da Prosperidade (Premium): each analysis, with the answers that produced it and the results the person opened (plans, offers). */
+export const radarReports = sqliteTable("radar_reports", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  deviceId: text("device_id").notNull().references(() => profiles.deviceId, { onDelete: "cascade" }),
+  answersJson: text("answers_json").notNull(),
+  resultJson: text("result_json").notNull(),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [index("radar_reports_device_idx").on(table.deviceId, table.createdAt)]);

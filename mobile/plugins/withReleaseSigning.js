@@ -43,6 +43,11 @@ module.exports = function withReleaseSigning(config) {
       const found = mod.modResults.find((item) => item.type === "property" && item.key === key);
       if (found) found.value = value; else mod.modResults.push({ type: "property", key, value });
     };
+    // The Kotlin symbol processors of expo-updates and expo-iap run out of metaspace with the 512 MB default.
+    set("org.gradle.jvmargs", "-Xmx4096m -XX:MaxMetaspaceSize=1536m");
+    // Parallel Kotlin symbol processing was flaky on this machine (NoClassDefFoundError in KSP); sequential is slower but reliable.
+    set("org.gradle.parallel", "false");
+    set("kotlin.daemon.jvmargs", "-Xmx3072m");
     set("reactNativeArchitectures", "armeabi-v7a,arm64-v8a");
     set("android.enableMinifyInReleaseBuilds", "true");
     set("android.enableShrinkResourcesInReleaseBuilds", "true");
